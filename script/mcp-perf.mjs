@@ -61,6 +61,7 @@ const SCROLL_TARGET = {
   'worship-td': 'worship-body',
   killroy: 'section-killroy',
   'combat-sim': 'combat-slot-scroll',
+  'royal-guardian': 'royal-pane',
 };
 
 /// Cards the pointer crosses on Home.

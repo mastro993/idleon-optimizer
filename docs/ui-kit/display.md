@@ -44,6 +44,17 @@ Uses are the counts across `crates/` when #340 was written (the tab strip row: w
 | `layout::SimpleGrid` | 1 | GPUI grid | `div().grid().grid_cols(n).gap(..)`, `n` from the workspace width beside the sidebar (`ui/dashboard.rs`, `columns`). Grid items stretch to their row's height. Home becomes one table in the Console design. |
 | `layout::bring_into_view` | 1 | `widgets::bring_into_view` | Same signature. `ScrollHandle::scroll_to_item(ix)` when the item is a direct child of the scroll container. |
 
+## Rows of controls
+
+Two layout traps the Royal Guardian migration (#351) hit:
+
+- **A kit `Select` grows in a row.** `.w(..)` on the `Select` does not stop it taking the free
+  space of an `h_flex`, which pushes its siblings to the far end. Box it:
+  `div().flex_none().w(px(200.)).child(Select::new(..))`. In a column, `.w(..)` alone works.
+- **A wrapping row is measured as one line.** An `h_flex().flex_wrap()` of controls that wraps
+  keeps the height of a single line, so its second line draws over what follows. Split the
+  controls into rows that never wrap (a `v_flex` of `h_flex` lines) instead.
+
 ## Sizes
 
 Ely sized controls with `ControlSize` and text with `TextSize`; the kit sizes components with

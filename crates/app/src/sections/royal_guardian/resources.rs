@@ -4,44 +4,50 @@
 //! The inspector is driven by a node selector so the harness can read it
 //! without a pointer, and the drain staffing is the stream table under it.
 
-use super::overview::{figure_text, kpi, number_cell, rate_cell};
+use super::overview::{figure_text, kpi, number_cell, rate_cell, tag};
+use super::table::{Col, table, text, text_id};
 use super::world_rail;
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, Styled, div, px};
+use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, Window, div, px};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_royal_guardian::RoyalGuardian;
 use idleon_royal_guardian::{
     self as royal_guardian, Allocation, NodeAllocation, Rate, ResourceNode,
 };
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, Tone};
 
 /// The Resources pane.
-pub(crate) fn resources(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn resources(
+    state: &AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let royal = state
         .royal
         .as_ref()
         .expect("the section renders its import prompt without a save");
     let world = state.royal_state.world.min(royal_guardian::WORLDS - 1);
     let nodes = royal.world_resources(world);
-    let selected = selected_resource(royal, world, state.royal_state.resource);
-    let allocation = royal.allocation_to_reset();
-    let banked = royal.banked();
-    div()
+    let derived = &state.royal_controls.derived;
+    let selected = selected_resource(
+        royal,
+        derived.streamed(royal),
+        world,
+        state.royal_state.resource,
+    );
+    let allocation = derived.allocation(royal);
+    let banked = derived.banked(royal);
+    v_flex()
         .id("royal-resources")
-        .flex()
-        .flex_col()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(world_rail(world, cx))
-        .child(time_cards(&allocation, &banked, cx))
-        .child(node_picker(royal, world, selected, cx))
-        .child(inspector(royal, &allocation, selected))
-        .child(node_table(&nodes, &allocation, selected, cx))
+        .child(time_cards(allocation, banked, cx))
+        .child(node_picker(state, &nodes, world, selected, window, cx))
+        .child(inspector(royal, allocation, selected, cx))
+        .child(node_table(&nodes, allocation, selected, cx))
         .child(rate_card(&royal.global_collection_rate(), cx))
         .into_any_element()
 }
@@ -52,7 +58,7 @@ fn time_cards(
     banked: &royal_guardian::Banked,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let reset = &allocation.reset;
     let reset_caption = match (reset.available, reset.hours_remaining) {
         (true, Some(hours)) => format!("{} until the daily reset", format::hours(hours)),
@@ -74,15 +80,13 @@ fn time_cards(
         .projected_grade_gains_at_reset
         .map(format::value)
         .unwrap_or_else(|| "—".to_owned());
-    let reset_body = div()
+    let reset_body = v_flex()
         .id("royal-reset-projection")
         .role(gpui::Role::Label)
         .aria_label(format!(
             "Drain projection: {collectable} collectable before the reset, {emptied} nodes \
              emptying, {refills} refilling and {grades} grade gains"
         ))
-        .flex()
-        .flex_col()
         .gap_1()
         .child(format!(
             "Drain projection: {collectable} collectable before the reset"
@@ -91,11 +95,7 @@ fn time_cards(
             "{emptied} nodes empty before it · {refills} refill · {grades} grade gains"
         ))
         .child(Caption::new(reset_caption.clone()).text_color(muted));
-    div()
-        .id("royal-resource-time")
-        .flex()
-        .flex_wrap()
-        .gap_3()
+    let strip = KpiStrip::new()
         .child(kpi(
             "royal-kpi-banked",
             "Banked hours",
@@ -125,28 +125,32 @@ fn time_cards(
             reset_caption.clone(),
         ))
         .child(
-            Card::new()
-                .header(CardHeader::new("Daily reset"))
-                .child(div().id("royal-reset-card").p_3().child(reset_body)),
-        )
+            v_flex()
+                .id("royal-reset-card")
+                .gap_1()
+                .child(Caption::new("Daily reset"))
+                .child(reset_body),
+        );
+    div()
+        .id("royal-resource-time")
+        .child(strip)
         .into_any_element()
 }
 
 /// The node selector that drives the inspector.
 fn node_picker(
-    royal: &RoyalGuardian,
+    state: &AppState,
+    nodes: &[ResourceNode],
     world: usize,
     selected: usize,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let choices: Vec<Choice> = royal
-        .world_resources(world)
-        .into_iter()
+    let choices: Vec<Choice<usize>> = nodes
+        .iter()
         .map(|node| {
             Choice::new(
-                node.resource.to_string(),
+                node.resource,
                 format!(
                     "Resource {} · {}",
                     node.resource + 1,
@@ -159,42 +163,34 @@ fn node_picker(
             )
         })
         .collect();
-    let select = Select::new("royal-resource", choices)
-        .label("Resource node")
-        .selected(selected.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(resource) = value.parse::<usize>() {
-                entity.update(cx, |state, cx| state.set_royal_resource(resource, cx));
-            }
-        });
-    div()
+    let select = &state.royal_controls.resource;
+    select.show(choices, Some(&selected), window, cx);
+    h_flex()
         .id("royal-resource-picker")
-        .flex()
-        .flex_wrap()
-        .items_end()
         .gap_3()
         .child(
-            div()
-                .flex()
-                .flex_col()
-                .gap_1()
-                .min_w(px(240.0))
-                .child(select),
+            div().flex_none().w(px(240.0)).child(
+                Select::new(select.state())
+                    .id("royal-resource")
+                    .accessibility_label("Resource node")
+                    .small(),
+            ),
         )
-        .child(
-            Caption::new(format!(
-                "World {} lists {} nodes",
-                world + 1,
-                royal.world_resources(world).len()
-            ))
-            .text_color(muted),
-        )
+        .child(Caption::new(format!(
+            "World {} lists {} nodes",
+            world + 1,
+            nodes.len()
+        )))
         .into_any_element()
 }
 
 /// The selected node: its state, its cycle and the outposts that drain it.
-fn inspector(royal: &RoyalGuardian, allocation: &Allocation, resource: usize) -> AnyElement {
+fn inspector(
+    royal: &RoyalGuardian,
+    allocation: &Allocation,
+    resource: usize,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let node = royal.resource_node(resource);
     let detail = allocation
         .details
@@ -204,7 +200,7 @@ fn inspector(royal: &RoyalGuardian, allocation: &Allocation, resource: usize) ->
         resource,
         detail.map(|detail| detail.rate).unwrap_or_default(),
     );
-    let mut body = div()
+    let mut body = v_flex()
         .id("royal-resource-detail")
         .role(gpui::Role::Label)
         .aria_label(format!(
@@ -214,20 +210,16 @@ fn inspector(royal: &RoyalGuardian, allocation: &Allocation, resource: usize) ->
             format::value(node.capacity),
             format::value(node.grade)
         ))
-        .flex()
-        .flex_col()
         .gap_2()
         .child(
-            div()
-                .flex()
-                .items_center()
+            h_flex()
                 .gap_2()
                 .child(
                     div()
                         .text_size(px(15.0))
                         .child(format!("Resource {}", resource + 1)),
                 )
-                .child(Badge::new(status(&node, detail)).tone(tone(&node, detail))),
+                .child(tag(status(&node, detail), tone(&node, detail))),
         )
         .child(Caption::new(format!(
             "World {} · grade {} · {} · saved progress {}",
@@ -264,14 +256,14 @@ fn inspector(royal: &RoyalGuardian, allocation: &Allocation, resource: usize) ->
         .child(reset_line(detail))
         .child(cycle_line(&cycle));
     if let Some(detail) = detail {
-        body = body.child(staffing_table(royal, detail));
+        body = body.child(staffing_table(royal, detail, cx));
     }
     Card::new()
         .header(
             CardHeader::new("Resource node")
                 .description("What the node holds, what drains it and what the reset refills"),
         )
-        .child(div().p_3().child(body))
+        .child(body)
         .into_any_element()
 }
 
@@ -334,43 +326,47 @@ fn cycle_line(cycle: &royal_guardian::NodeCycle) -> AnyElement {
 }
 
 /// The outposts draining the selected node.
-fn staffing_table(royal: &RoyalGuardian, detail: &NodeAllocation) -> AnyElement {
+fn staffing_table(
+    royal: &RoyalGuardian,
+    detail: &NodeAllocation,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     if detail.streams.is_empty() {
         return div()
             .id("royal-resource-staffing-empty")
             .child(Caption::new("No outpost links this node."))
             .into_any_element();
     }
-    let mut table = Table::new([
-        "Outpost",
-        "Slot",
-        "Kind",
-        "Rate /hr",
-        "Drain /hr",
-        "Currency /hr",
-    ]);
-    for stream in &detail.streams {
-        table = table.row([
-            div()
-                .id(format!("royal-stream-{}-{}", stream.map, stream.slot))
-                .child(royal.outpost(stream.map).name.replace('_', " "))
-                .into_any_element(),
+    let rows = detail.streams.iter().map(|stream| {
+        vec![
+            text_id(
+                SharedString::from(format!("royal-stream-{}-{}", stream.map, stream.slot)),
+                royal.outpost(stream.map).name.replace('_', " "),
+            ),
             number_cell(stream.slot as f64 + 1.0),
-            div()
-                .child(if stream.savage { "Savage" } else { "Normal" })
-                .into_any_element(),
+            text(if stream.savage { "Savage" } else { "Normal" }),
             number_cell(stream.rate),
             number_cell(stream.drain_rate),
             number_cell(stream.currency_rate),
-        ]);
-    }
-    div()
+        ]
+    });
+    v_flex()
         .id("royal-resource-staffing")
-        .flex()
-        .flex_col()
         .gap_1()
         .child(Caption::new("Drain staffing"))
-        .child(table)
+        .child(table(
+            "royal-stream",
+            &[
+                Col::Text("Outpost"),
+                Col::Number("Slot"),
+                Col::Text("Kind"),
+                Col::Number("Rate /hr"),
+                Col::Number("Drain /hr"),
+                Col::Number("Currency /hr"),
+            ],
+            rows,
+            cx,
+        ))
         .into_any_element()
 }
 
@@ -381,76 +377,63 @@ fn node_table(
     selected: usize,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mut table = Table::new([
-        "Node",
-        "Grade",
-        "Remaining",
-        "Rate /hr",
-        "Drain",
-        "Currency",
-        "Reset",
-    ]);
-    for node in nodes {
+    let accent = cx.theme().primary;
+    let rows = nodes.iter().map(|node| {
         let detail = allocation
             .details
             .iter()
             .find(|detail| detail.resource == node.resource);
         let pick = cx.entity();
         let resource = node.resource;
-        let picked = resource == selected;
-        table = table.row([
-            div()
-                .id(format!("royal-node-row-{resource}"))
+        vec![
+            v_flex()
+                .id(SharedString::from(format!("royal-node-row-{resource}")))
                 .role(gpui::Role::Button)
-                .flex()
-                .flex_col()
+                .cursor_pointer()
                 .gap_1()
                 .child(
                     div()
-                        .when(picked, |row| row.text_color(cx.theme().colors.accent))
+                        .when(resource == selected, |row| row.text_color(accent))
                         .child(format!("Resource {}", resource + 1)),
                 )
-                .child(Caption::new(status(node, detail)).text_color(muted))
+                .child(Caption::new(status(node, detail)))
                 .on_click(move |_event, _window, cx| {
                     pick.update(cx, |state, cx| state.set_royal_resource(resource, cx));
                 })
                 .into_any_element(),
             number_cell(node.grade),
-            div()
-                .flex()
-                .flex_col()
-                .items_end()
-                .w_full()
-                .child(format!(
-                    "{} / {}",
-                    format::value(node.remaining),
-                    format::value(node.capacity)
-                ))
-                .into_any_element(),
+            text(format!(
+                "{} / {}",
+                format::value(node.remaining),
+                format::value(node.capacity)
+            )),
             rate_cell(detail.map(|detail| detail.rate).unwrap_or_default()),
-            div()
-                .flex()
-                .flex_col()
-                .items_end()
-                .w_full()
-                .child(match detail.map(|detail| detail.drain_hours) {
-                    Some(hours) if hours.is_finite() => format::hours(hours),
-                    _ => "—".to_owned(),
-                })
-                .into_any_element(),
-            div()
-                .child(if node.currency_slot < 0 {
-                    "—".to_owned()
-                } else {
-                    format!("Slot {}", node.currency_slot)
-                })
-                .into_any_element(),
-            div()
-                .child(detail.map(reset_chip).unwrap_or_else(|| "—".to_owned()))
-                .into_any_element(),
-        ]);
-    }
+            text(match detail.map(|detail| detail.drain_hours) {
+                Some(hours) if hours.is_finite() => format::hours(hours),
+                _ => "—".to_owned(),
+            }),
+            text(if node.currency_slot < 0 {
+                "—".to_owned()
+            } else {
+                format!("Slot {}", node.currency_slot)
+            }),
+            text(detail.map(reset_chip).unwrap_or_else(|| "—".to_owned())),
+        ]
+    });
+    let table = table(
+        "royal-node",
+        &[
+            Col::Text("Node"),
+            Col::Number("Grade"),
+            Col::Number("Remaining"),
+            Col::Number("Rate /hr"),
+            Col::Number("Drain"),
+            Col::Text("Currency"),
+            Col::Text("Reset"),
+        ],
+        rows,
+        cx,
+    );
     Card::new()
         .header(
             CardHeader::new("Resource nodes")
@@ -471,52 +454,47 @@ fn reset_chip(detail: &NodeAllocation) -> String {
 
 /// The collection rate's factors, and the sources this build leaves out.
 fn rate_card(rate: &Rate, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mut table = Table::new(["Factor", "Value"]);
-    for factor in &rate.factors {
-        table = table.row([
-            div()
-                .id(format!("royal-rate-factor-{}", factor.name))
-                .child(factor.label)
-                .into_any_element(),
+    let rows = rate.factors.iter().map(|factor| {
+        vec![
+            text_id(
+                SharedString::from(format!("royal-rate-factor-{}", factor.name)),
+                factor.label,
+            ),
             number_cell(factor.value),
-        ]);
-    }
-    let mut card = Card::new().header(
-        CardHeader::new("Collection rate")
-            .description("What every outpost's collection rate multiplies in"),
+        ]
+    });
+    let factors = table(
+        "royal-rate-factor",
+        &[Col::Text("Factor"), Col::Number("Value")],
+        rows,
+        cx,
     );
-    card = card.child(
-        div()
-            .id("royal-collection-factors")
-            .flex()
-            .flex_col()
-            .gap_2()
-            .p_3()
-            .child(figure_line(rate.value))
-            .child(table),
-    );
-    if rate.partial {
-        let mut lines = div()
-            .id("royal-collection-missing")
-            .flex()
-            .flex_col()
-            .gap_1();
-        for source in &rate.missing {
-            lines = lines.child(Caption::new(source.clone()).text_color(muted));
-        }
-        card = card.child(
-            div()
-                .flex()
-                .flex_col()
-                .gap_1()
-                .px_3()
-                .pb_3()
-                .child(Caption::new("Sources this build does not read yet:").text_color(muted))
-                .child(lines),
-        );
-    }
-    card.into_any_element()
+    Card::new()
+        .header(
+            CardHeader::new("Collection rate")
+                .description("What every outpost's collection rate multiplies in"),
+        )
+        .child(
+            v_flex()
+                .id("royal-collection-factors")
+                .gap_2()
+                .child(figure_line(rate.value))
+                .child(factors),
+        )
+        .when(rate.partial, |card| {
+            card.child(
+                v_flex()
+                    .gap_1()
+                    .child(Caption::new("Sources this build does not read yet:"))
+                    .child(
+                        v_flex()
+                            .id("royal-collection-missing")
+                            .gap_1()
+                            .children(rate.missing.iter().cloned().map(Caption::new)),
+                    ),
+            )
+        })
+        .into_any_element()
 }
 
 /// The rate as a headline line.
@@ -531,8 +509,10 @@ fn figure_line(value: f64) -> AnyElement {
 
 /// The node the inspector explains: the saved one while it is in this world,
 /// else the first node that a stream drains, else the world's first node.
+/// `streamed` lists the nodes the saved streams drain, in stream order.
 pub(super) fn selected_resource(
     royal: &RoyalGuardian,
+    streamed: &[usize],
     world: usize,
     saved: Option<usize>,
 ) -> usize {
@@ -543,10 +523,9 @@ pub(super) fn selected_resource(
     {
         return saved;
     }
-    let (streams, _) = royal.resource_streams();
-    streams
+    streamed
         .iter()
-        .map(|stream| stream.resource)
+        .copied()
         .find(|resource| in_world(*resource))
         .or_else(|| nodes.first().map(|node| node.resource))
         .unwrap_or(0)

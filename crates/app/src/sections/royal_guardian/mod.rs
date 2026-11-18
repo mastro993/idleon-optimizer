@@ -11,28 +11,34 @@
 
 mod actions;
 mod breakdowns;
+mod controls;
 mod currencies;
-pub(crate) mod forecast;
+mod forecast;
 mod optimizer;
 mod outposts;
 mod overview;
 mod resources;
+mod table;
 mod unit_exp;
 mod upgrades;
 
+pub(crate) use controls::Controls;
 pub(crate) use upgrades::View as UpgradeView;
 
 #[cfg(test)]
 mod tests;
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::layout::ScrollArea;
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::shell::{TabBar, WindowTab};
+use crate::ui::layout::tab_bar;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, Window, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::{ActiveTheme as _, Icon};
 use idleon_royal_guardian as royal_guardian;
 
 /// The Royal Guardian tabs this build implements.
@@ -100,10 +106,6 @@ impl Tab {
             Tab::Optimizer => "Optimizer",
             Tab::UnitExp => "Unit EXP",
         }
-    }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
@@ -179,55 +181,41 @@ impl State {
 /// when the loaded save carries no Royal Guardian rows.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     if state.royal.is_none() {
         return prompt(cx);
     }
     let tab = state.royal_state.tab;
-    let entity = cx.entity();
-    let mut tabs =
-        TabBar::new("royal-tabs").selected(SharedString::from(format!("royal-tab-{}", tab.id())));
-    for entry in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(
-            format!("royal-tab-{}", entry.id()),
-            entry.label(),
-        ));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        let tab = id
-            .as_ref()
-            .strip_prefix("royal-tab-")
-            .and_then(Tab::from_id);
-        if let Some(tab) = tab {
-            entity.update(cx, |state, cx| state.set_royal_tab(tab, cx));
-        }
-    });
-    let header = div()
-        .id("royal-tab-strip")
-        .flex()
-        .items_center()
-        .px_3()
-        .pt_2()
-        .child(crate::ui::layout::scrolling_tabs(
-            "royal-tabs-scroll",
-            tabs,
-            cx,
-        ));
     if tab == Tab::Forecast {
         state.ensure_royal_forecast();
     }
+    state.sync_royal(cx);
+    let entity = cx.entity();
+    let selected = Tab::ALL.iter().position(|entry| *entry == tab).unwrap_or(0);
+    let tabs = Tab::ALL.map(|entry| {
+        (
+            SharedString::from(format!("royal-tab-{}", entry.id())),
+            SharedString::from(entry.label()),
+        )
+    });
+    let header = div().id("royal-tab-strip").flex().px_3().pt_2().child(
+        tab_bar("royal-tabs", tabs, selected, move |index, _window, cx| {
+            entity.update(cx, |state, cx| state.set_royal_tab(Tab::ALL[index], cx));
+        })
+        .flex_1(),
+    );
     let pane = match tab {
-        Tab::Overview => overview::overview(state, cx),
+        Tab::Overview => overview::overview(state, window, cx),
         Tab::Outposts => outposts::outposts(state, cx),
-        Tab::Resources => resources::resources(state, cx),
-        Tab::Currencies => currencies::currencies(state, cx),
-        Tab::Upgrades => upgrades::upgrades(state, cx),
+        Tab::Resources => resources::resources(state, window, cx),
+        Tab::Currencies => currencies::currencies(state, window, cx),
+        Tab::Upgrades => upgrades::upgrades(state, window, cx),
         Tab::Breakdowns => breakdowns::breakdowns(state, cx),
-        Tab::Forecast => forecast::forecast(state, cx),
-        Tab::Optimizer => optimizer::optimizer(state, cx),
-        Tab::UnitExp => unit_exp::unit_exp(state, cx),
+        Tab::Forecast => forecast::forecast(state, window, cx),
+        Tab::Optimizer => optimizer::optimizer(state, window, cx),
+        Tab::UnitExp => unit_exp::unit_exp(state, window, cx),
     };
     div()
         .id("royal-guardian-section")
@@ -237,11 +225,12 @@ pub(crate) fn view(
         .min_h_0()
         .child(header)
         .child(
-            ScrollArea::new("royal-pane")
-                .vertical()
+            div()
                 .flex_1()
                 .min_h_0()
-                .child(pane),
+                .child(div().p_3().child(pane))
+                .overflow_y_scrollbar()
+                .id("royal-pane"),
         )
         .into_any_element()
 }
@@ -249,33 +238,33 @@ pub(crate) fn view(
 /// The world rail every pane shares: which world its tables list.
 pub(super) fn world_rail(world: usize, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    let mut tabs = TabBar::new("royal-worlds-tabs").selected(format!("royal-world-{world}"));
-    for index in 0..royal_guardian::WORLDS {
-        tabs = tabs.tab(WindowTab::new(
-            format!("royal-world-{index}"),
-            format!("W{}", index + 1),
-        ));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        if let Some(world) = id
-            .strip_prefix("royal-world-")
-            .and_then(|rest| rest.parse::<usize>().ok())
-        {
-            entity.update(cx, |state, cx| state.set_royal_world(world, cx));
-        }
+    let tabs = (0..royal_guardian::WORLDS).map(|index| {
+        (
+            SharedString::from(format!("royal-world-{index}")),
+            SharedString::from(format!("W{}", index + 1)),
+        )
     });
     div()
         .id("royal-world-rail")
         .flex()
-        .items_center()
-        .gap_2()
-        .child(tabs)
+        .child(
+            tab_bar(
+                "royal-worlds-tabs",
+                tabs,
+                world,
+                move |world, _window, cx| {
+                    entity.update(cx, |state, cx| state.set_royal_world(world, cx));
+                },
+            )
+            .flex_1(),
+        )
         .into_any_element()
 }
 
 /// A save without `RoyalG` has no outposts: say so and offer the import.
 fn prompt(cx: &mut Context<AppState>) -> AnyElement {
     let import = cx.entity();
+    let muted = cx.theme().muted_foreground;
     div()
         .id("royal-guardian-section")
         .flex()
@@ -283,19 +272,31 @@ fn prompt(cx: &mut Context<AppState>) -> AnyElement {
         .size_full()
         .min_h_0()
         .child(
-            EmptyState::new("royal-empty", IconName::Map, "No Royal Guardian state")
-                .body(
-                    "The Royal Guardian calculator reads the outposts from a save. Import one to \
-                     see the counters, the world progress, the raw clearing values and the range \
-                     targets.",
-                )
-                .action(
-                    Button::new("royal-import", "Import save")
-                        .icon(IconName::Upload)
-                        .on_click(move |_event, window, cx| {
-                            import.update(cx, |state, cx| state.open_import(window, cx));
-                        }),
-                ),
+            div().id("royal-empty").child(
+                Empty::new()
+                    .header(
+                        EmptyHeader::new()
+                            .media(
+                                EmptyMedia::new().child(Icon::new(IconName::Map).text_color(muted)),
+                            )
+                            .title(EmptyTitle::new().child("No Royal Guardian state"))
+                            .description(EmptyDescription::new().child(
+                                "The Royal Guardian calculator reads the outposts from a save. \
+                                 Import one to see the counters, the world progress, the raw \
+                                 clearing values and the range targets.",
+                            )),
+                    )
+                    .content(
+                        EmptyContent::new().child(
+                            Button::new("royal-import")
+                                .label("Import save")
+                                .icon(IconName::Upload)
+                                .on_click(move |_event, window, cx| {
+                                    import.update(cx, |state, cx| state.open_import(window, cx));
+                                }),
+                        ),
+                    ),
+            ),
         )
         .into_any_element()
 }

@@ -83,7 +83,7 @@ impl AppState {
 
     /// Adds the collect hour the field holds.
     pub(crate) fn add_royal_collect(&mut self, cx: &mut Context<Self>) {
-        let text = forecast::text(&self.royal_forecast_inputs.collect, cx);
+        let text = forecast::field_text(&self.royal_controls.collect, cx);
         if let Some(hours) = forecast::hours(&text)
             && hours <= self.royal_state.forecast_hours
         {
@@ -107,11 +107,9 @@ impl AppState {
 
     /// Adds the menu-open window the two fields hold.
     pub(crate) fn add_royal_window(&mut self, cx: &mut Context<Self>) {
-        let start = forecast::hours(&forecast::text(
-            &self.royal_forecast_inputs.window_start,
-            cx,
-        ));
-        let end = forecast::hours(&forecast::text(&self.royal_forecast_inputs.window_end, cx));
+        let controls = &self.royal_controls;
+        let start = forecast::hours(&forecast::field_text(&controls.window_start, cx));
+        let end = forecast::hours(&forecast::field_text(&controls.window_end, cx));
         let (Some(start), Some(end)) = (start, end) else {
             return;
         };
@@ -155,13 +153,18 @@ impl AppState {
 }
 
 impl AppState {
-    /// The outpost optimizer's stored result, against the inputs it now shows.
+    /// The outpost optimizer's stored result, against the request
+    /// [`AppState::sync_royal`] keeps for the inputs it now shows.
     pub(crate) fn royal_optimizer_task(
         &self,
         cx: &gpui::App,
     ) -> TaskState<idleon_royal_guardian::Outcome> {
-        let input = self.royal_optimizer_request();
-        self.royal_optimizer.read(cx).state(&input)
+        let request = self
+            .royal_controls
+            .optimizer
+            .as_ref()
+            .expect("the optimizer pane renders only with a save");
+        self.royal_optimizer.read(cx).state(request)
     }
 
     /// The objective the outpost optimizer maximizes.
@@ -266,10 +269,11 @@ impl AppState {
         })
     }
 
-    /// The unit EXP plan's stored result, against the inputs it now shows.
+    /// The unit EXP plan's stored result, against the request
+    /// [`AppState::sync_royal`] keeps for the inputs it now shows.
     pub(crate) fn royal_unit_exp_task(&self, cx: &gpui::App) -> Option<TaskState<UnitExpPlan>> {
-        let input = self.royal_unit_exp_request()?;
-        Some(self.royal_unit_exp.read(cx).state(&input))
+        let request = self.royal_controls.unit_exp.as_ref()?;
+        Some(self.royal_unit_exp.read(cx).state(request))
     }
 
     /// Plan the unit EXP split off the UI thread through the shared runner.
@@ -319,10 +323,11 @@ impl AppState {
         ))
     }
 
-    /// The shelf plan's stored result, against the inputs it now shows.
+    /// The shelf plan's stored result, against the request
+    /// [`AppState::sync_royal`] keeps for the inputs it now shows.
     pub(crate) fn royal_shelf_task(&self, cx: &gpui::App) -> Option<TaskState<ShelfPlan>> {
-        let input = self.royal_shelf_request()?;
-        Some(self.royal_shelf.read(cx).state(&input))
+        let request = self.royal_controls.shelf.as_ref()?;
+        Some(self.royal_shelf.read(cx).state(request))
     }
 
     /// How many levels the shelf plan may buy.

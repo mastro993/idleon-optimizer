@@ -78,23 +78,6 @@ fn unavailable_rows_sort_after_available_ones() {
 }
 
 #[test]
-fn the_deposit_estimate_round_trips_through_its_selector_id() {
-    for estimate in Estimate::ALL {
-        assert_eq!(estimate_from_id(estimate_id(estimate)), Some(estimate));
-    }
-    assert_eq!(estimate_from_id("nope"), None);
-    assert_eq!(Estimate::Average.label(), "Average with vial doubles");
-}
-
-#[test]
-fn sort_ids_round_trip() {
-    for sort in Sort::ALL {
-        assert_eq!(Sort::from_id(sort.id()), Some(sort));
-    }
-    assert_eq!(Sort::from_id("nope"), None);
-}
-
-#[test]
 fn availability_reads_the_unavailable_label_and_tone() {
     let available = row(&sample(10, 0.0), 0);
     assert_eq!(

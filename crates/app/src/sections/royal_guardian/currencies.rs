@@ -4,23 +4,25 @@
 //! The "Collection Breakdown" tree belongs to RG-03, so this pane shows the
 //! sources with the same figures the tree resolves to.
 
-use super::overview::{figure_text, kpi, number_cell, rate_cell};
+use super::overview::{figure_text, kpi, number_cell, rate_cell, tag};
+use super::table::{Col, table, text, text_id};
 use super::world_rail;
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, Styled, div, px};
+use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, Window, div, px};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{Sizable as _, v_flex};
 use idleon_royal_guardian::RoyalGuardian;
 use idleon_royal_guardian::{self as royal_guardian, CurrencyIncome};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, Tone};
 
 /// The Currencies pane.
-pub(crate) fn currencies(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn currencies(
+    state: &AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let royal = state
         .royal
         .as_ref()
@@ -28,68 +30,60 @@ pub(crate) fn currencies(state: &AppState, cx: &mut Context<AppState>) -> AnyEle
     let world = state.royal_state.world.min(royal_guardian::WORLDS - 1);
     let slots = royal_guardian::currency_slots();
     let slot = selected_currency(&slots, state.royal_state.currency);
-    let income = royal.currency_income(slot);
-    div()
+    let income = state.royal_controls.derived.income(royal, slot);
+    v_flex()
         .id("royal-currencies")
-        .flex()
-        .flex_col()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(world_rail(world, cx))
-        .child(picker(&slots, slot, cx))
+        .child(picker(state, &slots, slot, window, cx))
         .child(summary(&income))
-        .child(source_table(royal, &income))
-        .child(partials(&income, cx))
+        .child(source_table(royal, &income, cx))
+        .child(partials(&income))
         .into_any_element()
 }
 
 /// The currency slot selector.
-fn picker(slots: &[i64], slot: i64, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
-    let choices: Vec<Choice> = slots
+fn picker(
+    state: &AppState,
+    slots: &[i64],
+    slot: i64,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let choices: Vec<Choice<i64>> = slots
         .iter()
-        .map(|value| Choice::new(value.to_string(), format!("Currency slot {value}")))
+        .map(|value| Choice::new(*value, format!("Currency slot {value}")))
         .collect();
-    let select = Select::new("royal-currency", choices)
-        .label("Currency")
-        .selected(slot.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(slot) = value.parse::<i64>() {
-                entity.update(cx, |state, cx| state.set_royal_currency(slot, cx));
-            }
-        });
+    let select = &state.royal_controls.currency;
+    select.show(choices, Some(&slot), window, cx);
     div()
         .id("royal-currency-picker")
-        .flex()
-        .items_end()
-        .gap_3()
         .child(
-            div()
-                .flex()
-                .flex_col()
-                .gap_1()
-                .min_w(px(220.0))
-                .child(select),
+            Select::new(select.state())
+                .id("royal-currency")
+                .accessibility_label("Currency")
+                .small()
+                .w(px(220.0)),
         )
         .into_any_element()
 }
 
 /// The inputs this save or this build leaves out of the rate, when any are.
-fn partials(income: &CurrencyIncome, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+fn partials(income: &CurrencyIncome) -> AnyElement {
     if !income.partial {
         return div().id("royal-currency-partial").into_any_element();
-    }
-    let mut lines = div().flex().flex_col().gap_1();
-    for source in &income.missing {
-        lines = lines.child(Caption::new(source.clone()).text_color(muted));
     }
     Card::new()
         .header(
             CardHeader::new("Rate inputs left out")
                 .description("These factors read as one instead of being guessed"),
         )
-        .child(div().id("royal-currency-partial").p_3().child(lines))
+        .child(
+            v_flex()
+                .id("royal-currency-partial")
+                .gap_1()
+                .children(income.missing.iter().cloned().map(Caption::new)),
+        )
         .into_any_element()
 }
 
@@ -111,11 +105,7 @@ fn summary(income: &CurrencyIncome) -> AnyElement {
         .projected_available_at_reset
         .map(figure_text)
         .unwrap_or_else(|| "—".to_owned());
-    div()
-        .id("royal-currency-summary")
-        .flex()
-        .flex_wrap()
-        .gap_3()
+    let strip = KpiStrip::new()
         .child(kpi(
             "royal-kpi-currency-balance",
             "Balance",
@@ -152,21 +142,26 @@ fn summary(income: &CurrencyIncome) -> AnyElement {
             format!("{before_reset} by the reset · {at_reset} after it"),
         ))
         .child(
-            div()
+            v_flex()
                 .id("royal-currency-reset-note")
                 .role(gpui::Role::Label)
                 .aria_label(reset_caption.clone())
-                .flex()
-                .flex_col()
                 .gap_1()
                 .child(Caption::new("Reset"))
                 .child(reset_caption),
-        )
+        );
+    div()
+        .id("royal-currency-summary")
+        .child(strip)
         .into_any_element()
 }
 
 /// The nodes that pay the selected slot.
-fn source_table(royal: &RoyalGuardian, income: &CurrencyIncome) -> AnyElement {
+fn source_table(
+    royal: &RoyalGuardian,
+    income: &CurrencyIncome,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let card = Card::new().header(CardHeader::new(format!(
         "Currency slot {} source nodes",
         income.slot
@@ -180,56 +175,53 @@ fn source_table(royal: &RoyalGuardian, income: &CurrencyIncome) -> AnyElement {
             )
             .into_any_element();
     }
-    let mut table = Table::new([
-        "Resource",
-        "Grade",
-        "Remaining",
-        "State",
-        "Nominal /hr",
-        "Collectable",
-        "Reset",
-    ]);
-    for node in &income.nodes {
+    let rows = income.nodes.iter().map(|node| {
         let resource = node.resource;
         let detail = &node.allocation;
         let state = if detail.drained {
-            Badge::new("Drained").tone(Tone::Warning)
+            tag("Drained", Tone::Warning)
         } else if detail.remaining == 0.0 {
-            Badge::new("Empty").tone(Tone::Neutral)
+            tag("Empty", Tone::Neutral)
         } else if detail.rate > 0.0 {
-            Badge::new("Draining").tone(Tone::Success)
+            tag("Draining", Tone::Success)
         } else {
-            Badge::new("No stream").tone(Tone::Danger)
+            tag("No stream", Tone::Danger)
         };
-        table = table.row([
-            div()
-                .id(format!("royal-currency-node-{resource}"))
-                .child(format!("Resource {}", resource + 1))
-                .into_any_element(),
+        vec![
+            text_id(
+                SharedString::from(format!("royal-currency-node-{resource}")),
+                format!("Resource {}", resource + 1),
+            ),
             number_cell(royal.resource_grade(resource)),
-            div()
-                .flex()
-                .flex_col()
-                .items_end()
-                .w_full()
-                .child(format!(
-                    "{} / {}",
-                    format::value(detail.remaining),
-                    format::value(royal.resource_capacity(resource))
-                ))
-                .into_any_element(),
-            div().child(state).into_any_element(),
+            text(format!(
+                "{} / {}",
+                format::value(detail.remaining),
+                format::value(royal.resource_capacity(resource))
+            )),
+            state.into_any_element(),
             rate_cell(node.currency_rate),
             number_cell(node.collectable_within_window),
-            div()
-                .child(match detail.refill_boundary {
-                    "saved-drained" => "Refills".to_owned(),
-                    "collect-before-reset" => "Collect first".to_owned(),
-                    _ => "—".to_owned(),
-                })
-                .into_any_element(),
-        ]);
-    }
+            text(match detail.refill_boundary {
+                "saved-drained" => "Refills",
+                "collect-before-reset" => "Collect first",
+                _ => "—",
+            }),
+        ]
+    });
+    let table = table(
+        "royal-currency-node",
+        &[
+            Col::Text("Resource"),
+            Col::Number("Grade"),
+            Col::Number("Remaining"),
+            Col::Text("State"),
+            Col::Number("Nominal /hr"),
+            Col::Number("Collectable"),
+            Col::Text("Reset"),
+        ],
+        rows,
+        cx,
+    );
     card.child(div().id("royal-currency-nodes").child(table))
         .into_any_element()
 }

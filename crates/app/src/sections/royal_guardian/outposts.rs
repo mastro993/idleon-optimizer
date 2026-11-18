@@ -8,20 +8,21 @@
 //! line art, because a rotated image edge would blur the 1-pixel line; the
 //! colour still tells the three families apart.
 
-use super::overview::{number_cell, rate_cell, selected_outpost, type_label};
+use super::controls::WorldMap;
+use super::overview::{number_cell, rate_cell, selected_outpost, tag, type_label};
+use super::table::{Col, table, text};
 use super::world_rail;
 use crate::assets::{Artwork, Manifest};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Hsla, IntoElement, Styled, canvas, div, img, point, px};
+use gpui::{
+    AnyElement, Context, Hsla, IntoElement, SharedString, Styled, canvas, div, img, point, px,
+};
+use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use idleon_royal_guardian::RoyalGuardian;
 use idleon_royal_guardian::{self as royal_guardian, Endpoint};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP, Tone};
 
 /// Resolve one game artwork reference, or `None` when the import skipped it.
 fn artwork(manifest: &Manifest, reference: &str) -> Option<std::path::PathBuf> {
@@ -48,14 +49,13 @@ pub(crate) fn outposts(state: &AppState, cx: &mut Context<AppState>) -> AnyEleme
         .expect("the section renders its import prompt without a save");
     let world = state.royal_state.world.min(royal_guardian::WORLDS - 1);
     let selected = selected_outpost(royal, world, state.royal_state.outpost);
-    div()
+    let rows = state.royal_controls.derived.world(royal, world);
+    v_flex()
         .id("royal-outposts")
-        .flex()
-        .flex_col()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(world_rail(world, cx))
-        .child(map(royal, world, selected, &state.assets, cx))
-        .child(outpost_table(royal, world, selected, cx))
+        .child(map(royal, rows, world, selected, &state.assets, cx))
+        .child(outpost_table(royal, rows, selected, cx))
         .child(selected_outpost_card(royal, selected))
         .into_any_element()
 }
@@ -64,12 +64,21 @@ pub(crate) fn outposts(state: &AppState, cx: &mut Context<AppState>) -> AnyEleme
 /// resource nodes that pay a currency.
 fn map(
     royal: &RoyalGuardian,
+    rows: &WorldMap,
     world: usize,
     selected: usize,
     manifest: &Manifest,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let theme = cx.theme();
+    let (background, border, foreground, muted, accent) = (
+        theme.background,
+        theme.border,
+        theme.foreground,
+        theme.muted_foreground,
+        theme.primary,
+    );
+    let (success, info, warning, radius) = (theme.success, theme.info, theme.warning, theme.radius);
     let entity = cx.entity();
     let width = (MAP_WIDTH * f64::from(MAP_SCALE)) as f32;
     let height = (MAP_HEIGHT * f64::from(MAP_SCALE)) as f32;
@@ -79,22 +88,18 @@ fn map(
         .aria_label(format!(
             "World {} outpost map · {} outposts · {} resource nodes",
             world + 1,
-            royal.world_outposts(world).len(),
-            royal
-                .world_resources(world)
-                .iter()
-                .filter(|node| node.currency_slot >= 0)
-                .count()
+            rows.outposts.len(),
+            rows.nodes.len()
         ))
         .relative()
         .flex_none()
         .w(px(width))
         .h(px(height))
-        .rounded(px(8.0))
+        .rounded(radius)
         .overflow_hidden()
-        .bg(colors.bg)
+        .bg(background)
         .border_1()
-        .border_color(colors.border);
+        .border_color(border);
     if let Some(path) = artwork(manifest, &format!("royal-guardian/UImap{}.png", world + 1)) {
         board = board.child(
             img(path)
@@ -107,8 +112,8 @@ fn map(
     }
 
     // The connection lines sit under the markers.
-    let lines = connection_lines(royal, world);
-    let palette = (colors.success, colors.info, colors.warning);
+    let lines = rows.lines.clone();
+    let palette = (success, info, warning);
     board = board.child(
         canvas(
             move |_bounds, _window, _cx| (lines, palette),
@@ -137,31 +142,23 @@ fn map(
         .h(px(height)),
     );
 
-    for node in royal
-        .world_resources(world)
-        .into_iter()
-        .filter(|node| node.currency_slot >= 0)
-    {
-        let Some((x, y)) = royal_guardian::resource_position(node.resource) else {
+    for &(resource, reachable) in &rows.nodes {
+        let Some((x, y)) = royal_guardian::resource_position(resource) else {
             continue;
         };
+        let node = royal.resource_node(resource);
         let (left, top) = board_point(x, y);
-        let reachable = royal
-            .reachable_outposts(node.resource)
-            .iter()
-            .any(|outpost| outpost.reachable);
         let ring = if node.drained {
-            colors.warning
+            warning
         } else if reachable {
-            colors.success
+            success
         } else {
-            colors.border
+            border
         };
-        let resource = node.resource;
         let click = entity.clone();
         board = board.child(
             div()
-                .id(format!("royal-map-resource-{resource}"))
+                .id(SharedString::from(format!("royal-map-resource-{resource}")))
                 .role(gpui::Role::Button)
                 .aria_label(format!(
                     "Resource {}, grade {}, {} of {} left, currency slot {}",
@@ -179,12 +176,12 @@ fn map(
                 .rounded_full()
                 .border_2()
                 .border_color(ring)
-                .bg(colors.bg.opacity(0.72))
+                .bg(background.opacity(0.72))
                 .flex()
                 .items_center()
                 .justify_center()
                 .text_size(px(8.0))
-                .text_color(colors.fg)
+                .text_color(foreground)
                 .child(format!("{}", node.currency_slot))
                 .on_click(move |_event, _window, cx| {
                     click.update(cx, |state, cx| {
@@ -195,28 +192,29 @@ fn map(
         );
     }
 
-    for outpost in royal.world_outposts(world) {
-        let Some((x, y)) = RoyalGuardian::outpost_position(outpost.map) else {
+    for row in &rows.outposts {
+        let Some((x, y)) = RoyalGuardian::outpost_position(row.map) else {
             continue;
         };
+        let outpost = royal.outpost(row.map);
         let (left, top) = board_point(x, y);
-        let kind = royal.outpost_type(outpost.map);
+        let kind = row.kind;
         let fill = if outpost.built {
             match kind as i64 {
-                1 => colors.info,
-                2 => colors.warning,
-                _ => colors.success,
+                1 => info,
+                2 => warning,
+                _ => success,
             }
         } else {
-            colors.fg_muted
+            muted
         };
-        let picked = outpost.map == selected;
-        let map_idx = outpost.map;
-        let units = royal.total_units(map_idx);
+        let picked = row.map == selected;
+        let map_idx = row.map;
+        let units = row.units;
         let click = entity.clone();
         board = board.child(
             div()
-                .id(format!("royal-map-outpost-{map_idx}"))
+                .id(SharedString::from(format!("royal-map-outpost-{map_idx}")))
                 .role(gpui::Role::Button)
                 .aria_label(format!(
                     "{} outpost, {}, {} units",
@@ -235,11 +233,11 @@ fn map(
                 .h(px(16.0))
                 .rounded(px(3.0))
                 .border_2()
-                .border_color(if picked { colors.accent } else { fill })
+                .border_color(if picked { accent } else { fill })
                 .bg(if outpost.built {
                     fill.opacity(0.65)
                 } else {
-                    colors.bg.opacity(0.35)
+                    background.opacity(0.35)
                 })
                 .on_click(move |_event, _window, cx| {
                     click.update(cx, |state, cx| state.set_royal_outpost(map_idx, cx));
@@ -255,12 +253,9 @@ fn map(
             ),
         )
         .child(
-            div()
+            v_flex()
                 .id("royal-map-pane")
-                .flex()
-                .flex_col()
                 .gap_2()
-                .p_3()
                 .child(board)
                 .child(map_legend(cx)),
         )
@@ -279,14 +274,15 @@ enum LineFamily {
 }
 
 /// One drawn connection, in the map image's coordinate space.
-struct Line {
+#[derive(Clone)]
+pub(crate) struct Line {
     from: (f64, f64),
     to: (f64, f64),
     family: LineFamily,
 }
 
 /// Every connection a built outpost in this world saves.
-fn connection_lines(royal: &RoyalGuardian, world: usize) -> Vec<Line> {
+pub(super) fn connection_lines(royal: &RoyalGuardian, world: usize) -> Vec<Line> {
     let mut lines = Vec::new();
     for outpost in royal.world_outposts(world).iter().filter(|row| row.built) {
         let Some((x, y)) = RoyalGuardian::outpost_position(outpost.map) else {
@@ -334,146 +330,105 @@ fn board_point(x: f64, y: f64) -> (f32, f32) {
 
 /// The colours the map uses, spelled out for the harness.
 fn map_legend(cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let colors = cx.theme().colors.clone();
-    let swatch = |color: Hsla| div().w(px(9.0)).h(px(9.0)).rounded(px(2.0)).bg(color);
-    div()
+    let theme = cx.theme();
+    let (success, info, warning, radius) = (theme.success, theme.info, theme.warning, theme.radius);
+    let entry = |color: Hsla, label: &'static str| {
+        h_flex()
+            .gap_1()
+            .child(div().size(px(9.0)).rounded(radius).bg(color))
+            .child(Caption::new(label))
+    };
+    h_flex()
         .id("royal-map-legend")
-        .flex()
         .flex_wrap()
-        .items_center()
         .gap_3()
-        .child(
-            div()
-                .flex()
-                .items_center()
-                .gap_1()
-                .child(swatch(colors.success))
-                .child(Caption::new("Normal connection")),
-        )
-        .child(
-            div()
-                .flex()
-                .items_center()
-                .gap_1()
-                .child(swatch(colors.info))
-                .child(Caption::new("Support connection")),
-        )
-        .child(
-            div()
-                .flex()
-                .items_center()
-                .gap_1()
-                .child(swatch(colors.warning))
-                .child(Caption::new("Savage connection or drained node")),
-        )
-        .child(Caption::new("Click an outpost or a node to inspect it.").text_color(muted))
+        .child(entry(success, "Normal connection"))
+        .child(entry(info, "Support connection"))
+        .child(entry(warning, "Savage connection or drained node"))
+        .child(Caption::new("Click an outpost or a node to inspect it."))
         .into_any_element()
 }
 
 /// Every outpost the world page lists, built or not.
 fn outpost_table(
     royal: &RoyalGuardian,
-    world: usize,
+    rows: &WorldMap,
     selected: usize,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let rows = royal.world_outposts(world);
-    let mut table = Table::new([
-        "Outpost",
-        "Type",
-        "Range",
-        "Units",
-        "Links",
-        "Supports",
-        "Collection /hr",
-        "State",
-    ]);
-    for outpost in &rows {
-        let map = outpost.map;
-        let pick = cx.entity();
-        let picked = map == selected;
-        let kind = royal.outpost_type(map);
-        let rate = royal.outpost_collection_rate(map);
-        let connections = royal.outpost_connections(map);
-        let links = connections
-            .iter()
-            .filter(|connection| connection.endpoint != Endpoint::Empty)
-            .map(|connection| match connection.endpoint {
-                Endpoint::Resource(resource) => format!("R{}", resource + 1),
-                Endpoint::Map(target) => format!("W{}", target + 1),
-                Endpoint::Empty => String::new(),
-            })
-            .collect::<Vec<_>>()
-            .join(" + ");
-        table = table.row([
-            div()
-                .id(format!("royal-outpost-row-{map}"))
-                .role(gpui::Role::Button)
-                .flex()
-                .flex_col()
-                .gap_1()
-                .child(
-                    div()
-                        .when(picked, |name| name.text_color(cx.theme().colors.accent))
-                        .child(outpost.name.replace('_', " ")),
-                )
-                .child(
-                    Caption::new(match outpost.reason {
-                        Some(reason) => reason.to_owned(),
-                        None => format!("Map {map}"),
-                    })
-                    .text_color(muted),
-                )
-                .on_click(move |_event, _window, cx| {
-                    pick.update(cx, |state, cx| state.set_royal_outpost(map, cx));
-                })
-                .into_any_element(),
-            div()
-                .child(if outpost.built {
-                    type_label(kind)
-                } else {
-                    "—"
-                })
-                .into_any_element(),
-            number_cell(if outpost.built { royal.range(map) } else { 0.0 }),
-            number_cell(if outpost.built {
-                royal.total_units(map)
-            } else {
-                0.0
-            }),
-            div()
-                .child(if links.is_empty() {
-                    "—".to_owned()
-                } else {
-                    links
-                })
-                .into_any_element(),
-            number_cell(royal.support_count(map) as f64),
-            rate_cell(if outpost.built { rate.value } else { 0.0 }),
-            div()
-                .child(if outpost.built {
-                    Badge::new("Built").tone(Tone::Accent)
-                } else {
-                    Badge::new(outpost.reason.unwrap_or("Unavailable")).tone(Tone::Danger)
-                })
-                .into_any_element(),
-        ]);
-    }
     let card = Card::new().header(
         CardHeader::new("Outposts")
             .description("Every outpost the world page lists, with its saved links and rate"),
     );
-    if rows.is_empty() {
+    if rows.outposts.is_empty() {
         return card
             .child(
                 div()
                     .id("royal-outposts-empty")
-                    .child(Caption::new("This world carries no outpost.").text_color(muted)),
+                    .child(Caption::new("This world carries no outpost.")),
             )
             .into_any_element();
     }
+    let accent = cx.theme().primary;
+    let cells = rows.outposts.iter().map(|row| {
+        let map = row.map;
+        let outpost = royal.outpost(map);
+        let pick = cx.entity();
+        vec![
+            v_flex()
+                .id(SharedString::from(format!("royal-outpost-row-{map}")))
+                .role(gpui::Role::Button)
+                .cursor_pointer()
+                .gap_1()
+                .child(
+                    div()
+                        .when(map == selected, |name| name.text_color(accent))
+                        .child(outpost.name.replace('_', " ")),
+                )
+                .child(Caption::new(match outpost.reason {
+                    Some(reason) => reason.to_owned(),
+                    None => format!("Map {map}"),
+                }))
+                .on_click(move |_event, _window, cx| {
+                    pick.update(cx, |state, cx| state.set_royal_outpost(map, cx));
+                })
+                .into_any_element(),
+            text(if outpost.built {
+                type_label(row.kind)
+            } else {
+                "—"
+            }),
+            number_cell(if outpost.built { row.range } else { 0.0 }),
+            number_cell(if outpost.built { row.units } else { 0.0 }),
+            text(if row.links.is_empty() {
+                "—".to_owned()
+            } else {
+                row.links.clone()
+            }),
+            number_cell(row.supports as f64),
+            rate_cell(if outpost.built { row.rate } else { 0.0 }),
+            if outpost.built {
+                tag("Built", Tone::Accent).into_any_element()
+            } else {
+                tag(outpost.reason.unwrap_or("Unavailable"), Tone::Danger).into_any_element()
+            },
+        ]
+    });
+    let table = table(
+        "royal-outpost",
+        &[
+            Col::Text("Outpost"),
+            Col::Text("Type"),
+            Col::Number("Range"),
+            Col::Number("Units"),
+            Col::Text("Links"),
+            Col::Number("Supports"),
+            Col::Number("Collection /hr"),
+            Col::Text("State"),
+        ],
+        cells,
+        cx,
+    );
     card.child(div().id("royal-outpost-table").child(table))
         .into_any_element()
 }
@@ -481,11 +436,9 @@ fn outpost_table(
 /// The selected outpost's links and what they reach.
 fn selected_outpost_card(royal: &RoyalGuardian, map: usize) -> AnyElement {
     let outpost = royal.outpost(map);
-    let mut body = div()
+    let mut body = v_flex()
         .id("royal-outpost-detail")
         .role(gpui::Role::Label)
-        .flex()
-        .flex_col()
         .gap_2();
     let title = format!(
         "{} · {}",
@@ -505,7 +458,7 @@ fn selected_outpost_card(royal: &RoyalGuardian, map: usize) -> AnyElement {
             .child(body)
             .into_any_element();
     }
-    let mut links = div().id("royal-outpost-links").flex().flex_wrap().gap_2();
+    let mut links = h_flex().id("royal-outpost-links").flex_wrap().gap_2();
     for connection in royal.outpost_connections(map) {
         let label = match connection.endpoint {
             Endpoint::Empty => "Empty slot".to_owned(),
@@ -534,12 +487,10 @@ fn selected_outpost_card(royal: &RoyalGuardian, map: usize) -> AnyElement {
             Endpoint::Resource(_) => Tone::Success,
             Endpoint::Map(_) => Tone::Accent,
         };
-        links = links.child(Badge::new(label).tone(tone));
+        links = links.child(tag(label, tone));
     }
     body = body.child(
-        div()
-            .flex()
-            .flex_col()
+        v_flex()
             .gap_1()
             .child(Caption::new("Connections"))
             .child(links),
