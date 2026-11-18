@@ -121,7 +121,7 @@ impl RenderOnce for WorldBadge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Context, TestAppContext};
+    use gpui::{AppContext as _, Context, TestAppContext};
     use gpui_kit::component::{
         ThemeSet,
         button::{Button, ButtonVariants as _},
@@ -217,11 +217,27 @@ mod tests {
             gpui_kit::init(cx);
             install(cx);
         });
-        let (_, cx) = cx.add_window_view(|_, _| KitSample);
+        // Through the kit's Root, as the app's window opens.
+        let (window, _) = cx
+            .update(|cx| {
+                gpui_kit::open_window(gpui::WindowOptions::default(), cx, |_, cx| {
+                    cx.new(|_| KitSample)
+                })
+            })
+            .expect("test window");
+        let cx = &mut gpui::VisualTestContext::from_window(window, cx);
         cx.run_until_parked();
         let ely = palette();
-        let (quads, underlines) =
-            cx.update(|window, _| (window.painted_quads(), window.painted_underlines()));
+        let (quads, underlines, rem) = cx.update(|window, _| {
+            (
+                window.painted_quads(),
+                window.painted_underlines(),
+                window.rem_size(),
+            )
+        });
+        // The Root sets the rem to the kit's `font.size` every frame; Ely sizes
+        // everything in rems of 16 px, so any other value rescales the app.
+        assert_eq!(rem, gpui::px(16.0));
         assert!(
             quads.iter().any(
                 |quad| quad.background.as_solid().map(|color| color.to_rgb())

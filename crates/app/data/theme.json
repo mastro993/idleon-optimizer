@@ -7,8 +7,7 @@
     {
       "name": "Idleon Dark",
       "mode": "dark",
-      "font.family": "Inter",
-      "font.size": 13,
+      "font.size": 16,
       "mono_font.family": "JetBrains Mono",
       "mono_font.size": 13,
       "radius": 6,

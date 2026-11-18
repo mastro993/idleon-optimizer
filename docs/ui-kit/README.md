@@ -31,6 +31,13 @@ draw one palette; `the_kit_theme_draws_ely_s_palette` fails when the two drift, 
 `kit_components_paint_the_app_colors` renders a kit `Button` and `Label` and checks the painted
 colors. #360 swaps in the Console design from [`theme.json`](theme.json) next to this page.
 
+The kit's `Root` sets the window's rem to the theme's `font.size` on every frame, and Ely sizes
+everything in rems of 16 px. So `font.size` stays 16 while any Ely screen remains; a smaller value
+shrinks the whole app (the same test checks the rem). The Console theme's 13 px body text has to
+come another way until Ely is gone. The `Root` also sets the window's font family from
+`font.family`, so the theme leaves it unset: the kit then uses the system UI font, which the app's
+plain text already draws in.
+
 Sections read colors, radii and fonts from `cx.theme()` (the kit's `ActiveTheme`) or the
 `idleon_ui` tokens, never a literal.
 
