@@ -285,7 +285,9 @@ cannot start, the window opens without it.
 - One shared header (sidebar toggle, history arrows, save status, Export, Import), one
   sidebar and one tab strip; a section owns its tab strip and the shell owns the header and sidebar.
 - Palette and spacing follow one dark theme: `#1a1a2e` ground, `#16213e` surfaces, `#0f3460`
-  borders, `#00d4ff` accent; world badges use per-world colours.
+  borders, `#00d4ff` accent; world badges use per-world colours. The GPUI Kit migration replaces it
+  with the Console design in [`ui-kit/design.md`](ui-kit/design.md) (dark and light) once #360
+  applies it.
 - When the workspace (the window minus the sidebar) is narrower than 1180 px, the fixed side rails
   stack under their main pane; data tables scroll inside a
   height that shrinks with the window, so the 1080×680 minimum stays usable.
