@@ -1,5 +1,5 @@
 //! The display composites and form controls GPUI Kit lacks, styled only from
-//! the kit theme.
+//! the kit theme, and the rows delegate for its virtualized `DataTable`.
 //!
 //! Everything else a screen draws comes from `gpui_kit::component`;
 //! `docs/ui-kit/display.md` and `docs/ui-kit/forms.md` map each Ely item to
@@ -17,6 +17,7 @@ mod number;
 mod scroll;
 mod search;
 mod stat;
+mod table;
 mod timeline;
 mod tokens;
 
@@ -33,6 +34,7 @@ pub use number::{number_state, number_value, show_number};
 pub use scroll::bring_into_view;
 pub use search::search_input;
 pub use stat::{KpiStrip, Statistic};
+pub use table::{RowColumn, RowsDelegate};
 pub use timeline::{Timeline, TimelineItem};
 pub use tokens::{
     PANEL_GAP, PANEL_PADDING, TEXT_BODY, TEXT_CAPTION, TEXT_KPI, TEXT_MONO, TEXT_TITLE, Tone,
