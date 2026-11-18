@@ -9,24 +9,25 @@
 use crate::sections::research::colors;
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::buttons::{Button, IconButton, SegmentedControl};
-use ely_gpui_component::data_display::Badge;
-use ely_gpui_component::forms::Checkbox;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{IconName, Tooltip};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Hsla, IntoElement, ParentElement, PathBuilder, Role, SharedString, Styled,
-    Window, canvas, div, point, px, rgb,
+    AnyElement, App, Context, Hsla, IntoElement, ParentElement, PathBuilder, Role, SharedString,
+    Styled, Window, canvas, div, point, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::tooltip::Tooltip;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_research::model::MagKind;
 use idleon_research::sim::{self, Event};
 use idleon_research::tree::Tree;
 use idleon_research::{game, shape};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone};
 
 /// One logical pixel of tree canvas at zoom 1.
 pub(crate) const NODE_W: f32 = 120.0;
@@ -151,8 +152,7 @@ pub(crate) fn pane(
     layout::split_pane(
         "decision-tree",
         Breakpoint::of(window, cx),
-        ScrollArea::new("dt-tree-scroll")
-            .vertical()
+        div()
             .flex_1()
             .min_w_0()
             .min_h_0()
@@ -165,7 +165,9 @@ pub(crate) fn pane(
                     .min_w_0()
                     .child(tree_card(state, window, cx))
                     .child(comparison_card(state, cx)),
-            ),
+            )
+            .overflow_y_scrollbar()
+            .id("dt-tree-scroll"),
         div()
             .id("dt-editor-column")
             .flex()
@@ -198,10 +200,11 @@ fn tree_card(state: &mut AppState, window: &Window, cx: &mut Context<AppState>) 
         .as_ref()
         .is_some_and(|tree| tree.level_ups_only);
     let toggle = entity.clone();
-    let level_ups = Checkbox::new("dt-level-ups-only", level_ups_only)
+    let level_ups = Checkbox::new("dt-level-ups-only")
         .label("Level-ups only")
-        .on_change(move |on, _window, cx| {
-            toggle.update(cx, |state, cx| state.tree_level_ups_only(on, cx));
+        .checked(level_ups_only)
+        .on_click(move |on, _window, cx| {
+            toggle.update(cx, |state, cx| state.tree_level_ups_only(*on, cx));
         });
 
     let zoom_out = entity.clone();
@@ -219,49 +222,53 @@ fn tree_card(state: &mut AppState, window: &Window, cx: &mut Context<AppState>) 
         .map(|tree| tree.layout().width)
         .unwrap_or(1.0);
     let mut tools = div().flex().items_center().gap_1().child(level_ups);
-    tools = tools
-        .child(
-            IconButton::new("dt-zoom-out", IconName::Minus)
-                .tooltip("Zoom out")
-                .on_click(move |_event, _window, cx| {
-                    zoom_out.update(cx, |state, cx| state.tree_zoom(-0.15, cx));
-                }),
-        )
-        .child(
-            IconButton::new("dt-zoom-in", IconName::Plus)
-                .tooltip("Zoom in")
-                .on_click(move |_event, _window, cx| {
-                    zoom_in.update(cx, |state, cx| state.tree_zoom(0.15, cx));
-                }),
-        )
-        .child(
-            Button::new(
-                "dt-zoom-reset",
-                format!("{:.0}%", state.research.tree.zoom * 100.0),
+    tools =
+        tools
+            .child(
+                Button::new("dt-zoom-out")
+                    .icon(IconName::Minus)
+                    .ghost()
+                    .small()
+                    .tooltip("Zoom out")
+                    .on_click(move |_event, _window, cx| {
+                        zoom_out.update(cx, |state, cx| state.tree_zoom(-0.15, cx));
+                    }),
             )
-            .size(ControlSize::Sm)
-            .on_click(move |_event, _window, cx| {
-                zoom_reset.update(cx, |state, cx| state.tree_zoom_reset(cx));
-            }),
-        )
-        .child(Button::new("dt-fit", "Fit").size(ControlSize::Sm).on_click(
-            move |_event, _window, cx| {
-                fit.update(cx, |state, cx| {
-                    state.tree_fit(viewport_width, layout_width, cx)
-                });
-            },
-        ))
-        .child(
-            Button::new("dt-reset", "Restart")
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
+            .child(
+                Button::new("dt-zoom-in")
+                    .icon(IconName::Plus)
+                    .ghost()
+                    .small()
+                    .tooltip("Zoom in")
+                    .on_click(move |_event, _window, cx| {
+                        zoom_in.update(cx, |state, cx| state.tree_zoom(0.15, cx));
+                    }),
+            )
+            .child(
+                Button::new("dt-zoom-reset")
+                    .label(format!("{:.0}%", state.research.tree.zoom * 100.0))
+                    .small()
+                    .on_click(move |_event, _window, cx| {
+                        zoom_reset.update(cx, |state, cx| state.tree_zoom_reset(cx));
+                    }),
+            )
+            .child(Button::new("dt-fit").label("Fit").small().on_click(
+                move |_event, _window, cx| {
+                    fit.update(cx, |state, cx| {
+                        state.tree_fit(viewport_width, layout_width, cx)
+                    });
+                },
+            ))
+            .child(Button::new("dt-reset").label("Restart").small().on_click(
+                move |_event, _window, cx| {
                     reset.update(cx, |state, cx| state.reset_tree(cx));
-                }),
-        );
+                },
+            ));
     if comparisons.unwrap_or(0) > 0 {
         tools = tools.child(
-            Button::new("dt-compare-clear", "Clear compare")
-                .size(ControlSize::Sm)
+            Button::new("dt-compare-clear")
+                .label("Clear compare")
+                .small()
                 .on_click(move |_event, _window, cx| {
                     clear.update(cx, |state, cx| state.tree_clear_compare(cx));
                 }),
@@ -305,7 +312,7 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
             .node(node.id)
             .map(|node| node.event)
             .unwrap_or_default();
-        edges.push((x1, y1, x2, y2, event_color(event)));
+        edges.push((x1, y1, x2, y2, event_color(event, cx)));
     }
 
     let entity = cx.entity();
@@ -317,7 +324,7 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
         .w_full()
         .overflow_hidden()
         .border_t_1()
-        .border_color(cx.theme().colors.border)
+        .border_color(cx.theme().border)
         .on_mouse_down(
             gpui::MouseButton::Left,
             cx.listener(|state, event: &gpui::MouseDownEvent, _window, cx| {
@@ -372,7 +379,8 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
         });
         let points = sim::grid_points(&node.state, ctx);
         let label = event_label(node.event);
-        let color = event_color(node.event);
+        let color = event_color(node.event, cx);
+        let theme = cx.theme();
         let active = node_id == selected;
         let compared = tree.compared().contains(&node_id);
         let compare = entity.clone();
@@ -404,19 +412,19 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
             .rounded(px(7.0))
             .border_1()
             .border_color(if compared {
-                rgb(0x4caf50).into()
+                theme.success
             } else if active {
-                rgb(0x64b5f6).into()
+                theme.info
             } else {
                 color
             })
-            .bg(cx.theme().colors.surface)
+            .bg(theme.secondary)
             .text_size(px((11.0 * zoom).clamp(8.0, 14.0)))
             .cursor_pointer()
-            .tooltip(Tooltip::text(format!(
-                "{name}\n{}",
-                tree.changes(node_id).join("\n")
-            )))
+            .tooltip({
+                let text = format!("{name}\n{}", tree.changes(node_id).join("\n"));
+                move |window, cx| Tooltip::new(text.clone()).build(window, cx)
+            })
             .on_click(move |_event, window, cx| {
                 focus.update(cx, |state, cx| state.tree_select(node_id, window, cx));
             })
@@ -433,7 +441,7 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
                             .child(label),
                     )
                     .when(node.auto_insight, |row| {
-                        row.child(Caption::new("AI▸").text_color(rgb(0xce93d8)))
+                        row.child(Caption::new("AI▸").text_color(theme.chart_5))
                     }),
             )
             .child(
@@ -444,7 +452,7 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
                     .child(format!("Lv {}", node.state.research_level))
                     .child(
                         div()
-                            .text_color(rgb(0x81c784))
+                            .text_color(theme.success)
                             .child(format!("{}/hr", format::rate(rate))),
                     ),
             )
@@ -456,15 +464,15 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
                     .child(Caption::new(when))
                     .when(points.free > 0, |row| {
                         row.child(
-                            Caption::new(format!("+{} pts", points.free)).text_color(rgb(0xffd700)),
+                            Caption::new(format!("+{} pts", points.free)).text_color(theme.warning),
                         )
                     })
                     .when_some(delta, |row, (value, pct)| {
                         row.child(Caption::new(format!("{value} {pct}")).text_color(
                             if value.starts_with('-') {
-                                Hsla::from(rgb(0xe57373))
+                                theme.danger
                             } else {
-                                Hsla::from(rgb(0x81c784))
+                                theme.success
                             },
                         ))
                     }),
@@ -484,7 +492,9 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
                 .top(px(y + NODE_H * zoom - 20.0 * zoom))
                 .size(px(16.0 * zoom))
                 .cursor_pointer()
-                .tooltip(Tooltip::text("Add to the branch comparison"))
+                .tooltip(|window, cx| {
+                    Tooltip::new("Add to the branch comparison").build(window, cx)
+                })
                 .on_click(move |_event, _window, cx| {
                     compare.update(cx, |state, cx| state.tree_toggle_compare(node_id, cx));
                 })
@@ -496,10 +506,10 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
                         .justify_center()
                         .rounded(px(3.0))
                         .border_1()
-                        .border_color(rgb(0x4caf50))
+                        .border_color(theme.success)
                         .text_size(px(10.0 * zoom))
-                        .text_color(rgb(0x102010))
-                        .when(compared, |box_| box_.bg(rgb(0x4caf50)).child("✓")),
+                        .text_color(theme.background)
+                        .when(compared, |box_| box_.bg(theme.success).child("✓")),
                 ),
         );
     }
@@ -517,7 +527,8 @@ fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         return div().into_any_element();
     }
     let entity = cx.entity();
-    let mut body = div().id("dt-comparison").flex().flex_wrap().gap_2().p_3();
+    let success = cx.theme().success;
+    let mut body = div().id("dt-comparison").flex().flex_wrap().gap_2();
     for (index, row) in rows.iter().enumerate() {
         let row_id = row.id;
         let event = tree
@@ -555,7 +566,7 @@ fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
             .min_w(px(190.0))
             .rounded(px(6.0))
             .border_2()
-            .border_color(rgb(0x4caf50))
+            .border_color(success)
             .child(
                 div()
                     .flex()
@@ -566,22 +577,33 @@ fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                             .font_weight(gpui::FontWeight::BOLD)
                             .child(format!("Node #{} · {event}", row.id)),
                     )
-                    .when(baseline, |line| line.child(Badge::new("Baseline"))),
+                    .when(baseline, |line| {
+                        line.child(
+                            Tag::new()
+                                .with_variant(Tone::Neutral.into())
+                                .outline()
+                                .small()
+                                .child("Baseline"),
+                        )
+                    }),
             )
             .child(comparison_line(
                 "Level",
                 row.level.to_string(),
                 row.level_delta,
+                cx,
             ))
             .child(comparison_line(
                 "EXP/hr",
                 format::rate(row.rate),
                 row.rate_delta,
+                cx,
             ))
             .child(comparison_line(
                 "Time",
                 format::projection(row.hours.abs()),
                 Hours(row.hours_delta),
+                cx,
             ))
             .child(
                 div()
@@ -589,21 +611,21 @@ fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                     .items_center()
                     .gap_1()
                     .child(
-                        Button::new(SharedString::from(format!("dt-open-{}", row.id)), "Open")
-                            .size(ControlSize::Sm)
+                        Button::new(SharedString::from(format!("dt-open-{}", row.id)))
+                            .label("Open")
+                            .small()
                             .on_click(move |_event, window, cx| {
                                 open.update(cx, |state, cx| state.tree_select(row_id, window, cx));
                             }),
                     )
                     .child(
-                        Button::new(
-                            SharedString::from(format!("dt-remove-{}", row.id)),
-                            "Remove",
-                        )
-                        .size(ControlSize::Sm)
-                        .on_click(move |_event, _window, cx| {
-                            remove.update(cx, |state, cx| state.tree_toggle_compare(row_id, cx));
-                        }),
+                        Button::new(SharedString::from(format!("dt-remove-{}", row.id)))
+                            .label("Remove")
+                            .small()
+                            .on_click(move |_event, _window, cx| {
+                                remove
+                                    .update(cx, |state, cx| state.tree_toggle_compare(row_id, cx));
+                            }),
                     ),
             );
         if baseline {
@@ -619,8 +641,14 @@ fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         .into_any_element()
 }
 
-fn comparison_line(label: &'static str, value: String, delta: impl OrderedDelta) -> AnyElement {
-    let (text, color) = delta.format();
+fn comparison_line(
+    label: &'static str,
+    value: String,
+    delta: impl OrderedDelta,
+    cx: &App,
+) -> AnyElement {
+    let (text, tone) = delta.format();
+    let color = tone.color(cx);
     div()
         .flex()
         .items_center()
@@ -642,20 +670,18 @@ fn comparison_line(label: &'static str, value: String, delta: impl OrderedDelta)
 
 /// The three delta shapes the comparison line can print.
 trait OrderedDelta {
-    fn format(self) -> (Option<String>, Hsla);
+    fn format(self) -> (Option<String>, Tone);
 }
 
 impl OrderedDelta for i64 {
-    fn format(self) -> (Option<String>, Hsla) {
-        let color = tone(self as f64);
-        (Some(format!("{self:+}")), color)
+    fn format(self) -> (Option<String>, Tone) {
+        (Some(format!("{self:+}")), delta_tone(self as f64))
     }
 }
 
 impl OrderedDelta for f64 {
-    fn format(self) -> (Option<String>, Hsla) {
-        let color = tone(self);
-        (Some(delta_text(self)), color)
+    fn format(self) -> (Option<String>, Tone) {
+        (Some(delta_text(self)), delta_tone(self))
     }
 }
 
@@ -663,26 +689,27 @@ impl OrderedDelta for f64 {
 struct Hours(f64);
 
 impl OrderedDelta for Hours {
-    fn format(self) -> (Option<String>, Hsla) {
+    fn format(self) -> (Option<String>, Tone) {
         let delta = self.0;
         if delta.abs() < 1.0 / 3600.0 {
-            return (Some("±0".into()), tone(0.0));
+            return (Some("±0".into()), delta_tone(0.0));
         }
         let sign = if delta >= 0.0 { "+" } else { "−" };
         (
             Some(format!("{sign}{}", format::projection(delta.abs()))),
-            tone(delta),
+            delta_tone(delta),
         )
     }
 }
 
-fn tone(delta: f64) -> Hsla {
+/// Up reads good, down bad, no change neutral.
+fn delta_tone(delta: f64) -> Tone {
     if delta > 0.0 {
-        rgb(0x81c784).into()
+        Tone::Success
     } else if delta < 0.0 {
-        rgb(0xe57373).into()
+        Tone::Danger
     } else {
-        rgb(0x8a8a98).into()
+        Tone::Neutral
     }
 }
 
@@ -728,29 +755,28 @@ fn editor(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .items_center()
         .gap_1()
         .child(
-            Button::new(
-                "dt-save",
-                if is_root {
+            Button::new("dt-save")
+                .label(if is_root {
                     "Start branch"
                 } else if children == 0 {
                     "Save & next"
                 } else {
                     "Save & re-sim"
-                },
-            )
-            .primary()
-            .size(ControlSize::Sm)
-            .disabled(running)
-            .on_click({
-                let entity = entity.clone();
-                move |_event, _window, cx| {
-                    entity.update(cx, |state, cx| state.start_tree_job(Job::Save, cx));
-                }
-            }),
+                })
+                .primary()
+                .small()
+                .disabled(running)
+                .on_click({
+                    let entity = entity.clone();
+                    move |_event, _window, cx| {
+                        entity.update(cx, |state, cx| state.start_tree_job(Job::Save, cx));
+                    }
+                }),
         )
         .child(
-            Button::new("dt-branch", "Branch")
-                .size(ControlSize::Sm)
+            Button::new("dt-branch")
+                .label("Branch")
+                .small()
                 .disabled(running || is_root)
                 .on_click({
                     let entity = entity.clone();
@@ -760,8 +786,9 @@ fn editor(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 }),
         )
         .child(
-            Button::new("dt-delete", "Delete")
-                .size(ControlSize::Sm)
+            Button::new("dt-delete")
+                .label("Delete")
+                .small()
                 .disabled(running || is_root)
                 .on_click({
                     let delete = entity.clone();
@@ -771,13 +798,14 @@ fn editor(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 }),
         )
         .child(
-            Checkbox::new("dt-auto-insight", auto)
+            Checkbox::new("dt-auto-insight")
                 .label("Auto Insight")
-                .on_change({
+                .checked(auto)
+                .on_click({
                     let entity = cx.entity();
                     move |on, _window, cx| {
                         entity.update(cx, |state, cx| {
-                            state.tree_set_auto_insight(selected, on, cx);
+                            state.tree_set_auto_insight(selected, *on, cx);
                         });
                     }
                 }),
@@ -785,21 +813,17 @@ fn editor(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 
     let mode = state.research.tree.mode;
     let mode_entity = cx.entity();
-    let modes = SegmentedControl::new("dt-mode", mode.id())
-        .size(ControlSize::Sm)
-        .segment("upgrades", "Upgrades", None)
-        .segment("shapes", "Shapes", None)
-        .on_change(move |value, _window, cx| {
-            let value = value.to_string();
+    let modes = super::controls::segmented(
+        "dt-mode",
+        &[(Mode::Upgrades, "Upgrades"), (Mode::Shapes, "Shapes")],
+        mode,
+        move |mode, _window, cx| {
             mode_entity.update(cx, |state, cx| {
-                state.set_tree_mode(if value == "shapes" {
-                    Mode::Shapes
-                } else {
-                    Mode::Upgrades
-                });
+                state.set_tree_mode(mode);
                 cx.notify();
             });
-        });
+        },
+    );
 
     let mut body = div()
         .id("dt-editor-body")
@@ -826,7 +850,13 @@ fn editor(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                                 .font_weight(gpui::FontWeight::BOLD)
                                 .child(format!("{event} · Lv {level}")),
                         )
-                        .child(Badge::new(format!("{}/hr", format::rate(rate)))),
+                        .child(
+                            Tag::new()
+                                .with_variant(Tone::Neutral.into())
+                                .outline()
+                                .small()
+                                .child(format!("{}/hr", format::rate(rate))),
+                        ),
                 )
                 .child(Caption::new(when)),
         )
@@ -882,16 +912,18 @@ fn editor(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .gap_2()
         .child(Caption::new("Auto"))
         .child(
-            Button::new("dt-auto-mags", "Magnifiers")
-                .size(ControlSize::Sm)
+            Button::new("dt-auto-mags")
+                .label("Magnifiers")
+                .small()
                 .disabled(running)
                 .on_click(move |_event, _window, cx| {
                     auto_entity.update(cx, |state, cx| state.start_tree_job(Job::Mags, cx));
                 }),
         )
         .child(
-            Button::new("dt-auto-shapes", "Shapes")
-                .size(ControlSize::Sm)
+            Button::new("dt-auto-shapes")
+                .label("Shapes")
+                .small()
                 .disabled(running)
                 .on_click(move |_event, _window, cx| {
                     shapes_entity.update(cx, |state, cx| state.start_tree_job(Job::Shapes, cx));
@@ -909,11 +941,12 @@ fn editor(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .min_h_0()
         .child(modes_row)
         .child(
-            ScrollArea::new("dt-editor-scroll")
-                .vertical()
+            div()
                 .flex_1()
                 .min_h_0()
-                .child(body),
+                .child(body)
+                .overflow_y_scrollbar()
+                .id("dt-editor-scroll"),
         )
         .into_any_element()
 }
@@ -954,7 +987,7 @@ fn board(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyElem
             let level = node.state.grid.level(cell);
             let tint = colors::goal_color(info.and_then(|node| node.goal.as_deref()));
             let fill = match info {
-                None => cx.theme().colors.bg,
+                None => cx.theme().background,
                 Some(_) if level == 0 => tint.opacity(0.08),
                 Some(info) => {
                     let strength = (level as f32 / info.max_lv.max(1) as f32).clamp(0.2, 1.0);
@@ -966,7 +999,7 @@ fn board(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyElem
                 .and_then(|shape| game.shapes.get(shape))
             {
                 Some(_) => colors::shape_color(overlay[cell] as usize),
-                None => cx.theme().colors.border,
+                None => cx.theme().border,
             };
             let name = info
                 .map(|node| node.name.replace('_', " "))
@@ -1038,11 +1071,12 @@ fn board(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyElem
                             ),
                             placement.rot.round() as i64
                         ))
-                        .text_color(cx.theme().colors.fg_muted),
+                        .text_color(cx.theme().muted_foreground),
                     )
                     .child(
-                        Button::new(SharedString::from(format!("dt-shape-left-{index}")), "◀")
-                            .size(ControlSize::Sm)
+                        Button::new(SharedString::from(format!("dt-shape-left-{index}")))
+                            .label("◀")
+                            .small()
                             .on_click(move |_event, _window, cx| {
                                 left.update(cx, |state, cx| {
                                     state.tree_nudge_shape(index, -5.0, 0.0, cx)
@@ -1050,8 +1084,9 @@ fn board(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyElem
                             }),
                     )
                     .child(
-                        Button::new(SharedString::from(format!("dt-shape-right-{index}")), "▶")
-                            .size(ControlSize::Sm)
+                        Button::new(SharedString::from(format!("dt-shape-right-{index}")))
+                            .label("▶")
+                            .small()
                             .on_click(move |_event, _window, cx| {
                                 right.update(cx, |state, cx| {
                                     state.tree_nudge_shape(index, 5.0, 0.0, cx)
@@ -1059,8 +1094,9 @@ fn board(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyElem
                             }),
                     )
                     .child(
-                        Button::new(SharedString::from(format!("dt-shape-up-{index}")), "▲")
-                            .size(ControlSize::Sm)
+                        Button::new(SharedString::from(format!("dt-shape-up-{index}")))
+                            .label("▲")
+                            .small()
                             .on_click(move |_event, _window, cx| {
                                 up.update(cx, |state, cx| {
                                     state.tree_nudge_shape(index, 0.0, -5.0, cx)
@@ -1068,8 +1104,9 @@ fn board(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyElem
                             }),
                     )
                     .child(
-                        Button::new(SharedString::from(format!("dt-shape-down-{index}")), "▼")
-                            .size(ControlSize::Sm)
+                        Button::new(SharedString::from(format!("dt-shape-down-{index}")))
+                            .label("▼")
+                            .small()
                             .on_click(move |_event, _window, cx| {
                                 down.update(cx, |state, cx| {
                                     state.tree_nudge_shape(index, 0.0, 5.0, cx)
@@ -1077,8 +1114,9 @@ fn board(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyElem
                             }),
                     )
                     .child(
-                        Button::new(SharedString::from(format!("dt-shape-turn-{index}")), "⟳")
-                            .size(ControlSize::Sm)
+                        Button::new(SharedString::from(format!("dt-shape-turn-{index}")))
+                            .label("⟳")
+                            .small()
                             .on_click(move |_event, _window, cx| {
                                 turn.update(cx, |state, cx| state.tree_turn_shape(index, cx));
                             }),
@@ -1138,7 +1176,7 @@ fn observations(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> 
                 .flex()
                 .items_center()
                 .gap_1()
-                .child(div().size(px(8.0)).rounded_full().bg(mag_color(kind)))
+                .child(div().size(px(8.0)).rounded_full().bg(mag_color(kind, cx)))
                 .child(Caption::new(format!(
                     "{} {}/{}",
                     kind_label(kind),
@@ -1185,21 +1223,21 @@ fn observations(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> 
                 .rounded(px(4.0))
                 .border_1()
                 .border_color(if active {
-                    rgb(0x64b5f6).into()
+                    cx.theme().info
                 } else {
-                    cx.theme().colors.border
+                    cx.theme().border
                 })
                 .cursor_pointer()
                 .on_click(move |_event, _window, cx| {
                     pick.update(cx, |state, cx| state.tree_pick_observation(obs, cx));
                 })
-                .child(div().text_size(px(10.0)).truncate().child(name))
+                .child(div().text_size(TEXT_CAPTION).truncate().child(name))
                 .child(
                     Caption::new(format!(
                         "IL {} · {count}/{cap}",
                         node.state.observations.insight(obs)
                     ))
-                    .text_color(cx.theme().colors.fg_muted),
+                    .text_color(cx.theme().muted_foreground),
                 ),
         );
     }
@@ -1215,11 +1253,12 @@ fn observations(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> 
             let assign_entity = entity.clone();
             let free = pool.free(kind, &node.state.mags);
             assign = assign.child(
-                Button::new(
-                    SharedString::from(format!("dt-mag-add-{}", kind_label(kind))),
-                    kind_label(kind),
-                )
-                .size(ControlSize::Sm)
+                Button::new(SharedString::from(format!(
+                    "dt-mag-add-{}",
+                    kind_label(kind)
+                )))
+                .label(kind_label(kind))
+                .small()
                 .disabled(free == 0)
                 .on_click(move |_event, _window, cx| {
                     assign_entity.update(cx, |state, cx| state.tree_assign_mag(kind, obs, cx));
@@ -1227,13 +1266,11 @@ fn observations(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> 
             );
         }
         let lift = entity.clone();
-        assign = assign.child(
-            Button::new("dt-mag-lift", "Remove")
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    lift.update(cx, |state, cx| state.tree_lift_mag(obs, cx));
-                }),
-        );
+        assign = assign.child(Button::new("dt-mag-lift").label("Remove").small().on_click(
+            move |_event, _window, cx| {
+                lift.update(cx, |state, cx| state.tree_lift_mag(obs, cx));
+            },
+        ));
     } else {
         assign = assign.child(Caption::new("No observation is usable at this level."));
     }
@@ -1243,16 +1280,9 @@ fn observations(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> 
             "{} slots · {cap} magnifiers per slot",
             usable.len()
         )))
-        .child(
-            div()
-                .flex()
-                .flex_col()
-                .gap_2()
-                .p_3()
-                .child(pool_row)
-                .child(slots)
-                .child(assign),
-        )
+        .child(pool_row)
+        .child(slots)
+        .child(assign)
         .into_any_element()
 }
 
@@ -1267,22 +1297,23 @@ fn event_label(event: Event) -> &'static str {
     }
 }
 
-fn event_color(event: Event) -> Hsla {
+fn event_color(event: Event, cx: &App) -> Hsla {
+    let theme = cx.theme();
     match event {
-        Event::Start => rgb(0x9a9a9a).into(),
-        Event::Level => rgb(0xffd700).into(),
-        Event::Insight => rgb(0xce93d8).into(),
-        Event::LevelAndInsight => rgb(0x4dd0e1).into(),
-        Event::Tournament => rgb(0xff9800).into(),
-        Event::End => rgb(0x9a9a9a).into(),
+        Event::Start | Event::End => theme.muted_foreground,
+        Event::Level => theme.warning,
+        Event::Insight => theme.chart_5,
+        Event::LevelAndInsight => theme.primary,
+        Event::Tournament => theme.chart_3,
     }
 }
 
-fn mag_color(kind: MagKind) -> Hsla {
+fn mag_color(kind: MagKind, cx: &App) -> Hsla {
+    let theme = cx.theme();
     match kind {
-        MagKind::Regular => rgb(0x81c784).into(),
-        MagKind::Monocle => rgb(0xce93d8).into(),
-        MagKind::Kaleidoscope => rgb(0x4dd0e1).into(),
+        MagKind::Regular => theme.success,
+        MagKind::Monocle => theme.chart_5,
+        MagKind::Kaleidoscope => theme.primary,
     }
 }
 
@@ -1322,7 +1353,7 @@ mod tests {
     }
 
     #[test]
-    fn the_mode_ids_round_trip_with_the_segmented_control() {
+    fn the_mode_ids_name_the_mode_hint() {
         assert_eq!(Mode::Upgrades.id(), "upgrades");
         assert_eq!(Mode::Shapes.id(), "shapes");
     }

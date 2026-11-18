@@ -7,21 +7,25 @@
 //! optimizer's own steps, so a click opens the same work the run just did.
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::charts::{LineChart, Series};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{Disclosure, IconName, Severity};
-use ely_gpui_component::theme::{ActiveTheme as _, Palette};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, div, px};
+use gpui::{
+    AnyElement, App, Context, Entity, Hsla, IntoElement, ParentElement, Role, SharedString,
+    Styled, div, px, radians,
+};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::chart::LineChart;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Icon, Sizable as _, Size};
 use idleon_research::model::{OptimizeResult, Strategy, Target};
 use idleon_research::sim::{self, Event, Projection, Sample};
 use idleon_research::timeline::{self, Phase};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, TEXT_CAPTION, TEXT_KPI, Tone};
+use std::f32::consts::FRAC_PI_2;
 
 /// The Result card: what the last run found, or why there is nothing yet.
 pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
@@ -59,11 +63,12 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
                 Card::new()
                     .header(CardHeader::new("Result"))
                     .child(
-                        div().p_3().flex().flex_col().gap_2().child(Banner::new(
+                        Alert::new(
                             "result-empty",
-                            Severity::Info,
                             "Nothing yet. Pick a target and press Optimize; the run happens in this process, so it can be thorough.",
-                        )),
+                        )
+                        .with_variant(Tone::Info.into())
+                        .banner(),
                     ),
             );
         }
@@ -84,7 +89,7 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
         .research
         .run_phase
         .filter(|index| *index < actions.len());
-    let colors = &cx.theme().colors;
+    let border = cx.theme().border;
 
     let apply = entity.clone();
     let dismiss = entity.clone();
@@ -99,7 +104,7 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
             .id("result-gain")
             .role(Role::Label)
             .aria_label(format!("{gain:+.1}% EXP/hr"))
-            .child(Badge::new(format!("{gain:+.1}% EXP/hr")).tone(tone)),
+            .child(badge(format!("{gain:+.1}% EXP/hr"), tone)),
     );
 
     let mut card = Card::new().header(
@@ -121,7 +126,6 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
                 .flex()
                 .flex_col()
                 .gap_3()
-                .p_3()
                 .min_h_0()
                 .child(
                     div()
@@ -159,7 +163,8 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
                         .flex()
                         .gap_2()
                         .child(
-                            Button::new("apply-result", "Apply layout")
+                            Button::new("apply-result")
+                                .label("Apply layout")
                                 .primary()
                                 .disabled(stale)
                                 .on_click(move |_event, _window, cx| {
@@ -167,7 +172,8 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
                                 }),
                         )
                         .child(
-                            Button::new("open-decision-tree", "Open in Decision Tree")
+                            Button::new("open-decision-tree")
+                                .label("Open in Decision Tree")
                                 .icon(IconName::GitBranch)
                                 .on_click(move |_event, _window, cx| {
                                     open_tree.update(cx, |state, cx| {
@@ -175,18 +181,20 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
                                     });
                                 }),
                         )
-                        .child(Button::new("dismiss-result", "Dismiss").on_click(
+                        .child(Button::new("dismiss-result").label("Dismiss").on_click(
                             move |_event, _window, cx| {
                                 dismiss.update(cx, |state, cx| state.dismiss_result(cx));
                             },
                         )),
                 )
-                .child(timeline(&phases, selected, entity.clone(), colors))
-                .child(rate_chart(&result.best.projection.samples))
-                .child(div().h(px(1.0)).bg(colors.border))
+                .child(timeline(&phases, selected, entity.clone(), cx))
+                .child(rate_chart(&result.best.projection.samples, cx))
+                .child(div().h(px(1.0)).bg(border))
                 .child(
-                    ScrollArea::new("actions-scroll")
-                        .child(action_list(&actions, selected, entity, colors)),
+                    div()
+                        .child(action_list(&actions, selected, entity, cx))
+                        .overflow_scrollbar()
+                        .id("actions-scroll"),
                 ),
         ),
     )
@@ -295,14 +303,10 @@ fn comparison(result: &OptimizeResult) -> AnyElement {
                     .flex_col()
                     .gap_0p5()
                     .child(Caption::new("Best vs worst"))
-                    .child(
-                        Badge::new(format!(
-                            "{} faster · {:.1}%",
-                            format::hours(lead.hours),
-                            lead.pct
-                        ))
-                        .tone(Tone::Success),
-                    ),
+                    .child(badge(
+                        format!("{} faster · {:.1}%", format::hours(lead.hours), lead.pct),
+                        Tone::Success,
+                    )),
             )
         })
         .into_any_element()
@@ -323,7 +327,7 @@ fn strategy(
         .flex_col()
         .gap_0p5()
         .child(Caption::new(format!("{heading} · {}", strategy.label)))
-        .child(div().text_size(px(14.0)).child(outcome))
+        .child(div().text_size(TEXT_BODY).child(outcome))
 }
 
 /// How one tested layout fared against the target.
@@ -349,7 +353,7 @@ fn timeline(
     phases: &[Phase],
     selected: Option<usize>,
     entity: Entity<AppState>,
-    colors: &Palette,
+    cx: &App,
 ) -> AnyElement {
     if phases.is_empty() {
         return Caption::new("The run finished before its first event, so there is no timeline.")
@@ -378,7 +382,7 @@ fn timeline(
                 .flex_basis(px(0.0))
                 .flex_grow(phase.hours.max(0.0) as f32)
                 .h_full()
-                .bg(event_color(phase.event, colors).opacity(if open { 1.0 } else { 0.45 }))
+                .bg(event_color(phase.event, cx).opacity(if open { 1.0 } else { 0.45 }))
                 .cursor_pointer()
                 .on_click(move |_event, _window, cx| {
                     toggle.update(cx, |state, cx| state.toggle_run_phase(index, cx));
@@ -396,8 +400,8 @@ fn timeline(
             div()
                 .flex()
                 .justify_between()
-                .text_size(px(11.0))
-                .text_color(colors.fg_muted)
+                .text_size(TEXT_CAPTION)
+                .text_color(cx.theme().muted_foreground)
                 .child(format::hours(0.0))
                 .child(format!("{} phases", phases.len()))
                 .child(format::hours(phases.last().map_or(0.0, Phase::end))),
@@ -407,19 +411,22 @@ fn timeline(
 
 /// The EXP/hour of the run at each of its samples: the same points the timeline
 /// is cut from.
-fn rate_chart(samples: &[Sample]) -> AnyElement {
+fn rate_chart(samples: &[Sample], cx: &App) -> AnyElement {
     if samples.len() < 2 || samples.iter().any(|sample| !sample.rate.is_finite()) {
         return Caption::new("This run has no rate curve to draw.").into_any_element();
     }
-    let labels: Vec<String> = samples
-        .iter()
-        .map(|sample| format::hours(sample.hours))
-        .collect();
-    let rates: Vec<f64> = samples.iter().map(|sample| sample.rate).collect();
-    LineChart::new("projection-chart", labels)
-        .series(Series::new("EXP/hr", rates))
-        .format(format::rate)
+    // The chart fills its parent, so the wrapper sets its height.
+    div()
         .h(px(160.0))
+        .child(
+            LineChart::new(samples.iter().cloned())
+                .id("projection-chart")
+                .name("EXP/hr")
+                .x(|sample: &Sample| SharedString::from(format::hours(sample.hours)))
+                .y(|sample: &Sample| sample.rate)
+                .y_tick_format(format::rate)
+                .stroke(cx.theme().chart_1),
+        )
         .into_any_element()
 }
 
@@ -429,8 +436,9 @@ fn action_list(
     actions: &[Action],
     selected: Option<usize>,
     entity: Entity<AppState>,
-    colors: &Palette,
+    cx: &App,
 ) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let mut list = div().id("run-actions").flex().flex_col();
     for (index, action) in actions.iter().enumerate() {
         let open = selected == Some(index);
@@ -450,7 +458,7 @@ fn action_list(
             .py_2()
             .pl_2()
             .border_l_2()
-            .border_color(event_color(action.event, colors))
+            .border_color(event_color(action.event, cx))
             .cursor_pointer()
             .on_click(move |_event, _window, cx| {
                 toggle.update(cx, |state, cx| state.toggle_run_phase(index, cx));
@@ -460,7 +468,13 @@ fn action_list(
                     .flex()
                     .items_center()
                     .gap_2()
-                    .child(Disclosure::new(("run-action-disclosure", index), open))
+                    .child(
+                        div().id(("run-action-disclosure", index)).child(
+                            Icon::new(IconName::ChevronRight)
+                                .with_size(Size::Small)
+                                .rotate(radians(if open { FRAC_PI_2 } else { 0.0 })),
+                        ),
+                    )
                     .child(div().flex_1().min_w_0().child(format!(
                         "{} · {}",
                         format::hours(action.start),
@@ -478,7 +492,7 @@ fn action_list(
                     .flex_col()
                     .gap_1()
                     .pl_5()
-                    .text_color(colors.fg_muted)
+                    .text_color(muted)
                     .children(action.lines.iter().map(Caption::new)),
             );
         }
@@ -500,14 +514,24 @@ fn event_label(event: Event) -> &'static str {
 }
 
 /// The colour of a phase: the chart's own hues, one per event kind.
-fn event_color(event: Event, colors: &Palette) -> Hsla {
+fn event_color(event: Event, cx: &App) -> Hsla {
+    let theme = cx.theme();
     match event {
-        Event::Start | Event::End => colors.accent,
-        Event::Level => colors.chart[2],
-        Event::Insight => colors.chart[4],
-        Event::LevelAndInsight => colors.chart[7],
-        Event::Tournament => colors.chart[6],
+        Event::Start | Event::End => theme.primary,
+        Event::Level => theme.chart_3,
+        Event::Insight => theme.chart_5,
+        Event::LevelAndInsight => theme.info,
+        Event::Tournament => theme.warning,
     }
+}
+
+/// A small outlined label in `tone`.
+fn badge(text: String, tone: Tone) -> Tag {
+    Tag::new()
+        .with_variant(tone.into())
+        .outline()
+        .small()
+        .child(text)
 }
 
 fn metric(id: &'static str, label: &'static str, value: String) -> impl IntoElement {
@@ -519,7 +543,7 @@ fn metric(id: &'static str, label: &'static str, value: String) -> impl IntoElem
         .flex_col()
         .gap_0p5()
         .child(Caption::new(label))
-        .child(div().text_size(px(16.0)).child(value))
+        .child(div().text_size(TEXT_KPI).child(value))
 }
 
 #[cfg(test)]

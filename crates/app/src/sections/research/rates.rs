@@ -2,21 +2,25 @@
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::buttons::{Button, IconButton};
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::forms::Stepper;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
+    AnyElement, App, Context, Entity, IntoElement, ParentElement, SharedString, Styled,
+    Subscription, Window, div, px,
 };
-use idleon_research::game;
-use idleon_research::sim;
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::input::{InputEvent, InputState, NumberInput};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
+use idleon_research::model::SimContext;
+use idleon_research::{game, sim};
 use idleon_ui::format;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, KpiStrip, Statistic, TEXT_CAPTION, number_state, number_value,
+    show_number,
+};
+use std::rc::Rc;
 
 pub(crate) fn rates_pane(
     state: &mut AppState,
@@ -27,9 +31,52 @@ pub(crate) fn rates_pane(
     let table_height = layout::table_height(f32::from(window.viewport_size().height));
     let rate = state.rate();
     let points = state.grid_points();
+    let previous = state.research.observation_rows.rows.clone();
+    let rows = observation_rows(state);
     let tree = state.breakdown.clone();
-    let root = idleon_research::breakdown::exp(&state.simulation, &state.context);
-    tree.update(cx, |tree, cx| tree.set_root(root, cx));
+    // The breakdown reads the same layout as the rows, so it is rebuilt with them.
+    if !Rc::ptr_eq(&previous, &rows) {
+        let root = idleon_research::breakdown::exp(&state.simulation, &state.context);
+        tree.update(cx, |tree, cx| tree.set_root(root, cx));
+    }
+    let cards = KpiStrip::new()
+        .child(
+            Statistic::new(
+                "kpi-rate",
+                "Research EXP/hr",
+                format::count(rate.total.max(0.0).round() as u64),
+            )
+            .caption("observations × multipliers")
+            .large(),
+        )
+        .child(
+            Statistic::new("kpi-multi", "Multiplier", format!("{:.2}", rate.multi))
+                .caption("additive and grid bonuses"),
+        )
+        .child(
+            Statistic::new("kpi-obs", "Observation EXP", format!("{:.1}", rate.obs_base))
+                .caption("before multipliers"),
+        )
+        .child(
+            Statistic::new("kpi-points", "Free grid points", format::count(points.free as u64))
+                .caption(format!("{} spent of {}", points.spent, points.earned)),
+        )
+        .child(
+            Statistic::new(
+                "kpi-shapes",
+                "Shapes",
+                format::count(state.simulation.placements.len() as u64),
+            )
+            .caption(format!("{} unlocked", state.shapes_owned())),
+        )
+        .child(
+            Statistic::new(
+                "kpi-mags",
+                "Magnifiers",
+                format::count(state.simulation.mags.len() as u64),
+            )
+            .caption(format!("{} owned", state.magnifiers_owned())),
+        );
     let cards = div()
         .id("kpi-row")
         .role(gpui::Role::Label)
@@ -38,49 +85,7 @@ pub(crate) fn rates_pane(
             format::rate(rate.total),
             rate.multi
         ))
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(
-            KpiCard::new(
-                Statistic::new("kpi-rate", "Research EXP/hr", rate.total)
-                    .decimals(0)
-                    .size(ely_gpui_component::theme::TextSize::Lg),
-            )
-            .caption("observations × multipliers"),
-        )
-        .child(
-            KpiCard::new(Statistic::new("kpi-multi", "Multiplier", rate.multi).decimals(2))
-                .caption("additive and grid bonuses"),
-        )
-        .child(
-            KpiCard::new(Statistic::new("kpi-obs", "Observation EXP", rate.obs_base).decimals(1))
-                .caption("before multipliers"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("kpi-points", "Free grid points", points.free as f64).decimals(0),
-            )
-            .caption(format!("{} spent of {}", points.spent, points.earned)),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kpi-shapes",
-                    "Shapes",
-                    state.simulation.placements.len() as f64,
-                )
-                .decimals(0),
-            )
-            .caption(format!("{} unlocked", state.shapes_owned())),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("kpi-mags", "Magnifiers", state.simulation.mags.len() as f64)
-                    .decimals(0),
-            )
-            .caption(format!("{} owned", state.magnifiers_owned())),
-        );
+        .child(cards);
 
     div()
         .id("dashboard")
@@ -99,7 +104,7 @@ pub(crate) fn rates_pane(
                 .flex_col()
                 .min_w_0()
                 .when(!breakpoint.is_compact(), |column| column.flex_1().min_h_0())
-                .child(observations_card(state, table_height, cx)),
+                .child(observations_card(state, rows, table_height, cx)),
             div()
                 .id("supplements-column")
                 .flex()
@@ -107,13 +112,13 @@ pub(crate) fn rates_pane(
                 .min_h_0()
                 .gap_3()
                 .child(formula_card(tree))
-                .child(supplements_card(state, cx)),
+                .child(supplements_card(state, window, cx)),
             px(340.0),
         ))
 }
 
 /// The shared formula tree, collapsed to a fixed height inside the side rail.
-fn formula_card(tree: gpui::Entity<idleon_ui::formula::FormulaTree>) -> impl IntoElement {
+fn formula_card(tree: Entity<idleon_ui::formula::FormulaTree>) -> impl IntoElement {
     Card::new()
         .header(
             CardHeader::new("EXP formula")
@@ -128,43 +133,152 @@ fn formula_card(tree: gpui::Entity<idleon_ui::formula::FormulaTree>) -> impl Int
         )
 }
 
-/// One supplement row: its name, its value, and a stepper that edits it.
-fn supplement_row(
+/// One save-derived supplement the Rates pane edits: its element id, label,
+/// range, step and decimals, where it lives in the context and the setter
+/// that clamps and stores it.
+pub(super) struct Supplement {
     id: &'static str,
     label: &'static str,
-    value: f64,
-    (min, max, step, precision): (f64, f64, f64, usize),
+    range: (f64, f64),
+    step: f64,
+    precision: usize,
+    get: fn(&SimContext) -> f64,
     set: fn(&mut AppState, f64, &mut Context<AppState>),
+}
+
+pub(super) const SUPPLEMENTS: [Supplement; 7] = [
+    Supplement {
+        id: "supp-svrxp",
+        label: "Server EXP scale",
+        range: (1.0, 10.0),
+        step: 0.05,
+        precision: 2,
+        get: |context| context.server_var_res_xp,
+        set: AppState::set_server_var_res_xp,
+    },
+    Supplement {
+        id: "supp-abm",
+        label: "All-bonus multiplier",
+        range: (1.0, 100.0),
+        step: 0.05,
+        precision: 2,
+        get: |context| context.all_bonus_multi,
+        set: AppState::set_all_bonus_multi,
+    },
+    Supplement {
+        id: "supp-extra-pct",
+        label: "Extra account %",
+        range: (0.0, 10_000.0),
+        step: 5.0,
+        precision: 0,
+        get: |context| context.extra_pct,
+        set: AppState::set_extra_pct,
+    },
+    Supplement {
+        id: "supp-extra-multi",
+        label: "Extra account ×",
+        range: (0.0, 100.0),
+        step: 0.05,
+        precision: 2,
+        get: |context| context.extra_multiplier,
+        set: AppState::set_extra_multiplier,
+    },
+    Supplement {
+        id: "supp-points",
+        label: "Bonus grid points",
+        range: (0.0, 100_000.0),
+        step: 10.0,
+        precision: 0,
+        get: |context| f64::from(context.bonus_grid_points),
+        set: AppState::set_bonus_grid_points,
+    },
+    Supplement {
+        id: "supp-shapes",
+        label: "Extra shapes",
+        range: (0.0, 100.0),
+        step: 1.0,
+        precision: 0,
+        get: |context| f64::from(context.extra_shapes),
+        set: AppState::set_extra_shapes,
+    },
+    Supplement {
+        id: "supp-mags",
+        label: "Extra magnifiers",
+        range: (0.0, 200.0),
+        step: 1.0,
+        precision: 0,
+        get: |context| f64::from(context.extra_magnifiers),
+        set: AppState::set_extra_magnifiers,
+    },
+];
+
+/// The number fields behind [`SUPPLEMENTS`], built once with the section
+/// state. An edit flows through the supplement's setter, which clamps it.
+pub(super) fn supplement_fields(
+    subscriptions: &mut Vec<Subscription>,
+    window: &mut Window,
     cx: &mut Context<AppState>,
+) -> Vec<Entity<InputState>> {
+    SUPPLEMENTS
+        .iter()
+        .map(|supplement| {
+            let (min, max) = supplement.range;
+            let field = number_state(min, max, supplement.step, window, cx);
+            let set = supplement.set;
+            subscriptions.push(cx.subscribe(&field, move |state, field, event, cx| {
+                if matches!(event, InputEvent::Change)
+                    && let Some(value) = number_value(field.read(cx))
+                {
+                    set(state, value, cx);
+                }
+            }));
+            field
+        })
+        .collect()
+}
+
+/// One supplement row: its name, its value, and the field that edits it.
+fn supplement_row(
+    state: &AppState,
+    index: usize,
+    window: &mut Window,
+    cx: &mut App,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
+    let supplement = &SUPPLEMENTS[index];
+    let value = (supplement.get)(&state.context);
+    let precision = supplement.precision;
+    let field = &state.research.supplement_fields[index];
+    show_number(field, value, precision, window, cx);
     let shown = format!("{value:.precision$}");
     div()
-        .id(id)
+        .id(supplement.id)
         .role(gpui::Role::Label)
-        .aria_label(format!("{label}: {shown}"))
+        .aria_label(format!("{}: {shown}", supplement.label))
         .aria_value(shown)
         .flex()
         .items_center()
         .justify_between()
         .gap_2()
         .h(px(30.0))
-        .child(Caption::new(label).text_color(muted))
+        .child(Caption::new(supplement.label))
         .child(
-            Stepper::new(SharedString::from(format!("{id}-stepper")), value)
-                .range(min, max)
-                .step(step)
-                .precision(precision)
-                .on_change(move |value, _window, cx| {
-                    entity.update(cx, |state, cx| set(state, value, cx));
-                }),
+            div()
+                .id(SharedString::from(format!("{}-stepper", supplement.id)))
+                .w(px(140.0))
+                .child(
+                    NumberInput::new(field)
+                        .accessibility_label(supplement.label)
+                        .small(),
+                ),
         )
         .into_any_element()
 }
 
-fn supplements_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let muted = cx.theme().colors.fg_muted;
+fn supplements_card(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> impl IntoElement {
     let open = state.supplements_open;
     let entity = cx.entity();
     let toggle = entity.clone();
@@ -177,16 +291,18 @@ fn supplements_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl In
                 .items_center()
                 .gap_1()
                 .child(
-                    Button::new("supp-reset", "Reset")
-                        .size(ControlSize::Sm)
+                    Button::new("supp-reset")
+                        .label("Reset")
+                        .small()
                         .disabled(!open)
                         .on_click(move |_event, _window, cx| {
                             reset.update(cx, |state, cx| state.reset_supplements(cx));
                         }),
                 )
                 .child(
-                    Button::new("supp-toggle", if open { "Hide" } else { "Show" })
-                        .size(ControlSize::Sm)
+                    Button::new("supp-toggle")
+                        .label(if open { "Hide" } else { "Show" })
+                        .small()
                         .on_click(move |_event, _window, cx| {
                             toggle.update(cx, |state, cx| state.set_supplements_open(!open, cx));
                         }),
@@ -194,213 +310,190 @@ fn supplements_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl In
         );
     let card = Card::new().header(header);
     if !open {
-        return card.child(div().px_3().pb_2().child(
-            Caption::new("Hidden; the simulated multipliers keep their values.").text_color(muted),
+        return card.child(Caption::new(
+            "Hidden; the simulated multipliers keep their values.",
         ));
     }
-    let context = state.context.clone();
     card.child(
         div()
             .id("supplements-card")
             .flex()
             .flex_col()
             .gap_1()
-            .px_3()
-            .pb_2()
-            .child(supplement_row(
-                "supp-svrxp",
-                "Server EXP scale",
-                context.server_var_res_xp,
-                (1.0, 10.0, 0.05, 2),
-                AppState::set_server_var_res_xp,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-abm",
-                "All-bonus multiplier",
-                context.all_bonus_multi,
-                (1.0, 100.0, 0.05, 2),
-                AppState::set_all_bonus_multi,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-extra-pct",
-                "Extra account %",
-                context.extra_pct,
-                (0.0, 10_000.0, 5.0, 0),
-                AppState::set_extra_pct,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-extra-multi",
-                "Extra account ×",
-                context.extra_multiplier,
-                (0.0, 100.0, 0.05, 2),
-                AppState::set_extra_multiplier,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-points",
-                "Bonus grid points",
-                context.bonus_grid_points as f64,
-                (0.0, 100_000.0, 10.0, 0),
-                AppState::set_bonus_grid_points,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-shapes",
-                "Extra shapes",
-                context.extra_shapes as f64,
-                (0.0, 100.0, 1.0, 0),
-                AppState::set_extra_shapes,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-mags",
-                "Extra magnifiers",
-                context.extra_magnifiers as f64,
-                (0.0, 200.0, 1.0, 0),
-                AppState::set_extra_magnifiers,
-                cx,
-            )),
+            .children((0..SUPPLEMENTS.len()).map(|index| supplement_row(state, index, window, cx))),
+    )
+}
+
+/// One observation row, formatted when the layout last changed.
+pub(super) struct ObservationRow {
+    obs: usize,
+    name: SharedString,
+    level: SharedString,
+    mags: SharedString,
+    insight_rate: SharedString,
+}
+
+/// The usable observations and their insight rates for this layout, rebuilt
+/// only when the simulation or the context changes.
+fn observation_rows(state: &mut AppState) -> Rc<Vec<ObservationRow>> {
+    let (simulation, context) = (&state.simulation, &state.context);
+    state.research.observation_rows.get_by(
+        |(cached_simulation, cached_context)| {
+            cached_simulation == simulation && cached_context == context
+        },
+        || (simulation.clone(), context.clone()),
+        || {
+            let level = simulation.research_level;
+            let to_find = sim::observations_to_find(level, &simulation.observations.found);
+            let overlay = simulation.overlay();
+            let kal_map = sim::kaleidoscope_map(&simulation.mags, game().observations.len());
+            let kal_base = sim::kalei_base(&simulation.grid, &overlay, context);
+            (0..to_find.min(game().observations.len()))
+                .filter(|obs| sim::observation_usable(*obs, level, &simulation.observations))
+                .map(|obs| {
+                    let insight_rate =
+                        sim::insight_rate(obs, simulation, &overlay, context, &kal_map, kal_base);
+                    let mags = simulation
+                        .mags
+                        .iter()
+                        .filter(|mag| mag.slot == Some(obs))
+                        .count();
+                    ObservationRow {
+                        obs,
+                        name: game().observations[obs].name.replace('_', " ").into(),
+                        level: format!(
+                            "Lv {}",
+                            simulation.observations.insight_level[obs]
+                        )
+                        .into(),
+                        mags: mags.to_string().into(),
+                        insight_rate: format::rate(insight_rate).into(),
+                    }
+                })
+                .collect()
+        },
     )
 }
 
 fn observations_card(
     state: &mut AppState,
+    rows: Rc<Vec<ObservationRow>>,
     table_height: gpui::Pixels,
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
-    let (muted, surface) = {
-        let palette = &cx.theme().colors;
-        (palette.fg_muted, palette.sunken)
-    };
+    let theme = cx.theme();
+    let (muted, accent, sunken) = (theme.muted_foreground, theme.primary, theme.muted);
     let level = state.simulation.research_level;
     let to_find = sim::observations_to_find(level, &state.simulation.observations.found);
-    let rows: Vec<usize> = (0..to_find.min(game().observations.len()))
-        .filter(|obs| sim::observation_usable(*obs, level, &state.simulation.observations))
-        .collect();
     let shown = rows.len();
     let entity = cx.entity();
-    let overlay = state.simulation.overlay();
-    let kal_map = sim::kaleidoscope_map(&state.simulation.mags, game().observations.len());
-    let kal_base = sim::kalei_base(&state.simulation.grid, &overlay, &state.context);
-
     let selected = state
         .research
         .selected_observation
         .filter(|obs| *obs < game().observations.len());
-    let accent = cx.theme().colors.accent;
-    let mut table = Table::new(["#", "Observation", "Insight", "+", "Mags", "Ins/hr", ""]);
-    for obs in rows {
-        let observation = &game().observations[obs];
-        let insight_level = state.simulation.observations.insight_level[obs];
-        let insight_rate = sim::insight_rate(
-            obs,
-            &state.simulation,
-            &overlay,
-            &state.context,
-            &kal_map,
-            kal_base,
-        );
-        let mags = state
-            .simulation
-            .mags
-            .iter()
-            .filter(|mag| mag.slot == Some(obs))
-            .count();
-        let bump = entity.clone();
-        let toggle = entity.clone();
-        let pick = entity.clone();
-        table = table.row([
-            div()
-                .id(("obs-row", obs))
-                .child(format!("{}", obs + 1))
-                .into_any_element(),
-            div()
-                .id(("obs-name", obs))
-                .min_w_0()
-                .when(selected == Some(obs), |name| name.text_color(accent))
-                .on_click(move |_event, window, cx| {
-                    pick.update(cx, |state, cx| {
-                        state.select_observation(obs, cx);
-                        window.focus(&state.focus, cx);
-                    });
-                })
-                .child(observation.name.replace('_', " "))
-                .into_any_element(),
-            div()
-                .child(format!("Lv {insight_level}"))
-                .into_any_element(),
-            IconButton::new(("obs-plus", obs), IconName::Plus)
-                .size(ControlSize::Sm)
-                .tooltip("Raise insight")
-                .on_click(move |_event, _window, cx| {
-                    bump.update(cx, |state, cx| state.bump_insight(obs, 1, cx));
-                })
-                .into_any_element(),
-            div().child(format!("{mags}")).into_any_element(),
-            div().child(format::rate(insight_rate)).into_any_element(),
-            IconButton::new(("obs-toggle", obs), IconName::RefreshCw)
-                .size(ControlSize::Sm)
-                .tooltip("Toggle found")
-                .on_click(move |_event, _window, cx| {
-                    toggle.update(cx, |state, cx| state.toggle_found(obs, cx));
-                })
-                .into_any_element(),
-        ]);
-    }
+    let head = |label: &'static str| TableHead::new().child(label);
+    let narrow = px(40.0);
+    let table = Table::new()
+        .child(
+            TableHeader::new().child(
+                TableRow::new()
+                    .child(head("#").w(narrow))
+                    .child(head("Observation"))
+                    .child(head("Insight"))
+                    .child(head("+").w(narrow))
+                    .child(head("Mags").text_right())
+                    .child(head("Ins/hr").text_right())
+                    .child(head("").w(narrow)),
+            ),
+        )
+        .child(TableBody::new().children(rows.iter().map(|row| {
+            let obs = row.obs;
+            let bump = entity.clone();
+            let toggle = entity.clone();
+            let pick = entity.clone();
+            TableRow::new()
+                .child(
+                    TableCell::new()
+                        .w(narrow)
+                        .child(div().id(("obs-row", obs)).child(format!("{}", obs + 1))),
+                )
+                .child(
+                    TableCell::new().child(
+                        div()
+                            .id(("obs-name", obs))
+                            .min_w_0()
+                            .cursor_pointer()
+                            .when(selected == Some(obs), |name| name.text_color(accent))
+                            .on_click(move |_event, window, cx| {
+                                pick.update(cx, |state, cx| {
+                                    state.select_observation(obs, cx);
+                                    window.focus(&state.focus, cx);
+                                });
+                            })
+                            .child(row.name.clone()),
+                    ),
+                )
+                .child(TableCell::new().child(row.level.clone()))
+                .child(
+                    TableCell::new().w(narrow).child(
+                        Button::new(("obs-plus", obs))
+                            .icon(IconName::Plus)
+                            .ghost()
+                            .xsmall()
+                            .tooltip("Raise insight")
+                            .on_click(move |_event, _window, cx| {
+                                bump.update(cx, |state, cx| state.bump_insight(obs, 1, cx));
+                            }),
+                    ),
+                )
+                .child(TableCell::new().text_right().child(row.mags.clone()))
+                .child(TableCell::new().text_right().child(row.insight_rate.clone()))
+                .child(
+                    TableCell::new().w(narrow).child(
+                        Button::new(("obs-toggle", obs))
+                            .icon(IconName::RefreshCw)
+                            .ghost()
+                            .xsmall()
+                            .tooltip("Toggle found")
+                            .on_click(move |_event, _window, cx| {
+                                toggle.update(cx, |state, cx| state.toggle_found(obs, cx));
+                            }),
+                    ),
+                )
+        })));
 
-    let table = ScrollArea::new("observations-scroll")
-        .vertical()
-        .h(table_height)
-        .child(div().min_w_0().child(table));
-    let card = Card::new()
+    let selection = selected
+        .map(|obs| {
+            format!(
+                "Selected: {} (#{})",
+                game().observations[obs].name.replace('_', " "),
+                obs + 1
+            )
+        })
+        .unwrap_or_else(|| "No observation selected".into());
+    Card::new()
         .header(CardHeader::new("Observations").description(format!(
             "{shown} usable of {to_find} found at research level {level}"
         )))
+        .child(div().h(px(1.0)).bg(sunken))
         .child(
             div()
-                .min_h_0()
-                .overflow_hidden()
-                .p_3()
-                .child(div().h(px(1.0)).bg(surface))
-                .child(table),
+                .min_w_0()
+                .child(table)
+                .overflow_y_scrollbar()
+                .id("observations-scroll")
+                .h(table_height),
         )
-        .child(
-            div().px_3().pb_2().text_size(px(11.0)).text_color(muted).child(
-                "Insight/hr counts monocles only; magnifiers marked here sit on that observation.",
-            ),
-        )
+        .child(div().text_size(TEXT_CAPTION).text_color(muted).child(
+            "Insight/hr counts monocles only; magnifiers marked here sit on that observation.",
+        ))
         .child(
             div()
                 .id("observations-selected")
                 .role(gpui::Role::Label)
-                .aria_label(selected.map_or_else(
-                    || "No observation selected".into(),
-                    |obs| {
-                        format!(
-                            "Selected: {} (#{})",
-                            game().observations[obs].name.replace('_', " "),
-                            obs + 1
-                        )
-                    },
-                ))
-                .px_3()
-                .pb_2()
-                .text_size(px(11.0))
+                .aria_label(selection.clone())
+                .text_size(TEXT_CAPTION)
                 .text_color(accent)
-                .child(
-                    selected
-                        .map(|obs| {
-                            format!(
-                                "Selected: {} (#{})",
-                                game().observations[obs].name.replace('_', " "),
-                                obs + 1
-                            )
-                        })
-                        .unwrap_or_else(|| "No observation selected".into()),
-                ),
-        );
-    card.into_any_element()
+                .child(selection),
+        )
 }

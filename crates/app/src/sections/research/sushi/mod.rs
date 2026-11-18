@@ -5,16 +5,17 @@
 //! the tab state the window keeps and renders the subtabs.
 
 mod best;
+pub(crate) mod columns;
 mod currency;
 mod overview;
 mod tiers;
 mod upgrades;
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::theme::ControlSize;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui_kit::component::Sizable as _;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
 use idleon_research::model::Simulation;
 use idleon_save::Save;
 use idleon_sushi::{Inputs, inputs};
@@ -71,6 +72,20 @@ pub(crate) struct State {
     pub(crate) show_spoiler_upgrades: bool,
     /// Whether the sushi table shows the tiers past the next Ring of Glory.
     pub(crate) show_spoiler_rog: bool,
+    /// What the subtabs draw, derived from `inputs`.
+    cache: Cache,
+}
+
+/// Each subtab's figures and rows, built from `inputs` the first time the
+/// subtab shows and dropped when a save loads, so render never re-evaluates
+/// the station's formulas.
+#[derive(Default)]
+struct Cache {
+    overview: Option<overview::Overview>,
+    upgrades: Option<upgrades::Upgrades>,
+    currency: Option<currency::Summary>,
+    best: Option<best::Best>,
+    tiers: Option<tiers::Tiers>,
 }
 
 impl State {
@@ -81,6 +96,7 @@ impl State {
             warnings: Vec::new(),
             show_spoiler_upgrades: false,
             show_spoiler_rog: false,
+            cache: Cache::default(),
         }
     }
 
@@ -97,20 +113,23 @@ impl State {
                 self.warnings.clear();
             }
         }
+        self.cache = Cache::default();
     }
 }
 
 /// The Sushi Station pane: the subtab strip and the active subtab.
 pub(crate) fn pane(
     state: &mut AppState,
-    window: &mut Window,
+    _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let tab = state.research.sushi.tab;
     let mut strip = div().id("sushi-tabs").flex().items_center().gap_1();
     for candidate in Tab::ALL {
         let entity = cx.entity();
-        let mut button = Button::new(candidate.id(), candidate.label()).size(ControlSize::Sm);
+        let mut button = Button::new(candidate.id())
+            .label(candidate.label())
+            .small();
         if candidate == tab {
             button = button.primary();
         }
@@ -138,9 +157,9 @@ pub(crate) fn pane(
                 .child(strip),
         )
         .child(match tab {
-            Tab::Overview => overview::pane(state, window, cx),
+            Tab::Overview => overview::pane(state, cx),
             Tab::Upgrades => upgrades::pane(state, cx),
-            Tab::Currency => currency::pane(state, window, cx),
+            Tab::Currency => currency::pane(state, cx),
             Tab::Best => best::pane(state, cx),
             Tab::Sushi => tiers::pane(state, cx),
         })

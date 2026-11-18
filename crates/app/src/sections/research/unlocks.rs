@@ -7,21 +7,22 @@
 //! and the failed-roll streak the probabilities read.
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, SegmentedControl};
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::SearchInput;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, Palette};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{AnyElement, App, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _};
 use idleon_research::model::Effort;
 use idleon_research::unlock::{Filter, Outcome, Priority, Row};
 use idleon_ui::format;
 use idleon_ui::runner::TaskState;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone, search_input};
+use std::rc::Rc;
+
+use super::controls::segmented;
 
 /// The Unlocks pane: the run controls, the roll summary and the ranked table.
 pub(crate) fn pane(
@@ -30,9 +31,7 @@ pub(crate) fn pane(
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
     let run = state.unlock_state(cx);
-    ScrollArea::new("unlock-scroll")
-        .vertical()
-        .shadows()
+    div()
         .flex_1()
         .min_h_0()
         .child(
@@ -43,9 +42,11 @@ pub(crate) fn pane(
                 .gap_3()
                 .min_w_0()
                 .child(summary_card(state, &run, cx))
-                .child(kpi_row(&run, cx))
+                .child(kpi_row(&run))
                 .child(table_card(state, &run, cx)),
         )
+        .overflow_y_scrollbar()
+        .id("unlock-scroll")
 }
 
 /// The run control, the roll summary and what the save left out.
@@ -54,66 +55,60 @@ fn summary_card(
     run: &TaskState<Outcome>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
     let run_entity = entity.clone();
     let effort_entity = entity.clone();
-    let effort = match state.effort {
-        Effort::Quick => "quick",
-        Effort::Balanced => "balanced",
-        Effort::Thorough => "thorough",
-    };
-    let effort_control = SegmentedControl::new("unlock-effort", effort)
-        .size(ControlSize::Sm)
-        .segment("quick", "Quick", None)
-        .segment("balanced", "Balanced", None)
-        .segment("thorough", "Thorough", None)
-        .on_change(move |value, _window, cx| {
-            let effort = match value.as_ref() {
-                "quick" => Effort::Quick,
-                "thorough" => Effort::Thorough,
-                _ => Effort::Balanced,
-            };
+    let effort_control = segmented(
+        "unlock-effort",
+        &[
+            (Effort::Quick, "Quick"),
+            (Effort::Balanced, "Balanced"),
+            (Effort::Thorough, "Thorough"),
+        ],
+        state.effort,
+        move |effort, _window, cx| {
             effort_entity.update(cx, |state, cx| state.set_effort(effort, cx));
-        });
-    let button = Button::new(
-        "unlock-run",
-        if run.running {
+        },
+    );
+    let button = Button::new("unlock-run")
+        .label(if run.running {
             "Ranking…"
         } else {
             "Rank unlocks"
-        },
-    )
-    .primary()
-    .icon(IconName::Play)
-    .disabled(run.running)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.run_unlocks(cx));
-    });
-    let mut body = div()
-        .id("unlock-summary")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
-        .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .items_center()
-                .gap_2()
-                .child(effort_control)
-                .child(div().flex_1())
-                .child(button),
-        );
+        })
+        .primary()
+        .icon(IconName::Play)
+        .disabled(run.running)
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.run_unlocks(cx));
+        });
+    let mut body = div().id("unlock-summary").flex().flex_col().gap_3().child(
+        div()
+            .flex()
+            .flex_wrap()
+            .items_center()
+            .gap_2()
+            .child(effort_control)
+            .child(div().flex_1())
+            .child(button),
+    );
     if let Some(result) = run.result.as_ref() {
-        body = body.child(roll_line(result, &colors));
+        body = body.child(roll_line(result));
         for (index, missing) in result.missing.iter().enumerate() {
-            body = body.child(Banner::new(
-                format!("unlock-missing-{index}"),
-                Severity::Warning,
-                format!("Missing roll data — {missing}"),
-            ));
+            let text = format!("Missing roll data — {missing}");
+            // The wrapper keeps the Ely banner's id and reads its message.
+            body = body.child(
+                div()
+                    .id(SharedString::from(format!("unlock-missing-{index}")))
+                    .role(gpui::Role::Label)
+                    .aria_label(text.clone())
+                    .child(
+                        Alert::new(("unlock-missing-alert", index), text)
+                            .with_variant(Tone::Warning.into())
+                            .banner(),
+                    ),
+            );
         }
     } else if !run.running {
         body = body.child(
@@ -121,14 +116,17 @@ fn summary_card(
                 "Rank the observations you have not found yet by the research EXP each adds per \
                  day of rolls.",
             )
-            .text_color(colors.fg_muted),
+            .text_color(muted),
         );
     }
-    body = body.child(Banner::new(
-        "unlock-experimental",
-        Severity::Info,
-        "Experimental estimates: they read the save's own roll data. Use your best judgement.",
-    ));
+    body = body.child(
+        Alert::new(
+            "unlock-experimental",
+            "Experimental estimates: they read the save's own roll data. Use your best judgement.",
+        )
+        .with_variant(Tone::Info.into())
+        .banner(),
+    );
     if run.running {
         if let Some(progress) = run.progress.clone() {
             let cancel = entity.clone();
@@ -163,7 +161,7 @@ fn summary_card(
 
 /// The summary line: the roll bounds, the pity, the rolls a day, the
 /// failed-roll streak and the current rate.
-fn roll_line(result: &Outcome, colors: &Palette) -> AnyElement {
+fn roll_line(result: &Outcome) -> AnyElement {
     let rolls = result.rolls;
     let mut text = format!(
         "Roll range: {}–{} · Rolls/day: {} · Current EXP/hr: {}",
@@ -195,17 +193,16 @@ fn roll_line(result: &Outcome, colors: &Palette) -> AnyElement {
         .flex_wrap()
         .items_center()
         .gap_2()
-        .child(Caption::new(text).text_color(colors.fg_muted))
+        .child(Caption::new(text))
         .into_any_element()
 }
 
 /// The triage strip: how many are left, how many the level can use, the best
 /// pick and the rolls a day.
-fn kpi_row(run: &TaskState<Outcome>, cx: &mut Context<AppState>) -> AnyElement {
+fn kpi_row(run: &TaskState<Outcome>) -> AnyElement {
     let Some(result) = run.result.as_ref() else {
         return div().id("unlock-kpis").into_any_element();
     };
-    let colors = cx.theme().colors.clone();
     let usable = result.rows.iter().filter(|row| row.usable).count();
     let best_row = if result.rows.iter().any(|row| row.chance_today.is_some()) {
         result
@@ -222,6 +219,12 @@ fn kpi_row(run: &TaskState<Outcome>, cx: &mut Context<AppState>) -> AnyElement {
         "not estimated without the save's roll data".to_string()
     };
     let per_day = result.rolls.per_day;
+    let best_chance = result
+        .rows
+        .iter()
+        .filter_map(|row| row.chance_today)
+        .fold(0.0, f64::max)
+        * 100.0;
     let summary = format!(
         "{} undiscovered · {} usable now · best: {best_row} · {per_day} rolls a day",
         result.rows.len(),
@@ -231,49 +234,137 @@ fn kpi_row(run: &TaskState<Outcome>, cx: &mut Context<AppState>) -> AnyElement {
         .id("unlock-kpis")
         .role(gpui::Role::Label)
         .aria_label(summary)
-        .flex()
-        .flex_wrap()
-        .gap_3()
         .child(
-            KpiCard::new(
-                Statistic::new(
-                    "unlock-undiscovered",
-                    "Undiscovered",
-                    result.rows.len() as f64,
+            KpiStrip::new()
+                .child(
+                    Statistic::new(
+                        "unlock-undiscovered",
+                        "Undiscovered",
+                        format::count(result.rows.len() as u64),
+                    )
+                    .caption("observations the save has not found"),
                 )
-                .decimals(0),
-            )
-            .caption("observations the save has not found"),
-        )
-        .child(
-            KpiCard::new(Statistic::new("unlock-usable", "Usable now", usable as f64).decimals(0))
-                .caption("research level already meets their requirement"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("unlock-per-day", "Rolls a day", f64::from(per_day)).decimals(0),
-            )
-            .caption("from Observationalistic, the event shop and Ring of Glory"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "unlock-best-chance",
-                    "Best chance today",
-                    result
-                        .rows
-                        .iter()
-                        .filter_map(|row| row.chance_today)
-                        .fold(0.0, f64::max)
-                        * 100.0,
+                .child(
+                    Statistic::new("unlock-usable", "Usable now", format::count(usable as u64))
+                        .caption("research level already meets their requirement"),
                 )
-                .decimals(0)
-                .suffix("%"),
-            )
-            .caption(best_row),
+                .child(
+                    Statistic::new(
+                        "unlock-per-day",
+                        "Rolls a day",
+                        format::count(u64::from(per_day)),
+                    )
+                    .caption("from Observationalistic, the event shop and Ring of Glory"),
+                )
+                .child(
+                    Statistic::new(
+                        "unlock-best-chance",
+                        "Best chance today",
+                        format!("{best_chance:.0}"),
+                    )
+                    .suffix("%")
+                    .caption(best_row),
+                ),
         )
-        .text_color(colors.fg)
         .into_any_element()
+}
+
+/// What the cached table rows were built from.
+#[derive(PartialEq)]
+pub(super) struct RowsKey {
+    generation: u64,
+    filter: Filter,
+    query: String,
+}
+
+/// One table row, formatted when its result, filter or search last changed.
+pub(super) struct UnlockRow {
+    obs: usize,
+    name: SharedString,
+    threshold: SharedString,
+    level: SharedString,
+    usable: bool,
+    chance: SharedString,
+    /// `None` draws the chance in the body color.
+    chance_tone: Option<Tone>,
+    days: SharedString,
+    gain: SharedString,
+    gainful: bool,
+    score: SharedString,
+    priority: Priority,
+}
+
+impl UnlockRow {
+    fn new(row: &Row, best: f64) -> Self {
+        let threshold = format::count(row.threshold.max(0.0) as u64);
+        let level = format::count(row.required_level.max(0.0) as u64);
+        Self {
+            obs: row.obs,
+            name: row.name.clone().into(),
+            threshold: threshold.into(),
+            level: if row.usable {
+                level
+            } else {
+                format!("{level} (wait)")
+            }
+            .into(),
+            usable: row.usable,
+            chance: match row.chance_today {
+                Some(chance) => format!("{:.1}%", chance * 100.0),
+                None => "—".to_string(),
+            }
+            .into(),
+            chance_tone: match row.chance_today {
+                Some(chance) if chance < 0.01 => Some(Tone::Danger),
+                Some(chance) if chance < 0.5 => Some(Tone::Warning),
+                Some(_) => None,
+                None => Some(Tone::Neutral),
+            },
+            days: match row.expected_days {
+                Some(days) if days.is_finite() => format!("{days:.1}d"),
+                _ => "—".to_string(),
+            }
+            .into(),
+            gain: if row.exp_gain > 0.0 {
+                format!("+{}", format::rate(row.exp_gain))
+            } else {
+                "—".to_string()
+            }
+            .into(),
+            gainful: row.exp_gain > 0.0,
+            score: row
+                .score
+                .filter(|_| row.exp_gain > 0.0)
+                .map(format::rate)
+                .unwrap_or_else(|| "—".to_string())
+                .into(),
+            priority: row.priority(best),
+        }
+    }
+}
+
+/// The rows the filter and the name search keep, in the result's order.
+fn table_rows(
+    state: &mut AppState,
+    result: &Outcome,
+    cx: &App,
+) -> Rc<Vec<UnlockRow>> {
+    let research = &mut state.research;
+    let key = RowsKey {
+        generation: research.run_generation,
+        filter: research.unlock_filter,
+        query: research.unlock_search.read(cx).value().trim().to_lowercase(),
+    };
+    let best = result.best_score();
+    let (filter, query) = (key.filter, key.query.clone());
+    research.unlock_rows.get(key, || {
+        result
+            .filtered(filter)
+            .into_iter()
+            .filter(|row| query.is_empty() || row.name.to_lowercase().contains(&query))
+            .map(|row| UnlockRow::new(row, best))
+            .collect()
+    })
 }
 
 /// The ranked table with its availability filter and name search.
@@ -282,60 +373,49 @@ fn table_card(
     run: &TaskState<Outcome>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
     let Some(result) = run.result.as_ref() else {
         return Card::new()
             .header(CardHeader::new("Observation Unlock Priority"))
             .child(
-                div().id("unlock-table-empty").p_3().child(
+                div().id("unlock-table-empty").child(
                     Caption::new("Run the ranking to list the observations left to find.")
-                        .text_color(colors.fg_muted),
+                        .text_color(muted),
                 ),
             )
             .into_any_element();
     };
 
     let filter_entity = entity.clone();
-    let mut filter = SegmentedControl::new("unlock-filter", state.research.unlock_filter.id())
-        .size(ControlSize::Sm);
-    for mode in Filter::ALL {
-        filter = filter.segment(mode.id(), mode.label(), None);
-    }
-    let filter = filter.on_change(move |value, _window, cx| {
-        let mode = Filter::ALL
-            .into_iter()
-            .find(|mode| mode.id() == value.as_ref())
-            .unwrap_or_default();
-        filter_entity.update(cx, |state, cx| state.set_unlock_filter(mode, cx));
-    });
-    let search_focus = state.research.unlock_search.read(cx).focus().clone();
-    let query = state
-        .research
-        .unlock_search
-        .read(cx)
-        .text()
-        .trim()
-        .to_lowercase();
-    let rows: Vec<&Row> = result
-        .filtered(state.research.unlock_filter)
-        .into_iter()
-        .filter(|row| query.is_empty() || row.name.to_lowercase().contains(&query))
-        .collect();
-    let best = result.best_score();
-    let mut table = Table::new([
-        "Observation",
-        "Roll Req",
-        "Res LV Req",
-        "P(unlock/day)",
-        "E[days]",
-        "EXP/hr Gain",
-        "EXP/hr per E[day]",
-        "Priority",
-    ]);
-    for row in &rows {
-        table = table.row(row_cells(row, best, &colors));
-    }
+    let modes: Vec<(Filter, &'static str)> =
+        Filter::ALL.into_iter().map(|mode| (mode, mode.label())).collect();
+    let filter = segmented(
+        "unlock-filter",
+        &modes,
+        state.research.unlock_filter,
+        move |mode, _window, cx| {
+            filter_entity.update(cx, |state, cx| state.set_unlock_filter(mode, cx));
+        },
+    );
+    let rows = table_rows(state, result, cx);
+    let head = |label: &'static str| TableHead::new().child(label);
+    let number = |label: &'static str| TableHead::new().text_right().child(label);
+    let table = Table::new()
+        .child(
+            TableHeader::new().child(
+                TableRow::new()
+                    .child(head("Observation"))
+                    .child(number("Roll Req"))
+                    .child(number("Res LV Req"))
+                    .child(number("P(unlock/day)"))
+                    .child(number("E[days]"))
+                    .child(number("EXP/hr Gain"))
+                    .child(number("EXP/hr per E[day]"))
+                    .child(head("Priority")),
+            ),
+        )
+        .child(TableBody::new().children(rows.iter().map(|row| row_cells(row, cx))));
     let summary = format!("{} of {} observations shown", rows.len(), result.rows.len());
     Card::new()
         .header(
@@ -354,13 +434,10 @@ fn table_card(
                                 .role(gpui::Role::Search)
                                 .aria_label("Find an observation")
                                 .w(px(220.0))
-                                .on_click(move |_event, window, cx| {
-                                    window.focus(&search_focus, cx);
-                                })
-                                .child(SearchInput::new(
-                                    "unlock-search-field",
-                                    &state.research.unlock_search,
-                                )),
+                                .child(
+                                    search_input(&state.research.unlock_search)
+                                        .aria_label("Find an observation"),
+                                ),
                         ),
                 ),
         )
@@ -372,7 +449,6 @@ fn table_card(
                 .flex()
                 .flex_col()
                 .gap_2()
-                .p_3()
                 .when(rows.is_empty(), |body| {
                     body.child(
                         Caption::new(if result.rows.is_empty() {
@@ -380,7 +456,7 @@ fn table_card(
                         } else {
                             "No observation matches the filter."
                         })
-                        .text_color(colors.fg_muted),
+                        .text_color(muted),
                     )
                 })
                 .child(div().min_h_0().child(table)),
@@ -389,88 +465,69 @@ fn table_card(
 }
 
 /// One row's cells: the observation, its requirements, its odds and its worth.
-fn row_cells(row: &Row, best: f64, colors: &Palette) -> [AnyElement; 8] {
-    let muted = colors.fg_muted;
-    let level = if row.usable {
-        format::count(row.required_level.max(0.0) as u64)
-    } else {
-        format!(
-            "{} (wait)",
-            format::count(row.required_level.max(0.0) as u64)
+fn row_cells(row: &UnlockRow, cx: &App) -> TableRow {
+    let theme = cx.theme();
+    let priority_color = match row.priority {
+        Priority::Best => theme.success,
+        Priority::Good => theme.warning,
+        Priority::Wait => theme.danger,
+        Priority::Low | Priority::Minor => theme.muted_foreground,
+    };
+    let chance_color = row
+        .chance_tone
+        .map_or(theme.foreground, |tone| tone.color(cx));
+    TableRow::new()
+        .child(
+            TableCell::new().child(
+                div()
+                    .id(SharedString::from(format!("unlock-obs-{}", row.obs)))
+                    .child(row.name.clone()),
+            ),
         )
-    };
-    let chance = match row.chance_today {
-        Some(chance) => format!("{:.1}%", chance * 100.0),
-        None => "—".to_string(),
-    };
-    let days = match row.expected_days {
-        Some(days) if days.is_finite() => format!("{days:.1}d"),
-        _ => "—".to_string(),
-    };
-    let gain = if row.exp_gain > 0.0 {
-        format!("+{}", format::rate(row.exp_gain))
-    } else {
-        "—".to_string()
-    };
-    let score = row
-        .score
-        .filter(|_| row.exp_gain > 0.0)
-        .map(format::rate)
-        .unwrap_or_else(|| "—".to_string());
-    let priority = row.priority(best);
-    let priority_color = match priority {
-        Priority::Best => colors.success,
-        Priority::Good => colors.warning,
-        Priority::Wait => colors.danger,
-        Priority::Low | Priority::Minor => muted,
-    };
-    let chance_color = match row.chance_today {
-        Some(chance) if chance < 0.01 => colors.danger,
-        Some(chance) if chance < 0.5 => colors.warning,
-        Some(_) => colors.fg,
-        None => muted,
-    };
-    [
-        div()
-            .id(format!("unlock-obs-{}", row.obs))
-            .child(row.name.clone())
-            .into_any_element(),
-        div()
-            .child(format::count(row.threshold.max(0.0) as u64))
-            .into_any_element(),
-        div()
-            .text_color(if row.usable {
-                colors.success
-            } else {
-                colors.danger
-            })
-            .child(level)
-            .into_any_element(),
-        div()
-            .id(format!("unlock-chance-{}", row.obs))
-            .role(gpui::Role::Label)
-            .aria_label(chance.clone())
-            .text_color(chance_color)
-            .child(chance)
-            .into_any_element(),
-        div().child(days).into_any_element(),
-        div()
-            .text_color(if row.exp_gain > 0.0 {
-                colors.success
-            } else {
-                muted
-            })
-            .child(gain)
-            .into_any_element(),
-        div().text_color(colors.fg).child(score).into_any_element(),
-        div()
-            .id(format!("unlock-priority-{}", row.obs))
-            .role(gpui::Role::Label)
-            .aria_label(priority.label())
-            .text_color(priority_color)
-            .child(priority.label())
-            .into_any_element(),
-    ]
+        .child(TableCell::new().text_right().child(row.threshold.clone()))
+        .child(
+            TableCell::new()
+                .text_right()
+                .text_color(if row.usable { theme.success } else { theme.danger })
+                .child(row.level.clone()),
+        )
+        .child(
+            TableCell::new().text_right().child(
+                div()
+                    .id(SharedString::from(format!("unlock-chance-{}", row.obs)))
+                    .role(gpui::Role::Label)
+                    .aria_label(row.chance.clone())
+                    .text_color(chance_color)
+                    .child(row.chance.clone()),
+            ),
+        )
+        .child(TableCell::new().text_right().child(row.days.clone()))
+        .child(
+            TableCell::new()
+                .text_right()
+                .text_color(if row.gainful {
+                    theme.success
+                } else {
+                    theme.muted_foreground
+                })
+                .child(row.gain.clone()),
+        )
+        .child(
+            TableCell::new()
+                .text_right()
+                .text_color(theme.foreground)
+                .child(row.score.clone()),
+        )
+        .child(
+            TableCell::new().child(
+                div()
+                    .id(SharedString::from(format!("unlock-priority-{}", row.obs)))
+                    .role(gpui::Role::Label)
+                    .aria_label(row.priority.label())
+                    .text_color(priority_color)
+                    .child(row.priority.label()),
+            ),
+        )
 }
 
 #[cfg(test)]

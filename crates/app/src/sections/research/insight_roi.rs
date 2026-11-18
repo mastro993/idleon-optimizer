@@ -7,21 +7,25 @@
 //! shared formula tree.
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, SegmentedControl};
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::Checkbox;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{
+    AnyElement, App, Context, FontWeight, Hsla, IntoElement, ParentElement, SharedString, Styled,
+    Window, div, px,
+};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _};
 use idleon_research::insight::{Outcome, Row, Scenario, Sort};
 use idleon_research::model::{Effort, coord};
 use idleon_ui::format;
 use idleon_ui::runner::TaskState;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
+use std::rc::Rc;
+
+use super::controls::segmented;
 
 /// The Insight ROI pane: the baseline summary and the ranked table.
 pub(crate) fn pane(
@@ -75,16 +79,8 @@ fn update_tree(state: &AppState, result: &Outcome, cx: &mut Context<AppState>) {
     tree.update(cx, |tree, cx| tree.set_root(root, cx));
 }
 
-fn effort_id(effort: Effort) -> &'static str {
-    match effort {
-        Effort::Quick => "quick",
-        Effort::Balanced => "balanced",
-        Effort::Thorough => "thorough",
-    }
-}
-
 /// The monocle count and the baseline rate, in the summary's order.
-fn monocle_line(result: &Outcome, colors: &ely_gpui_component::theme::Palette) -> AnyElement {
+fn monocle_line(result: &Outcome, cx: &App) -> AnyElement {
     div()
         .id("insight-monocles")
         .role(gpui::Role::Label)
@@ -105,7 +101,7 @@ fn monocle_line(result: &Outcome, colors: &ely_gpui_component::theme::Palette) -
                 format::rate(result.base_rate),
                 format::exact(result.base_rate)
             ))
-            .text_color(colors.success),
+            .text_color(cx.theme().success),
         )
         .into_any_element()
 }
@@ -129,45 +125,40 @@ fn kpi_row(
     run: &TaskState<Outcome>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
     let run_entity = entity.clone();
-    let effort = effort_id(state.effort);
     let effort_entity = entity.clone();
-    let effort_control = SegmentedControl::new("insight-effort", effort)
-        .size(ControlSize::Sm)
-        .segment("quick", "Quick", None)
-        .segment("balanced", "Balanced", None)
-        .segment("thorough", "Thorough", None)
-        .on_change(move |value, _window, cx| {
-            let effort = match value.as_ref() {
-                "quick" => Effort::Quick,
-                "thorough" => Effort::Thorough,
-                _ => Effort::Balanced,
-            };
+    let effort_control = segmented(
+        "insight-effort",
+        &[
+            (Effort::Quick, "Quick"),
+            (Effort::Balanced, "Balanced"),
+            (Effort::Thorough, "Thorough"),
+        ],
+        state.effort,
+        move |effort, _window, cx| {
             effort_entity.update(cx, |state, cx| state.set_effort(effort, cx));
-        });
-    let button = Button::new(
-        "insight-run",
-        if run.running {
+        },
+    );
+    let button = Button::new("insight-run")
+        .label(if run.running {
             "Computing…"
         } else {
             "Compute ROI"
-        },
-    )
-    .primary()
-    .icon(IconName::Play)
-    .disabled(run.running)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.run_insight_roi(cx));
-    });
+        })
+        .primary()
+        .icon(IconName::Play)
+        .disabled(run.running)
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.run_insight_roi(cx));
+        });
     let result = run.result.as_ref();
     let mut body = div()
         .id("insight-summary")
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
         .child(
             div()
                 .flex()
@@ -179,23 +170,26 @@ fn kpi_row(
                 .child(button),
         );
     if let Some(result) = result {
-        body = body.child(monocle_line(result, &colors));
+        body = body.child(monocle_line(result, cx));
         if result.monocles == 0 {
             let node = coord(91);
-            body = body.child(Banner::new(
-                "insight-no-monocle",
-                Severity::Warning,
-                format!(
-                    "No Optical Monocles owned. Unlock grid node {node} (Optical Monocle) to use insight."
-                ),
-            ));
+            body = body.child(
+                Alert::new(
+                    "insight-no-monocle",
+                    format!(
+                        "No Optical Monocles owned. Unlock grid node {node} (Optical Monocle) to use insight."
+                    ),
+                )
+                .with_variant(Tone::Warning.into())
+                .banner(),
+            );
         }
     } else if !run.running {
         body = body.child(
             Caption::new(
                 "Rank every usable observation by the research EXP its next insight levels buy back.",
             )
-            .text_color(colors.fg_muted),
+            .text_color(muted),
         );
     }
     if run.running {
@@ -247,37 +241,36 @@ fn kpi_row(
         .id("insight-kpis")
         .role(gpui::Role::Label)
         .aria_label(summary)
-        .flex()
-        .flex_wrap()
-        .gap_3()
         .child(
-            KpiCard::new(
-                Statistic::new("insight-high-value", "High value", counts.high as f64).decimals(0),
-            )
-            .caption("over 10 EXP/hr per break-even hour"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("insight-moderate", "Moderate", counts.moderate as f64).decimals(0),
-            )
-            .caption("between 1 and 10 EXP/hr per hour"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("insight-low", "Low or none", counts.low as f64).decimals(0),
-            )
-            .caption("under 1, or no gain at all"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "insight-best-grind",
-                    "Observations",
-                    result.rows.len() as f64,
+            KpiStrip::new()
+                .child(
+                    Statistic::new(
+                        "insight-high-value",
+                        "High value",
+                        format::count(counts.high as u64),
+                    )
+                    .caption("over 10 EXP/hr per break-even hour"),
                 )
-                .decimals(0),
-            )
-            .caption(best),
+                .child(
+                    Statistic::new(
+                        "insight-moderate",
+                        "Moderate",
+                        format::count(counts.moderate as u64),
+                    )
+                    .caption("between 1 and 10 EXP/hr per hour"),
+                )
+                .child(
+                    Statistic::new("insight-low", "Low or none", format::count(counts.low as u64))
+                        .caption("under 1, or no gain at all"),
+                )
+                .child(
+                    Statistic::new(
+                        "insight-best-grind",
+                        "Observations",
+                        format::count(result.rows.len() as u64),
+                    )
+                    .caption(best),
+                ),
         );
     div()
         .id("insight-summary-row")
@@ -295,16 +288,14 @@ fn baseline_card(
     run: &TaskState<Outcome>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
     let mut body = div()
         .id("insight-baseline")
         .flex()
         .flex_col()
         .gap_2()
-        .p_3()
         .child(
             Caption::new("The optimized magnifiers on the save's own shapes.")
-                .text_color(colors.fg_muted),
+                .text_color(cx.theme().muted_foreground),
         );
     if run.result.is_some() {
         body = body.child(
@@ -351,70 +342,102 @@ fn triage(result: &Outcome) -> Triage {
     triage
 }
 
+/// What the cached table rows were built from.
+#[derive(PartialEq)]
+pub(super) struct RowsKey {
+    generation: u64,
+    sort: Sort,
+    hide_free: bool,
+}
+
+/// The rows the sort and the hide-free filter give, one per scenario, built
+/// when the result or either control changes.
+fn table_rows(state: &mut AppState, result: &Outcome) -> (Rc<Vec<ScenarioRow>>, usize) {
+    let research = &mut state.research;
+    let (sort, hide_free) = (research.insight_sort, research.insight_hide_free);
+    let key = RowsKey {
+        generation: research.run_generation,
+        sort,
+        hide_free,
+    };
+    let rows = research.insight_rows.get(key, || {
+        result
+            .sorted(sort)
+            .into_iter()
+            .filter(|row| keeps(row, hide_free))
+            .flat_map(|row| {
+                row.scenarios
+                    .iter()
+                    .enumerate()
+                    .map(|(index, scenario)| ScenarioRow::new(row, scenario, index == 0))
+            })
+            .collect()
+    });
+    let shown = rows.iter().filter(|row| row.first).count();
+    (rows, shown)
+}
+
 /// The ranked table with its sort control and the hide-free filter.
 fn table_card(
     state: &mut AppState,
     run: &TaskState<Outcome>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
     let Some(result) = run.result.as_ref() else {
         return Card::new()
             .header(CardHeader::new("Insight ROI"))
             .child(
-                div().id("insight-table-empty").p_3().child(
-                    Caption::new("Run the analysis to rank the observations.")
-                        .text_color(colors.fg_muted),
+                div().id("insight-table-empty").child(
+                    Caption::new("Run the analysis to rank the observations.").text_color(muted),
                 ),
             )
             .into_any_element();
     };
 
     let sort_entity = entity.clone();
-    let mut sort = SegmentedControl::new("insight-sort", state.research.insight_sort.id())
-        .size(ControlSize::Sm);
-    for mode in Sort::ALL {
-        sort = sort.segment(mode.id(), mode.label(), None);
-    }
-    let sort = sort.on_change(move |value, _window, cx| {
-        let mode = Sort::ALL
-            .into_iter()
-            .find(|mode| mode.id() == value.as_ref())
-            .unwrap_or_default();
-        sort_entity.update(cx, |state, cx| state.set_insight_sort(mode, cx));
-    });
+    let modes: Vec<(Sort, &'static str)> =
+        Sort::ALL.into_iter().map(|mode| (mode, mode.label())).collect();
+    let sort = segmented(
+        "insight-sort",
+        &modes,
+        state.research.insight_sort,
+        move |mode, _window, cx| {
+            sort_entity.update(cx, |state, cx| state.set_insight_sort(mode, cx));
+        },
+    );
     let hide_entity = entity.clone();
-    let hide = Checkbox::new("insight-hide-free", state.research.insight_hide_free)
+    let hide = Checkbox::new("insight-hide-free")
         .label("Hide free")
-        .on_change(move |hide, _window, cx| {
+        .checked(state.research.insight_hide_free)
+        .on_click(move |hide, _window, cx| {
+            let hide = *hide;
             hide_entity.update(cx, |state, cx| state.set_insight_hide_free(hide, cx));
         });
 
-    let rows: Vec<&Row> = result
-        .sorted(state.research.insight_sort)
-        .into_iter()
-        .filter(|row| keeps(row, state.research.insight_hide_free))
-        .collect();
-    let mut table = Table::new([
-        "Observation",
-        "Insight LV",
-        "+LV",
-        "Insight/hr",
-        "Grind Time",
-        "EXP/hr During",
-        "EXP Lost",
-        "Rate Gain",
-        "Recoup",
-        "Break-Even",
-        "Efficiency",
-    ]);
-    for row in &rows {
-        for (index, scenario) in row.scenarios.iter().enumerate() {
-            table = table.row(scenario_row(row, scenario, index == 0, &colors));
-        }
-    }
-    let summary = format!("{} of {} observations shown", rows.len(), result.rows.len());
+    let (rows, shown) = table_rows(state, result);
+    let head = |label: &'static str| TableHead::new().child(label);
+    let number = |label: &'static str| TableHead::new().text_right().child(label);
+    let table = Table::new()
+        .child(
+            TableHeader::new().child(
+                TableRow::new()
+                    .child(head("Observation"))
+                    .child(number("Insight LV"))
+                    .child(number("+LV"))
+                    .child(number("Insight/hr"))
+                    .child(number("Grind Time"))
+                    .child(number("EXP/hr During"))
+                    .child(number("EXP Lost"))
+                    .child(number("Rate Gain"))
+                    .child(number("Recoup"))
+                    .child(number("Break-Even"))
+                    .child(number("Efficiency")),
+            ),
+        )
+        .child(TableBody::new().children(rows.iter().map(|row| scenario_row(row, cx))));
+    let summary = format!("{shown} of {} observations shown", result.rows.len());
     Card::new()
         .header(
             CardHeader::new("Insight ROI")
@@ -437,13 +460,12 @@ fn table_card(
                 .flex()
                 .flex_col()
                 .gap_2()
-                .p_3()
                 .when(rows.is_empty(), |body| {
                     body.child(
                         Caption::new(
                             "Every row is hidden: no observation loses EXP while its insight grinds.",
                         )
-                        .text_color(colors.fg_muted),
+                        .text_color(muted),
                     )
                 })
                 .child(div().min_h_0().child(table)),
@@ -461,144 +483,155 @@ fn keeps(row: &Row, hide_free: bool) -> bool {
     one.total_exp_lost.is_finite() && one.total_exp_lost > 0.0
 }
 
-/// One scenario line: the observation on the first row, then the numbers.
-fn scenario_row(
-    row: &Row,
-    scenario: &Scenario,
+/// The color a scenario cell draws in: a tone, or the body text.
+#[derive(Clone, Copy, PartialEq)]
+enum Ink {
+    Body,
+    Tone(Tone),
+}
+
+impl Ink {
+    fn color(self, cx: &App) -> Hsla {
+        match self {
+            Self::Body => cx.theme().foreground,
+            Self::Tone(tone) => tone.color(cx),
+        }
+    }
+}
+
+/// One scenario line, formatted when the table rows were built.
+pub(super) struct ScenarioRow {
+    obs: usize,
+    level_gain: u32,
+    /// The observation's first scenario names it; the later ones leave the
+    /// name and level blank.
     first: bool,
-    colors: &ely_gpui_component::theme::Palette,
-) -> [AnyElement; 11] {
-    let muted = colors.fg_muted;
-    let text = colors.fg;
-    let insight = format!("{:.1}", scenario.insight_rate);
-    let grind = format::projection(scenario.grind_hours);
-    let during = format::rate(scenario.grind_rate);
-    let lost = if scenario.total_exp_lost.is_finite() && scenario.total_exp_lost > 0.0 {
-        format::rate(scenario.total_exp_lost)
-    } else {
-        "—".into()
-    };
-    let gain = format!(
-        "{}{}",
-        if scenario.rate_gain > 0.0 { "+" } else { "" },
-        format::rate(scenario.rate_gain)
-    );
-    let recoup = format::projection(scenario.recoup_hours);
-    let break_even = format::projection(scenario.break_even_hours);
-    // A gain with no break-even to pay is forever ahead.
-    let efficiency = if scenario.rate_gain <= 0.0 {
-        "No gain".to_string()
-    } else if scenario.break_even_hours == 0.0 {
-        "∞".to_string()
-    } else if scenario.break_even_hours.is_finite() {
-        format!(
-            "+{}",
-            format::rate(idleon_research::insight::efficiency(scenario))
-        )
-    } else {
-        "—".to_string()
-    };
-    let gain_color = if scenario.rate_gain > 0.0 {
-        colors.success
-    } else if scenario.rate_gain < 0.0 {
-        colors.danger
-    } else {
-        muted
-    };
-    let break_even_color = if !scenario.worth {
-        colors.danger
-    } else if scenario.break_even_hours < 24.0 {
-        colors.success
-    } else if scenario.break_even_hours < 72.0 {
-        colors.warning
-    } else {
-        text
-    };
-    let efficiency_color = if scenario.rate_gain <= 0.0 {
-        colors.danger
-    } else if idleon_research::insight::efficiency(scenario) > 10.0 {
-        colors.success
-    } else {
-        muted
-    };
-    let cell = |id: String, child: String, color: gpui::Hsla| -> AnyElement {
-        div()
-            .id(id)
-            .when(color != text, |cell| cell.text_color(color))
-            .child(child)
-            .into_any_element()
-    };
-    [
-        // The name cell is blank on an observation's later rows; each row
-        // still needs its own id, or the semantic tree drops them all.
-        div()
-            .id(if first {
-                format!("insight-obs-{}", row.obs)
-            } else {
-                format!("insight-obs-{}-{}", row.obs, scenario.level_gain)
-            })
-            .when(first, |cell| cell.font_weight(gpui::FontWeight::SEMIBOLD))
-            .child(if first {
-                row.name.clone()
-            } else {
-                String::new()
-            })
-            .into_any_element(),
-        cell(
-            format!("insight-level-{}-{}", row.obs, scenario.level_gain),
-            if first {
-                format!("{}", row.level)
-            } else {
-                String::new()
-            },
-            muted,
-        ),
-        cell(
-            format!("insight-gain-{}-{}", row.obs, scenario.level_gain),
-            format!("+{}", scenario.level_gain),
-            colors.warning,
-        ),
-        cell(
-            format!("insight-rate-{}-{}", row.obs, scenario.level_gain),
-            insight,
-            colors.accent,
-        ),
-        cell(
-            format!("insight-grind-{}-{}", row.obs, scenario.level_gain),
-            grind,
-            text,
-        ),
-        cell(
-            format!("insight-during-{}-{}", row.obs, scenario.level_gain),
-            during,
-            muted,
-        ),
-        cell(
-            format!("insight-lost-{}-{}", row.obs, scenario.level_gain),
-            lost,
-            colors.danger,
-        ),
-        cell(
-            format!("insight-rategain-{}-{}", row.obs, scenario.level_gain),
-            gain,
-            gain_color,
-        ),
-        cell(
-            format!("insight-recoup-{}-{}", row.obs, scenario.level_gain),
-            recoup,
-            text,
-        ),
-        cell(
-            format!("insight-breakeven-{}-{}", row.obs, scenario.level_gain),
-            break_even,
-            break_even_color,
-        ),
-        cell(
-            format!("insight-efficiency-{}-{}", row.obs, scenario.level_gain),
-            efficiency,
-            efficiency_color,
-        ),
-    ]
+    name: SharedString,
+    /// The text and ink of the remaining cells, after the name, in column order.
+    cells: [(SharedString, Ink); 10],
+}
+
+/// The cell ids after the name, in column order.
+const CELL_IDS: [&str; 10] = [
+    "insight-level",
+    "insight-gain",
+    "insight-rate",
+    "insight-grind",
+    "insight-during",
+    "insight-lost",
+    "insight-rategain",
+    "insight-recoup",
+    "insight-breakeven",
+    "insight-efficiency",
+];
+
+impl ScenarioRow {
+    fn new(row: &Row, scenario: &Scenario, first: bool) -> Self {
+        let muted = Ink::Tone(Tone::Neutral);
+        let lost = if scenario.total_exp_lost.is_finite() && scenario.total_exp_lost > 0.0 {
+            format::rate(scenario.total_exp_lost)
+        } else {
+            "—".into()
+        };
+        let gain = format!(
+            "{}{}",
+            if scenario.rate_gain > 0.0 { "+" } else { "" },
+            format::rate(scenario.rate_gain)
+        );
+        // A gain with no break-even to pay is forever ahead.
+        let efficiency = if scenario.rate_gain <= 0.0 {
+            "No gain".to_string()
+        } else if scenario.break_even_hours == 0.0 {
+            "∞".to_string()
+        } else if scenario.break_even_hours.is_finite() {
+            format!(
+                "+{}",
+                format::rate(idleon_research::insight::efficiency(scenario))
+            )
+        } else {
+            "—".to_string()
+        };
+        let gain_ink = if scenario.rate_gain > 0.0 {
+            Ink::Tone(Tone::Success)
+        } else if scenario.rate_gain < 0.0 {
+            Ink::Tone(Tone::Danger)
+        } else {
+            muted
+        };
+        let break_even_ink = if !scenario.worth {
+            Ink::Tone(Tone::Danger)
+        } else if scenario.break_even_hours < 24.0 {
+            Ink::Tone(Tone::Success)
+        } else if scenario.break_even_hours < 72.0 {
+            Ink::Tone(Tone::Warning)
+        } else {
+            Ink::Body
+        };
+        let efficiency_ink = if scenario.rate_gain <= 0.0 {
+            Ink::Tone(Tone::Danger)
+        } else if idleon_research::insight::efficiency(scenario) > 10.0 {
+            Ink::Tone(Tone::Success)
+        } else {
+            muted
+        };
+        Self {
+            obs: row.obs,
+            level_gain: scenario.level_gain,
+            first,
+            name: if first { row.name.clone() } else { String::new() }.into(),
+            cells: [
+                (
+                    if first {
+                        row.level.to_string()
+                    } else {
+                        String::new()
+                    }
+                    .into(),
+                    muted,
+                ),
+                (format!("+{}", scenario.level_gain).into(), Ink::Tone(Tone::Warning)),
+                (
+                    format!("{:.1}", scenario.insight_rate).into(),
+                    Ink::Tone(Tone::Accent),
+                ),
+                (format::projection(scenario.grind_hours).into(), Ink::Body),
+                (format::rate(scenario.grind_rate).into(), muted),
+                (lost.into(), Ink::Tone(Tone::Danger)),
+                (gain.into(), gain_ink),
+                (format::projection(scenario.recoup_hours).into(), Ink::Body),
+                (
+                    format::projection(scenario.break_even_hours).into(),
+                    break_even_ink,
+                ),
+                (efficiency.into(), efficiency_ink),
+            ],
+        }
+    }
+}
+
+/// One scenario line: the observation on the first row, then the numbers.
+fn scenario_row(row: &ScenarioRow, cx: &App) -> TableRow {
+    let (obs, gain) = (row.obs, row.level_gain);
+    // The name cell is blank on an observation's later rows; each row still
+    // needs its own id, or the semantic tree drops them all.
+    let name = div()
+        .id(SharedString::from(if row.first {
+            format!("insight-obs-{obs}")
+        } else {
+            format!("insight-obs-{obs}-{gain}")
+        }))
+        .when(row.first, |cell| cell.font_weight(FontWeight::SEMIBOLD))
+        .child(row.name.clone());
+    TableRow::new()
+        .child(TableCell::new().child(name))
+        .children(row.cells.iter().zip(CELL_IDS).map(|((text, ink), id)| {
+            TableCell::new().text_right().child(
+                div()
+                    .id(SharedString::from(format!("{id}-{obs}-{gain}")))
+                    .when(*ink != Ink::Body, |cell| cell.text_color(ink.color(cx)))
+                    .child(text.clone()),
+            )
+        }))
 }
 
 #[cfg(test)]

@@ -2,18 +2,16 @@
 //! one breakdown tree.
 
 use crate::state::AppState;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
+use gpui_kit::component::ActiveTheme as _;
 use idleon_common::formula::{FormulaNode, ValueFormat};
-use idleon_minehead::game;
+use idleon_minehead::{Inputs, game};
 use idleon_ui::format;
+use idleon_ui::widgets::{Card, CardHeader, TEXT_CAPTION};
 
-pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(inputs) = state.research.minehead.inputs.clone() else {
-        return crate::ui::section::no_save(cx);
-    };
+/// Every factor of the currency/hr formula, as one tree.
+fn currency_tree(inputs: &Inputs) -> FormulaNode {
     let total = inputs.currency_per_hour();
     let data = game();
     let levels = &inputs.qty_levels;
@@ -105,14 +103,31 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
             "TaskZZ2[6][4]",
         ),
     ];
-    let root = FormulaNode::new("Minehead Currency/hr", total)
+    FormulaNode::new("Minehead Currency/hr", total)
         .with_format(ValueFormat::Rate)
         .with_note("Grid 129 × every account factor")
-        .with_children(children);
-    let tree = state.minehead_breakdown.clone();
-    tree.update(cx, |tree, cx| tree.set_root(root, cx));
+        .with_children(children)
+}
 
-    let muted = cx.theme().colors.fg_muted;
+pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let minehead = &mut state.research.minehead;
+    let Some(inputs) = minehead.inputs.as_ref() else {
+        return crate::ui::section::no_save(cx);
+    };
+    let tree = state.minehead_breakdown.clone();
+    // The tree is rebuilt only when the inputs it reads changed.
+    let total = match minehead.currency_total {
+        Some(total) => total,
+        None => {
+            let root = currency_tree(inputs);
+            let total = root.value;
+            tree.update(cx, |tree, cx| tree.set_root(root, cx));
+            minehead.currency_total = Some(total);
+            total
+        }
+    };
+
+    let muted = cx.theme().muted_foreground;
     div()
         .id("minehead-currency")
         .flex()
@@ -133,9 +148,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 )
                 .child(
                     div()
-                        .px_3()
-                        .pb_3()
-                        .text_size(gpui::px(11.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(
                             "Every factor comes from the loaded save; a missing field stays at ×1.",

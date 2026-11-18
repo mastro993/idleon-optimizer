@@ -1,17 +1,16 @@
 //! Right rail: the selected square, the shape list and the magnifier pool.
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, IconButton};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{App, Context, ElementId, Hsla, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_research::game;
 use idleon_research::model::{MagKind, coord};
 use idleon_research::{shape, sim};
+use idleon_ui::widgets::{Caption, Card, CardHeader, Tone};
 
 pub(crate) fn inspector_pane(
     state: &mut AppState,
@@ -31,15 +30,15 @@ pub(crate) fn inspector_pane(
 }
 
 fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let colors = &cx.theme().colors;
+    let colors = cx.theme();
     let selected = state.research.selected_cell;
     let node = state.selected_node();
     let card = Card::new().header(CardHeader::new("Selected square"));
 
     let Some(node) = node else {
-        return card.child(div().p_3().child(Caption::new(
+        return card.child(Caption::new(
             "Pick a square on the grid to see what it does.",
-        )));
+        ));
     };
     let cell = selected.unwrap_or(node.id);
     let level = state.simulation.grid.level(cell);
@@ -66,7 +65,6 @@ fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
             .flex()
             .flex_col()
             .gap_2()
-            .p_3()
             .child(
                 div()
                     .flex()
@@ -105,11 +103,14 @@ fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                             ),
                     )
                     .child(
-                        Badge::new(node.goal.clone().unwrap_or_else(|| "Square".into()))
-                            .tone(Tone::Neutral),
+                        Tag::new()
+                            .with_variant(Tone::Neutral.into())
+                            .outline()
+                            .small()
+                            .child(node.goal.clone().unwrap_or_else(|| "Square".into())),
                     ),
             )
-            .child(Caption::new(node.desc.replace('_', " ")).text_color(colors.fg_muted))
+            .child(Caption::new(node.desc.replace('_', " ")).text_color(colors.muted_foreground))
             .child(
                 div()
                     .flex()
@@ -122,7 +123,7 @@ fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                             .items_center()
                             .gap_1()
                             .child(
-                                IconButton::new("square-minus", IconName::Minus)
+                                icon_button("square-minus", IconName::Minus)
                                     .tooltip("Lower this square")
                                     .disabled(level == 0)
                                     .on_click(bump(-1)),
@@ -133,7 +134,7 @@ fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                                     .child(format!("Level {level} / {}", node.max_lv)),
                             )
                             .child(
-                                IconButton::new("square-plus", IconName::Plus)
+                                icon_button("square-plus", IconName::Plus)
                                     .tooltip("Level this square")
                                     .disabled(level >= node.max_lv)
                                     .on_click(bump(1)),
@@ -148,7 +149,7 @@ fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
 }
 
 fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let colors = &cx.theme().colors;
+    let colors = cx.theme();
     let owned = state.shapes_owned();
     let placed = state.simulation.placements.len();
     let entity = cx.entity();
@@ -163,28 +164,27 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                     .items_center()
                     .gap_1()
                     .child(
-                        Button::new("shape-add", "Add shape")
-                            .size(ely_gpui_component::theme::ControlSize::Sm)
+                        Button::new("shape-add")
+                            .label("Add shape")
+                            .small()
                             .icon(IconName::Plus)
                             .disabled(placed >= owned)
                             .on_click(move |_event, _window, cx| {
                                 add.update(cx, |state, cx| state.add_shape(cx));
                             }),
                     )
-                    .child(
-                        Button::new("layout-reset", "Clear")
-                            .size(ely_gpui_component::theme::ControlSize::Sm)
-                            .on_click(move |_event, _window, cx| {
-                                clear.update(cx, |state, cx| state.reset_layout(cx));
-                            }),
-                    ),
+                    .child(Button::new("layout-reset").label("Clear").small().on_click(
+                        move |_event, _window, cx| {
+                            clear.update(cx, |state, cx| state.reset_layout(cx));
+                        },
+                    )),
             ),
     );
 
     if placed == 0 {
-        return card.child(div().p_3().child(Caption::new(
+        return card.child(Caption::new(
             "No shapes yet. Add one, or run the optimizer to place them for you.",
-        )));
+        ));
     }
 
     let overlay = state.simulation.overlay();
@@ -208,7 +208,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
         })
         .collect();
 
-    let mut list = div().flex().flex_col().gap_1().p_3();
+    let mut list = div().flex().flex_col().gap_1();
     for (index, name, bonus, covered, anchor) in names {
         let rotate_left = entity.clone();
         let rotate_right = entity.clone();
@@ -231,7 +231,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                 .rounded(px(6.0))
                 .px_2()
                 .py_1()
-                .bg(if picked { colors.hover } else { colors.sunken })
+                .bg(if picked { colors.accent } else { colors.muted })
                 .child(
                     div()
                         .flex()
@@ -265,7 +265,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                         .items_center()
                         .gap_1()
                         .child(
-                            IconButton::new(("shape-left", index), IconName::ArrowLeft)
+                            icon_button(("shape-left", index), IconName::ArrowLeft)
                                 .tooltip("Move left")
                                 .on_click(move |_event, _window, cx| {
                                     left.update(cx, |state, cx| {
@@ -274,7 +274,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                                 }),
                         )
                         .child(
-                            IconButton::new(("shape-up", index), IconName::ArrowUp)
+                            icon_button(("shape-up", index), IconName::ArrowUp)
                                 .tooltip("Move up")
                                 .on_click(move |_event, _window, cx| {
                                     up.update(cx, |state, cx| {
@@ -283,7 +283,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                                 }),
                         )
                         .child(
-                            IconButton::new(("shape-down", index), IconName::ArrowDown)
+                            icon_button(("shape-down", index), IconName::ArrowDown)
                                 .tooltip("Move down")
                                 .on_click(move |_event, _window, cx| {
                                     down.update(cx, |state, cx| {
@@ -292,7 +292,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                                 }),
                         )
                         .child(
-                            IconButton::new(("shape-right", index), IconName::ArrowRight)
+                            icon_button(("shape-right", index), IconName::ArrowRight)
                                 .tooltip("Move right")
                                 .on_click(move |_event, _window, cx| {
                                     right.update(cx, |state, cx| {
@@ -301,7 +301,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                                 }),
                         )
                         .child(
-                            IconButton::new(("shape-rotate-left", index), IconName::RotateCcw)
+                            icon_button(("shape-rotate-left", index), IconName::RotateCcw)
                                 .tooltip("Rotate left")
                                 .on_click(move |_event, _window, cx| {
                                     rotate_left.update(cx, |state, cx| {
@@ -310,7 +310,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                                 }),
                         )
                         .child(
-                            IconButton::new(("shape-rotate-right", index), IconName::RotateCw)
+                            icon_button(("shape-rotate-right", index), IconName::RotateCw)
                                 .tooltip("Rotate right")
                                 .on_click(move |_event, _window, cx| {
                                     rotate_right
@@ -318,7 +318,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                                 }),
                         )
                         .child(
-                            IconButton::new(("shape-remove", index), IconName::X)
+                            icon_button(("shape-remove", index), IconName::X)
                                 .tooltip("Remove this shape")
                                 .on_click(move |_event, _window, cx| {
                                     remove.update(cx, |state, cx| state.remove_shape(index, cx));
@@ -332,7 +332,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
 
 /// The magnifier assignment: the pool by kind, and the selected observation.
 fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let colors = &cx.theme().colors;
+    let colors = cx.theme();
     let owned = state.magnifiers_owned();
     let placed = state
         .simulation
@@ -354,13 +354,11 @@ fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
             .description(format!(
                 "{placed} placed · {owned} owned · {cap} per observation"
             ))
-            .action(
-                Button::new("mag-clear", "Clear")
-                    .size(ely_gpui_component::theme::ControlSize::Sm)
-                    .on_click(move |_event, _window, cx| {
-                        clear.update(cx, |state, cx| state.clear_mags(cx));
-                    }),
-            ),
+            .action(Button::new("mag-clear").label("Clear").small().on_click(
+                move |_event, _window, cx| {
+                    clear.update(cx, |state, cx| state.clear_mags(cx));
+                },
+            )),
     );
 
     let mut pool_row = div()
@@ -368,9 +366,7 @@ fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
         .flex()
         .flex_wrap()
         .items_center()
-        .gap_2()
-        .px_3()
-        .pb_2();
+        .gap_2();
     for kind in [MagKind::Regular, MagKind::Monocle, MagKind::Kaleidoscope] {
         pool_row = pool_row.child(
             div()
@@ -385,7 +381,7 @@ fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
                 .flex()
                 .items_center()
                 .gap_1()
-                .child(div().size(px(8.0)).rounded_full().bg(mag_color(kind)))
+                .child(div().size(px(8.0)).rounded_full().bg(mag_color(kind, cx)))
                 .child(Caption::new(format!(
                     "{} {free}/{of}",
                     kind_label(kind),
@@ -397,10 +393,8 @@ fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
 
     let Some(obs) = selected else {
         return card.child(pool_row).child(
-            div().px_3().pb_3().child(
-                Caption::new("Pick an observation on the Rates tab to assign magnifiers.")
-                    .text_color(colors.fg_muted),
-            ),
+            Caption::new("Pick an observation on the Rates tab to assign magnifiers.")
+                .text_color(colors.muted_foreground),
         );
     };
 
@@ -417,15 +411,14 @@ fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
         .flex()
         .flex_wrap()
         .items_center()
-        .gap_2()
-        .px_3()
-        .pb_3();
+        .gap_2();
     for kind in [MagKind::Regular, MagKind::Monocle, MagKind::Kaleidoscope] {
         let assign = entity.clone();
         let free = pool.free(kind, &state.simulation.mags);
         assign_row = assign_row.child(
-            Button::new(format!("mag-add-{}", kind_label(kind)), kind_label(kind))
-                .size(ely_gpui_component::theme::ControlSize::Sm)
+            Button::new(format!("mag-add-{}", kind_label(kind)))
+                .label(kind_label(kind))
+                .small()
                 .disabled(free == 0 || on_slot >= cap as usize)
                 .on_click(move |_event, _window, cx| {
                     assign.update(cx, |state, cx| state.assign_mag(kind, obs, cx));
@@ -433,8 +426,9 @@ fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
         );
     }
     assign_row = assign_row.child(
-        Button::new("mag-lift", "Remove")
-            .size(ely_gpui_component::theme::ControlSize::Sm)
+        Button::new("mag-lift")
+            .label("Remove")
+            .small()
             .disabled(on_slot == 0)
             .on_click(move |_event, _window, cx| {
                 lift.update(cx, |state, cx| state.lift_mag(obs, cx));
@@ -442,22 +436,26 @@ fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
     );
 
     card.child(pool_row)
-        .child(div().px_3().pb_1().child(Caption::new(format!(
+        .child(Caption::new(format!(
             "#{} {name} · {on_slot}/{cap} magnifiers",
             obs + 1
-        ))))
+        )))
         .child(assign_row)
 }
 
 /// The pool colour of a magnifier kind, as the observation editor draws it.
-fn mag_color(kind: MagKind) -> gpui::Hsla {
-    use gpui::rgb;
+fn mag_color(kind: MagKind, cx: &App) -> Hsla {
+    let theme = cx.theme();
     match kind {
-        MagKind::Regular => rgb(0x81c784),
-        MagKind::Monocle => rgb(0xce93d8),
-        MagKind::Kaleidoscope => rgb(0x4dd0e1),
+        MagKind::Regular => theme.success,
+        MagKind::Monocle => theme.chart_5,
+        MagKind::Kaleidoscope => theme.primary,
     }
-    .into()
+}
+
+/// A small ghost icon button, named by its tooltip.
+fn icon_button(id: impl Into<ElementId>, icon: IconName) -> Button {
+    Button::new(id).icon(icon).ghost().small()
 }
 
 fn kind_label(kind: MagKind) -> &'static str {

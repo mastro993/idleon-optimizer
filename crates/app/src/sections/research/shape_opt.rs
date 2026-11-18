@@ -12,20 +12,20 @@
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::Input;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, Point, Render, Role, SharedString, Styled,
     Window, div, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::input::Input;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::tooltip::Tooltip;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_research::game;
 use idleon_research::model::{Effort, coord};
 use idleon_research::optimize::shapes::ShapesOutcome;
@@ -33,6 +33,9 @@ use idleon_research::sim;
 use idleon_research::tiers::{Tier, is_exp_node};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, TEXT_CAPTION, Tone};
+
+use super::controls::segmented;
 
 /// Logical pixels per preview cell; the board keeps the 20×12 shape.
 const PREVIEW_CELL: f32 = 22.0;
@@ -49,9 +52,7 @@ pub(crate) fn pane(
         .as_ref()
         .map(|result| result.overlay.clone())
         .unwrap_or_else(|| vec![-1; game().cells()]);
-    ScrollArea::new("shape-opt-scroll")
-        .vertical()
-        .shadows()
+    div()
         .flex_1()
         .min_h_0()
         .child(
@@ -65,6 +66,8 @@ pub(crate) fn pane(
                 .child(preview_card(state, &run, cx))
                 .child(breakdown_card(&run, cx)),
         )
+        .overflow_y_scrollbar()
+        .id("shape-opt-scroll")
 }
 
 /// The tier panel: the preset rail and the three drop zones.
@@ -76,7 +79,7 @@ fn tiers_card(
 ) -> AnyElement {
     let tiers = state.simulation.shape_tiers.clone();
     let (above, exp, below) = zones(state);
-    let border = cx.theme().colors.border;
+    let border = cx.theme().border;
     let split = layout::split_pane_reversed(
         "shape-tier-split",
         Breakpoint::of(window, cx),
@@ -123,13 +126,15 @@ fn tiers_card(
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
         .when(!tiers.above.is_empty(), |body| {
-            body.child(Banner::new(
-                "shape-above-warning",
-                Severity::Warning,
-                "Nodes above Res EXP always have shapes placed on them before any EXP nodes.",
-            ))
+            body.child(
+                Alert::new(
+                    "shape-above-warning",
+                    "Nodes above Res EXP always have shapes placed on them before any EXP nodes.",
+                )
+                .with_variant(Tone::Warning.into())
+                .banner(),
+            )
         })
         .child(split);
     Card::new()
@@ -166,7 +171,8 @@ fn zone(
     cells: &[usize],
     overlay: &[i32],
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let theme = cx.theme();
+    let (border, surface, muted) = (theme.border, theme.secondary, theme.muted_foreground);
     let drop = cx.entity();
     let drop_tier = tier;
     let mut squares = div()
@@ -188,10 +194,10 @@ fn zone(
         .p_2()
         .rounded(px(6.0))
         .border_1()
-        .border_color(colors.border)
-        .bg(colors.surface)
+        .border_color(border)
+        .bg(surface)
         .when(cells.is_empty(), |zone| {
-            zone.child(Caption::new(hint).text_color(colors.fg_muted))
+            zone.child(Caption::new(hint).text_color(muted))
         })
         .child(squares)
         .on_drop(move |drag: &TierDrag, _window, cx| {
@@ -210,7 +216,8 @@ fn tier_square(
     cell: usize,
     overlay: &[i32],
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let theme = cx.theme();
+    let (primary, background, foreground) = (theme.primary, theme.background, theme.foreground);
     let node = game().node_at(cell);
     let level = state.simulation.grid.level(cell);
     let name = node
@@ -224,7 +231,7 @@ fn tier_square(
     let border = placed
         .as_ref()
         .map(|_| super::colors::shape_color(shape as usize))
-        .unwrap_or(colors.border);
+        .unwrap_or(theme.border);
     let zone = match tier {
         Tier::Above => "above",
         Tier::Exp => "exp",
@@ -254,14 +261,14 @@ fn tier_square(
         .border_1()
         .border_color(border)
         .bg(if tier == Tier::Above {
-            colors.accent.opacity(0.14)
+            primary.opacity(0.14)
         } else {
-            colors.bg
+            background
         })
         .text_size(px(10.0))
-        .text_color(colors.fg)
+        .text_color(foreground)
         .cursor_pointer()
-        .tooltip(ely_gpui_component::primitives::Tooltip::text(label))
+        .tooltip(move |window, cx| Tooltip::new(label.clone()).build(window, cx))
         .on_click(move |_event, _window, cx| {
             click.update(cx, |state, cx| {
                 let above = state.simulation.shape_tiers.zone(before) == Some(Tier::Above);
@@ -297,7 +304,7 @@ fn tier_square(
 
 /// The built-in and custom preset rail, plus the name field that saves one.
 fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let muted = cx.theme().muted_foreground;
     let active = state.research.active_shape_preset.clone();
     let custom = state.research.shape_presets.clone();
     let mut rail = div()
@@ -306,24 +313,18 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .flex_col()
         .gap_1()
         .min_w(px(220.0))
-        .child(Caption::new("Built-in presets").text_color(colors.fg_muted));
+        .child(Caption::new("Built-in presets").text_color(muted));
     for preset in &game().presets {
         let entity = cx.entity();
         let id = preset.id.clone();
         let is_active = active.as_deref() == Some(preset.id.as_str());
         rail = rail.child(
-            Button::new(
-                SharedString::from(format!("shape-preset-{}", preset.id)),
-                preset.name.clone(),
-            )
-            .size(ControlSize::Sm)
-            .full_width()
-            .variant(if is_active {
-                ButtonVariant::Primary
-            } else {
-                ButtonVariant::Ghost
-            })
-            .on_click(move |_event, _window, cx| {
+            Button::new(SharedString::from(format!("shape-preset-{}", preset.id)))
+                .label(preset.name.clone())
+                .small()
+                .w_full()
+                .when_else(is_active, |button| button.primary(), |button| button.ghost())
+                .on_click(move |_event, _window, cx| {
                 let id = id.clone();
                 entity.update(cx, |state, cx| state.apply_shape_preset(&id, cx));
             }),
@@ -336,11 +337,11 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             .flex_col()
             .gap_1()
             .pt_2()
-            .child(Caption::new("Saved presets").text_color(colors.fg_muted))
+            .child(Caption::new("Saved presets").text_color(muted))
             .when(custom.is_empty(), |list| {
                 list.child(
                     Caption::new("No saved presets yet; name the tiers and save them.")
-                        .text_color(colors.fg_muted),
+                        .text_color(muted),
                 )
             }),
     );
@@ -356,17 +357,11 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .items_center()
                 .gap_1()
                 .child(
-                    Button::new(
-                        SharedString::from(format!("shape-custom-preset-{index}")),
-                        preset.name.clone(),
-                    )
-                    .size(ControlSize::Sm)
-                    .variant(if is_active {
-                        ButtonVariant::Primary
-                    } else {
-                        ButtonVariant::Ghost
-                    })
-                    .on_click(move |_event, _window, cx| {
+                    Button::new(SharedString::from(format!("shape-custom-preset-{index}")))
+                        .label(preset.name.clone())
+                        .small()
+                        .when_else(is_active, |button| button.primary(), |button| button.ghost())
+                        .on_click(move |_event, _window, cx| {
                         let name = name.clone();
                         load.update(cx, |state, cx| {
                             state.apply_custom_shape_preset(&name, cx);
@@ -375,21 +370,17 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 )
                 .child(div().flex_1())
                 .child(
-                    Button::new(
-                        SharedString::from(format!("shape-custom-delete-{index}")),
-                        "",
-                    )
-                    .icon(IconName::Trash2)
-                    .name("Delete preset")
-                    .size(ControlSize::Sm)
-                    .variant(ButtonVariant::Ghost)
-                    .on_click(move |_event, _window, cx| {
+                    Button::new(SharedString::from(format!("shape-custom-delete-{index}")))
+                        .icon(IconName::Trash)
+                        .tooltip("Delete preset")
+                        .small()
+                        .ghost()
+                        .on_click(move |_event, _window, cx| {
                         delete.update(cx, |state, cx| state.delete_shape_preset(index, cx));
                     }),
                 ),
         );
     }
-    let focus = state.research.preset_name.read(cx).focus().clone();
     let save = cx.entity();
     let shown = match active.as_deref() {
         Some(id) if id.starts_with('_') => game()
@@ -403,20 +394,19 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     };
     rail.child(div().pt_2())
         .child(
-            div()
+            Input::new(&state.research.preset_name)
                 .id("shape-preset-name")
-                .role(Role::TextInput)
                 .aria_label("Shape preset name")
-                .on_click(move |_event, window, cx| window.focus(&focus, cx))
-                .child(Input::new(&state.research.preset_name).size(ControlSize::Sm)),
+                .small(),
         )
         .child(
-            Button::new("shape-save-preset", "Save preset")
-                .size(ControlSize::Sm)
+            Button::new("shape-save-preset")
+                .label("Save preset")
+                .small()
                 .icon(IconName::Save)
-                .full_width()
-                .on_click(move |_event, _window, cx| {
-                    save.update(cx, |state, cx| state.save_shape_preset(cx));
+                .w_full()
+                .on_click(move |_event, window, cx| {
+                    save.update(cx, |state, cx| state.save_shape_preset(window, cx));
                 }),
         )
         .child(
@@ -425,7 +415,7 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .role(Role::Label)
                 .aria_label(format!("Active shape preset: {shown}"))
                 .pt_1()
-                .child(Caption::new(format!("Active: {shown}")).text_color(colors.fg_muted)),
+                .child(Caption::new(format!("Active: {shown}")).text_color(muted)),
         )
         .into_any_element()
 }
@@ -436,49 +426,41 @@ fn preview_card(
     run: &idleon_ui::runner::TaskState<ShapesOutcome>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let theme = cx.theme();
+    let (muted, success) = (theme.muted_foreground, theme.success);
     let entity = cx.entity();
     let run_entity = entity.clone();
-    let effort = match state.effort {
-        Effort::Quick => "quick",
-        Effort::Balanced => "balanced",
-        Effort::Thorough => "thorough",
-    };
     let effort_entity = entity.clone();
-    let effort_control = SegmentedControl::new("shape-effort", effort)
-        .size(ControlSize::Sm)
-        .segment("quick", "Quick", None)
-        .segment("balanced", "Balanced", None)
-        .segment("thorough", "Thorough", None)
-        .on_change(move |value, _window, cx| {
-            let effort = match value.as_ref() {
-                "quick" => Effort::Quick,
-                "thorough" => Effort::Thorough,
-                _ => Effort::Balanced,
-            };
+    let effort_control = segmented(
+        "shape-effort",
+        &[
+            (Effort::Quick, "Quick"),
+            (Effort::Balanced, "Balanced"),
+            (Effort::Thorough, "Thorough"),
+        ],
+        state.effort,
+        move |effort, _window, cx| {
             effort_entity.update(cx, |state, cx| state.set_effort(effort, cx));
-        });
-    let run_button = Button::new(
-        "shape-optimize",
-        if run.running {
+        },
+    );
+    let run_button = Button::new("shape-optimize")
+        .label(if run.running {
             "Optimizing…"
         } else {
             "Optimize placement"
-        },
-    )
-    .primary()
-    .icon(IconName::Play)
-    .disabled(run.running)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.optimize_shapes(cx));
-    });
+        })
+        .primary()
+        .icon(IconName::Play)
+        .disabled(run.running)
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.optimize_shapes(cx));
+        });
 
     let mut body = div()
         .id("shape-preview-body")
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
         .child(
             div()
                 .flex()
@@ -493,7 +475,13 @@ fn preview_card(
                             .id("shape-stale")
                             .role(Role::Label)
                             .aria_label("Stale: the tiers changed after this run")
-                            .child(Badge::new("Stale").tone(Tone::Warning)),
+                            .child(
+                                Tag::new()
+                                    .with_variant(Tone::Warning.into())
+                                    .outline()
+                                    .small()
+                                    .child("Stale"),
+                            ),
                     )
                 }),
         );
@@ -541,8 +529,8 @@ fn preview_card(
                         .id("shape-summary")
                         .role(Role::Label)
                         .aria_label(summary.clone())
-                        .text_size(px(13.0))
-                        .text_color(colors.success)
+                        .text_size(TEXT_BODY)
+                        .text_color(success)
                         .child(summary),
                 )
                 .child(
@@ -564,8 +552,9 @@ fn preview_card(
                         .items_center()
                         .gap_2()
                         .child(
-                            Button::new("shape-apply", "Apply layout")
-                                .size(ControlSize::Sm)
+                            Button::new("shape-apply")
+                                .label("Apply layout")
+                                .small()
                                 .disabled(run.stale)
                                 .on_click(move |_event, _window, cx| {
                                     apply.update(cx, |state, cx| {
@@ -577,20 +566,23 @@ fn preview_card(
                             Caption::new(
                                 "Applying writes these placements to the grid editor's shape layout.",
                             )
-                            .text_color(colors.fg_muted),
+                            .text_color(muted),
                         ),
                 );
         }
         None if !run.running => {
-            body = body.child(Banner::new(
-                "shape-preview-empty",
-                Severity::Info,
-                if state.shapes_owned() == 0 {
-                    "No shapes are unlocked at this research level yet."
-                } else {
-                    "Run the placement optimizer to see the layout these tiers place."
-                },
-            ));
+            body = body.child(
+                Alert::new(
+                    "shape-preview-empty",
+                    if state.shapes_owned() == 0 {
+                        "No shapes are unlocked at this research level yet."
+                    } else {
+                        "Run the placement optimizer to see the layout these tiers place."
+                    },
+                )
+                .with_variant(Tone::Info.into())
+                .banner(),
+            );
         }
         None => {}
     }
@@ -623,12 +615,12 @@ fn preview_cell(
     overlay: &[i32],
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let theme = cx.theme();
     let node = game().node_at(cell);
     let level = state.simulation.grid.level(cell);
     let tint = super::colors::goal_color(node.and_then(|node| node.goal.as_deref()));
     let fill = if node.is_none() {
-        colors.bg
+        theme.background
     } else if level == 0 {
         tint.opacity(0.08)
     } else {
@@ -641,7 +633,7 @@ fn preview_cell(
         .ok()
         .and_then(|index| game().shapes.get(index))
         .map(|_| super::colors::shape_color(shape as usize))
-        .unwrap_or(colors.border);
+        .unwrap_or(theme.border);
     let name = node
         .map(|node| node.name.replace('_', " "))
         .unwrap_or_else(|| "empty".into());
@@ -659,7 +651,7 @@ fn preview_cell(
         .border_color(border)
         .rounded(px(3.0))
         .text_size(px(9.0))
-        .text_color(colors.fg)
+        .text_color(theme.foreground)
         .child(if level > 0 {
             level.to_string()
         } else {
@@ -673,12 +665,12 @@ fn breakdown_card(
     run: &idleon_ui::runner::TaskState<ShapesOutcome>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
-    let mut body = div().id("shape-breakdown-body").p_3().flex().flex_col();
+    let muted = cx.theme().muted_foreground;
+    let mut body = div().id("shape-breakdown-body").flex().flex_col();
     match &run.result {
         Some(result) if !result.placements.is_empty() => {
-            let mut table = Table::new(["#", "Shape", "Bonus", "Place at", "Nodes"]);
-            for (order, placement) in result.placements.iter().enumerate() {
+            let head = |label: &'static str| TableHead::new().child(label);
+            let rows = result.placements.iter().enumerate().map(|(order, placement)| {
                 let shape = game().shapes.get(placement.shape);
                 let name = shape
                     .map(|shape| shape.name.clone())
@@ -691,66 +683,76 @@ fn breakdown_card(
                     .filter(|(_, owner)| **owner == placement.shape as i32)
                     .map(|(cell, _)| coord(cell))
                     .collect();
-                table = table.row([
-                    div()
-                        .id(SharedString::from(format!("shape-breakdown-order-{order}")))
-                        .child(format!("{}", order + 1))
-                        .into_any_element(),
-                    div()
-                        .flex()
-                        .items_center()
-                        .gap_1()
-                        .child(
-                            div()
-                                .flex_none()
-                                .size(px(8.0))
-                                .rounded_full()
-                                .bg(super::colors::shape_color(placement.shape)),
-                        )
-                        .child(name)
-                        .into_any_element(),
-                    div().child(format!("+{bonus:.0}%")).into_any_element(),
-                    div()
-                        .child(format!(
-                            "({}, {}){}",
-                            placement.x.round() as i64,
-                            placement.y.round() as i64,
-                            if placement.rot != 0.0 {
-                                format!(" rot {}°", placement.rot)
-                            } else {
-                                String::new()
-                            }
-                        ))
-                        .into_any_element(),
-                    div()
-                        .min_w_0()
-                        .text_size(px(11.0))
-                        .child(if nodes.is_empty() {
-                            "—".to_string()
-                        } else {
-                            nodes.join(", ")
-                        })
-                        .into_any_element(),
-                ]);
-            }
-            body = body.child(table).child(
-                div()
-                    .pt_2()
-                    .text_size(px(11.0))
-                    .text_color(colors.fg_muted)
+                TableRow::new()
                     .child(
-                        "Drop shapes in this order: a node keeps the first shape that covers it.",
+                        TableCell::new().w(px(40.0)).child(
+                            div()
+                                .id(SharedString::from(format!("shape-breakdown-order-{order}")))
+                                .child(format!("{}", order + 1)),
+                        ),
+                    )
+                    .child(
+                        TableCell::new().child(
+                            div()
+                                .flex()
+                                .items_center()
+                                .gap_1()
+                                .child(
+                                    div()
+                                        .flex_none()
+                                        .size(px(8.0))
+                                        .rounded_full()
+                                        .bg(super::colors::shape_color(placement.shape)),
+                                )
+                                .child(name),
+                        ),
+                    )
+                    .child(TableCell::new().text_right().child(format!("+{bonus:.0}%")))
+                    .child(TableCell::new().child(format!(
+                        "({}, {}){}",
+                        placement.x.round() as i64,
+                        placement.y.round() as i64,
+                        if placement.rot != 0.0 {
+                            format!(" rot {}°", placement.rot)
+                        } else {
+                            String::new()
+                        }
+                    )))
+                    .child(
+                        TableCell::new()
+                            .min_w_0()
+                            .text_size(TEXT_CAPTION)
+                            .child(if nodes.is_empty() {
+                                "—".to_string()
+                            } else {
+                                nodes.join(", ")
+                            }),
+                    )
+            });
+            let table = Table::new()
+                .child(
+                    TableHeader::new().child(
+                        TableRow::new()
+                            .child(head("#").w(px(40.0)))
+                            .child(head("Shape"))
+                            .child(TableHead::new().text_right().child("Bonus"))
+                            .child(head("Place at"))
+                            .child(head("Nodes")),
                     ),
+                )
+                .child(TableBody::new().children(rows));
+            body = body.child(table).child(
+                Caption::new("Drop shapes in this order: a node keeps the first shape that covers it.")
+                    .text_color(muted),
             );
         }
         Some(_) => {
-            body = body
-                .child(Caption::new("The optimizer placed no shapes.").text_color(colors.fg_muted));
+            body = body.child(Caption::new("The optimizer placed no shapes.").text_color(muted));
         }
         None => {
             body = body.child(
                 Caption::new("Run the placement optimizer to see the coverage breakdown.")
-                    .text_color(colors.fg_muted),
+                    .text_color(muted),
             );
         }
     }
@@ -820,7 +822,7 @@ struct TierGhost {
 
 impl Render for TierGhost {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let colors = cx.theme().colors.clone();
+        let theme = cx.theme();
         div()
             .pl(self.offset.x - px(15.0))
             .pt(self.offset.y - px(13.0))
@@ -832,8 +834,8 @@ impl Render for TierGhost {
                     .size(px(30.0))
                     .rounded(px(4.0))
                     .border_1()
-                    .border_color(colors.accent)
-                    .bg(colors.surface)
+                    .border_color(theme.primary)
+                    .bg(theme.secondary)
                     .text_size(px(10.0))
                     .child(coord(self.cell)),
             )

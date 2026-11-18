@@ -8,18 +8,18 @@
 use crate::sections::research::Tab;
 use crate::state::AppState;
 use crate::ui::formula_tree;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::motion::ProgressBar;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::component::button::Button;
+use gpui_kit::component::progress::Progress;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::tooltip::Tooltip;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_research::dashboard;
 use idleon_research::game;
-use idleon_research::model::coord;
+use idleon_research::model::{SimContext, Simulation, coord};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, TEXT_CAPTION};
 
 use idleon_ui::formula::FormulaTree;
 
@@ -29,23 +29,65 @@ const CELL_PX: f32 = 24.0;
 /// the minimum window width.
 const OBS_WIDTH: f32 = 132.0;
 
-/// The three formula trees plus the grid-point tree the dashboard owns.
+/// The three formula trees plus the grid-point tree the dashboard owns, and
+/// the figures they and the previews were last derived from.
 pub(crate) struct Trees {
     pub(crate) exp: Entity<FormulaTree>,
     pub(crate) afk: Entity<FormulaTree>,
     pub(crate) insight: Entity<FormulaTree>,
     pub(crate) points: Entity<FormulaTree>,
+    /// What the dashboard last derived, and the inputs it came from, so a
+    /// frame that changes neither re-runs no simulation function.
+    derived: Option<Derived>,
+}
+
+/// The dashboard's figures for one simulation and context.
+struct Derived {
+    simulation: Simulation,
+    context: SimContext,
+    summary: dashboard::Summary,
+    cards: Vec<dashboard::ObservationCard>,
+    overlay: Vec<i32>,
 }
 
 impl Trees {
-    /// Create the dashboard's trees; the pane replaces their roots each render.
+    /// Create the dashboard's trees; the pane fills them on its first render.
     pub(crate) fn new(window: &mut Window, cx: &mut gpui::App) -> Self {
         Self {
             exp: formula_tree("dash-exp-formula", window, cx),
             afk: formula_tree("dash-afk-formula", window, cx),
             insight: formula_tree("dash-insight-formula", window, cx),
             points: formula_tree("dash-points-formula", window, cx),
+            derived: None,
         }
+    }
+
+    /// Derive the figures and tree roots again when the simulation or its
+    /// context changed since the last render.
+    fn refresh(&mut self, simulation: &Simulation, context: &SimContext, cx: &mut gpui::App) {
+        if self
+            .derived
+            .as_ref()
+            .is_some_and(|derived| derived.simulation == *simulation && derived.context == *context)
+        {
+            return;
+        }
+        let exp = idleon_research::breakdown::exp(simulation, context);
+        let afk = idleon_research::breakdown::afk(simulation, context);
+        let insight = idleon_research::breakdown::insight(simulation, context);
+        let points = idleon_research::breakdown::grid_points(simulation, context);
+        self.exp.update(cx, |tree, cx| tree.set_root(exp, cx));
+        self.afk.update(cx, |tree, cx| tree.set_root(afk, cx));
+        self.insight
+            .update(cx, |tree, cx| tree.set_root(insight, cx));
+        self.points.update(cx, |tree, cx| tree.set_root(points, cx));
+        self.derived = Some(Derived {
+            simulation: simulation.clone(),
+            context: context.clone(),
+            summary: dashboard::summary(simulation, context),
+            cards: dashboard::observations(simulation, context),
+            overlay: simulation.overlay(),
+        });
     }
 }
 
@@ -54,32 +96,11 @@ pub(crate) fn dashboard_pane(
     _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let summary = dashboard::summary(&state.simulation, &state.context);
-    let cards = dashboard::observations(&state.simulation, &state.context);
-    let exp_root = idleon_research::breakdown::exp(&state.simulation, &state.context);
-    let afk_root = idleon_research::breakdown::afk(&state.simulation, &state.context);
-    let insight_root = idleon_research::breakdown::insight(&state.simulation, &state.context);
-    let points_root = idleon_research::breakdown::grid_points(&state.simulation, &state.context);
     state
         .research_trees
-        .exp
-        .update(cx, |tree, cx| tree.set_root(exp_root, cx));
-    state
-        .research_trees
-        .afk
-        .update(cx, |tree, cx| tree.set_root(afk_root, cx));
-    state
-        .research_trees
-        .insight
-        .update(cx, |tree, cx| tree.set_root(insight_root, cx));
-    state
-        .research_trees
-        .points
-        .update(cx, |tree, cx| tree.set_root(points_root, cx));
+        .refresh(&state.simulation, &state.context, cx);
 
-    ScrollArea::new("dashboard-scroll")
-        .vertical()
-        .shadows()
+    div()
         .flex_1()
         .min_h_0()
         .child(
@@ -88,9 +109,9 @@ pub(crate) fn dashboard_pane(
                 .flex()
                 .flex_col()
                 .gap_3()
-                .child(summary_card(state, summary, cx))
+                .child(summary_card(state, cx))
                 .child(grid_card(state, cx))
-                .child(observations_card(state, cards, cx))
+                .child(observations_card(state, cx))
                 .child(
                     div()
                         .id("dashboard-breakdowns")
@@ -121,15 +142,23 @@ pub(crate) fn dashboard_pane(
                         )),
                 ),
         )
+        .overflow_y_scrollbar()
+        .id("dashboard-scroll")
         .into_any_element()
 }
 
-fn summary_card(
-    state: &mut AppState,
-    summary: dashboard::Summary,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let colors = &cx.theme().colors;
+/// The figures the last refresh derived; the pane refreshes before any card renders.
+fn derived(state: &AppState) -> &Derived {
+    state
+        .research_trees
+        .derived
+        .as_ref()
+        .expect("the dashboard refreshes before it renders")
+}
+
+fn summary_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
+    let summary = derived(state).summary;
     let level = state.simulation.research_level;
     let kpis = div()
         .id("dash-kpis")
@@ -140,55 +169,65 @@ fn summary_card(
             format::rate(summary.offline_rate),
             summary.afk_rate * 100.0
         ))
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(kpi("dash-level", "Research level", level as f64, 0, None))
-        .child(kpi(
-            "dash-active",
-            "Active EXP/hr",
-            summary.active_rate,
-            0,
-            Some(format::rate(summary.active_rate)),
-        ))
-        .child(kpi(
-            "dash-offline",
-            "Offline EXP/hr",
-            summary.offline_rate,
-            0,
-            Some(format::rate(summary.offline_rate)),
-        ))
-        .child(kpi(
-            "dash-afk",
-            "AFK rate",
-            summary.afk_rate * 100.0,
-            1,
-            Some(format!("{:.1}%", summary.afk_rate * 100.0)),
-        ))
-        .child(kpi(
-            "dash-magnifiers",
-            "Magnifiers",
-            summary.magnifiers as f64,
-            0,
-            Some(format!("{} owned", summary.magnifiers)),
-        ))
-        .child(kpi(
-            "dash-mag-cap",
-            "Max per slot",
-            summary.mag_cap as f64,
-            0,
-            Some(format!("level {}", level)),
-        ))
-        .child(kpi(
-            "dash-points",
-            "Grid points",
-            summary.grid_points.free as f64,
-            0,
-            Some(format!(
-                "{} free of {} earned",
-                summary.grid_points.free, summary.grid_points.earned
-            )),
-        ));
+        .child(
+            KpiStrip::new()
+                .child(Statistic::new(
+                    "dash-level",
+                    "Research level",
+                    format::count(u64::from(level)),
+                ))
+                .child(
+                    Statistic::new(
+                        "dash-active",
+                        "Active EXP/hr",
+                        format::count(summary.active_rate.round() as u64),
+                    )
+                    .caption(format::rate(summary.active_rate)),
+                )
+                .child(
+                    Statistic::new(
+                        "dash-offline",
+                        "Offline EXP/hr",
+                        format::count(summary.offline_rate.round() as u64),
+                    )
+                    .caption(format::rate(summary.offline_rate)),
+                )
+                .child(
+                    Statistic::new(
+                        "dash-afk",
+                        "AFK rate",
+                        format!("{:.1}", summary.afk_rate * 100.0),
+                    )
+                    .caption(format!("{:.1}%", summary.afk_rate * 100.0)),
+                )
+                .child(
+                    Statistic::new(
+                        "dash-magnifiers",
+                        "Magnifiers",
+                        format::count(summary.magnifiers as u64),
+                    )
+                    .caption(format!("{} owned", summary.magnifiers)),
+                )
+                .child(
+                    Statistic::new(
+                        "dash-mag-cap",
+                        "Max per slot",
+                        format::count(summary.mag_cap as u64),
+                    )
+                    .caption(format!("level {}", level)),
+                )
+                .child(
+                    Statistic::new(
+                        "dash-points",
+                        "Grid points",
+                        format::count(summary.grid_points.free as u64),
+                    )
+                    .caption(format!(
+                        "{} free of {} earned",
+                        summary.grid_points.free, summary.grid_points.earned
+                    )),
+                ),
+        );
 
     let times = div()
         .flex()
@@ -198,13 +237,13 @@ fn summary_card(
             "dash-hours-active",
             "Active time to next level",
             summary.hours_active,
-            colors.fg_muted,
+            muted,
         ))
         .child(time_stat(
             "dash-hours-offline",
             "Offline time to next level",
             summary.hours_offline,
-            colors.fg_muted,
+            muted,
         ))
         .child(
             div()
@@ -222,15 +261,15 @@ fn summary_card(
                             format::rate(summary.exp_current),
                             format::rate(summary.exp_required)
                         ))
-                        .text_size(px(11.0))
-                        .text_color(colors.fg_muted)
+                        .text_size(TEXT_CAPTION)
+                        .text_color(muted)
                         .child(format!(
                             "EXP {} / {}",
                             format::rate(summary.exp_current),
                             format::rate(summary.exp_required)
                         )),
                 )
-                .child(ProgressBar::new("dash-progress", summary.progress)),
+                .child(Progress::new("dash-progress").value(summary.progress * 100.0)),
         );
 
     Card::new()
@@ -246,7 +285,7 @@ fn summary_card(
                 .flex()
                 .flex_col()
                 .gap_2()
-                .child(Caption::new("Grid points").text_color(colors.fg_muted))
+                .child(Caption::new("Grid points").text_color(muted))
                 .child(
                     div()
                         .id("dash-points-formula")
@@ -256,25 +295,6 @@ fn summary_card(
                 ),
         )
         .into_any_element()
-}
-
-/// One KPI with its stable id; the caption names the scaled value.
-fn kpi(
-    id: &'static str,
-    label: &'static str,
-    value: f64,
-    decimals: usize,
-    caption: Option<String>,
-) -> AnyElement {
-    let card = KpiCard::new(
-        Statistic::new(id, label, value)
-            .decimals(decimals)
-            .size(TextSize::Lg),
-    );
-    match caption {
-        Some(caption) => card.caption(caption).into_any_element(),
-        None => card.into_any_element(),
-    }
 }
 
 fn time_stat(id: &'static str, label: &'static str, hours: f64, muted: gpui::Hsla) -> AnyElement {
@@ -288,15 +308,15 @@ fn time_stat(id: &'static str, label: &'static str, hours: f64, muted: gpui::Hsl
         .gap_0p5()
         .min_w(px(190.0))
         .flex_1()
-        .child(div().text_size(px(11.0)).text_color(muted).child(label))
+        .child(div().text_size(TEXT_CAPTION).text_color(muted).child(label))
         .child(div().text_size(px(16.0)).child(reading))
         .into_any_element()
 }
 
-fn grid_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+fn grid_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let game = game();
-    let overlay = state.simulation.overlay();
+    let overlay = &derived(state).overlay;
     let entity = cx.entity();
     let open = entity.clone();
     // The cells are laid out in rows so the board keeps its 20 columns.
@@ -320,8 +340,9 @@ fn grid_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             CardHeader::new("Research grid")
                 .description("A read-only preview; open the editor to change a square")
                 .action(
-                    Button::new("dash-grid-open", "Open editor")
-                        .size(ControlSize::Sm)
+                    Button::new("dash-grid-open")
+                        .label("Open editor")
+                        .small()
                         .on_click(move |_event, window, cx| {
                             open.update(cx, |state, cx| {
                                 state.set_tab(Tab::Grid, cx);
@@ -334,7 +355,7 @@ fn grid_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .child(
             div()
                 .id("dash-grid-note")
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(format!(
                     "{} squares leveled · {} cells under a shape",
@@ -351,12 +372,12 @@ fn preview_cell(
     shape: i32,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let colors = cx.theme().colors;
     let level = state.simulation.grid.level(cell);
     let node = game().node_at(cell);
     let tint = super::colors::goal_color(node.and_then(|node| node.goal.as_deref()));
     let fill = if node.is_none() {
-        colors.bg
+        colors.background
     } else if level == 0 {
         tint.opacity(0.08)
     } else {
@@ -391,8 +412,8 @@ fn preview_cell(
         .border_color(border)
         .rounded(px(3.0))
         .text_size(px(10.0))
-        .text_color(colors.fg)
-        .tooltip(ely_gpui_component::primitives::Tooltip::text(label))
+        .text_color(colors.foreground)
+        .tooltip(move |window, cx| Tooltip::new(label.clone()).build(window, cx))
         .on_click(move |_event, window, cx| {
             id.update(cx, |state, cx| state.open_grid_cell(cell, window, cx));
         })
@@ -404,12 +425,9 @@ fn preview_cell(
         .into_any_element()
 }
 
-fn observations_card(
-    state: &mut AppState,
-    cards: Vec<dashboard::ObservationCard>,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+fn observations_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
+    let cards = &derived(state).cards;
     let found = cards.iter().filter(|card| card.found).count();
     let total = cards.len();
     let mut board = div().id("dash-observations").flex().flex_wrap().gap_2();
@@ -425,7 +443,7 @@ fn observations_card(
         .child(
             div()
                 .id("dash-obs-note")
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(
                     "M: magnifying glasses · O: optical monocles · K: kaleidoscopes · Adj: neighbouring kaleidoscopes. Click one to open its editor.",
@@ -434,8 +452,8 @@ fn observations_card(
         .into_any_element()
 }
 
-fn observation_cell(card: dashboard::ObservationCard, cx: &mut Context<AppState>) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+fn observation_cell(card: &dashboard::ObservationCard, cx: &mut Context<AppState>) -> AnyElement {
+    let colors = cx.theme().colors;
     let obs = card.obs;
     let id = cx.entity();
     let mags = format!(
@@ -488,17 +506,17 @@ fn observation_cell(card: dashboard::ObservationCard, cx: &mut Context<AppState>
         .bg(if card.found {
             colors.success.opacity(0.08)
         } else {
-            colors.surface
+            colors.secondary
         })
         .when(!card.found, |el| el.opacity(0.45))
-        .hover(|style| style.bg(colors.hover))
+        .hover(move |style| style.bg(colors.accent))
         .cursor_pointer()
         .on_click(move |_event, _window, cx| {
             id.update(cx, |state, cx| state.open_observation(obs, cx));
         })
         .child(
             div()
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(card.name.clone()),
         )
@@ -531,7 +549,7 @@ fn observation_cell(card: dashboard::ObservationCard, cx: &mut Context<AppState>
         .child(
             div()
                 .text_size(px(10.0))
-                .text_color(colors.accent)
+                .text_color(colors.primary)
                 .child(if card.insight > 0.0 {
                     format!("{} ins", format::rate(card.insight))
                 } else {

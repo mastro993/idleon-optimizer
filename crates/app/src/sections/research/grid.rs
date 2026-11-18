@@ -2,16 +2,17 @@
 
 use crate::state::AppState;
 use crate::ui::key_binding;
-use ely_gpui_component::buttons::IconButton;
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
     App, Context, Hsla, IntoElement, ParentElement, PathBuilder, Pixels, Point, Styled, Window,
     canvas, div, point, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::tooltip::Tooltip;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_research::game;
+use idleon_ui::widgets::Caption;
 
 gpui::actions!(
     idleon_grid,
@@ -69,8 +70,8 @@ pub(crate) fn grid_pane(
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
     let colors = {
-        let palette = &cx.theme().colors;
-        (palette.surface, palette.border, palette.fg_muted)
+        let theme = cx.theme();
+        (theme.secondary, theme.border, theme.muted_foreground)
     };
     let game = game();
     let width = CELL * game.grid.cols as f32;
@@ -230,7 +231,7 @@ fn grid_cell(
     picked: bool,
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
-    let colors = &cx.theme().colors;
+    let colors = cx.theme();
     let game = game();
     let level = state.simulation.grid.level(cell);
     let selected = state.research.selected_cell == Some(cell);
@@ -238,7 +239,7 @@ fn grid_cell(
     let tint = super::colors::goal_color(node.and_then(|node| node.goal.as_deref()));
     let is_node = node.is_some();
     let fill: Hsla = if !is_node {
-        colors.bg
+        colors.background
     } else if level == 0 {
         tint.opacity(0.10)
     } else {
@@ -247,9 +248,9 @@ fn grid_cell(
         tint.opacity(0.12 + 0.33 * strength)
     };
     let border = if selected {
-        colors.accent
+        colors.primary
     } else if picked {
-        colors.accent.opacity(0.7)
+        colors.primary.opacity(0.7)
     } else if level > 0 {
         tint.opacity(0.55)
     } else {
@@ -282,13 +283,13 @@ fn grid_cell(
         .border_1()
         .border_color(border)
         .text_size(px(13.0))
-        .text_color(colors.fg)
+        .text_color(colors.foreground)
         .when(selected || picked, |el| {
             el.font_weight(gpui::FontWeight::BOLD)
         })
         .aria_label(title.clone())
         .aria_selected(selected)
-        .tooltip(ely_gpui_component::primitives::Tooltip::text(title))
+        .tooltip(move |window, cx| Tooltip::new(title.clone()).build(window, cx))
         .on_click(cx.listener(move |state, _event, window, cx| state.select(cell, window, cx)))
         .on_mouse_down(
             gpui::MouseButton::Left,
@@ -317,7 +318,10 @@ fn grid_tools(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement 
         .items_center()
         .gap_1()
         .child(
-            IconButton::new("grid-undo", IconName::Undo2)
+            Button::new("grid-undo")
+                .icon(IconName::Undo2)
+                .ghost()
+                .small()
                 .tooltip("Undo the last edit")
                 .disabled(!state.can_undo())
                 .on_click(move |_event, _window, cx| {
@@ -325,7 +329,10 @@ fn grid_tools(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement 
                 }),
         )
         .child(
-            IconButton::new("grid-redo", IconName::Redo2)
+            Button::new("grid-redo")
+                .icon(IconName::Redo2)
+                .ghost()
+                .small()
                 .tooltip("Redo the last undo")
                 .disabled(!state.can_redo())
                 .on_click(move |_event, _window, cx| {
@@ -372,9 +379,7 @@ fn rotate_handle(state: &AppState, cx: &mut Context<AppState>) -> Option<impl In
             .bg(color)
             .border_2()
             .border_color(gpui::white())
-            .tooltip(ely_gpui_component::primitives::Tooltip::text(
-                "Drag to rotate · click turns 5°",
-            ))
+            .tooltip(|window, cx| Tooltip::new("Drag to rotate · click turns 5°").build(window, cx))
             .on_mouse_down(
                 gpui::MouseButton::Left,
                 cx.listener(move |state, event: &gpui::MouseDownEvent, window, cx| {
@@ -427,7 +432,7 @@ fn shape_overlay(state: &AppState, cx: &mut Context<AppState>) -> impl IntoEleme
 }
 
 fn legend(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let border = cx.theme().colors.border;
+    let border = cx.theme().border;
     let mut row = div()
         .flex()
         .flex_wrap()

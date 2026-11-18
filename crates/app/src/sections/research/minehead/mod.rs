@@ -14,10 +14,14 @@ mod rank;
 use play::Play;
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::theme::ControlSize;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui::{
+    AnyElement, Context, Entity, IntoElement, ParentElement, Styled, Subscription, Window, div,
+};
+use gpui_kit::component::Sizable as _;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::input::{InputEvent, InputState};
+use idleon_ui::widgets::{number_state, number_value};
 use idleon_minehead::{Grid, Inputs, Params, Recorded, infer, inputs};
 use idleon_research::model::Simulation;
 use idleon_save::Save;
@@ -104,6 +108,17 @@ pub(crate) struct KnobRange {
 }
 
 impl KnobRange {
+    /// How many decimals the knob's field shows.
+    fn decimals(&self) -> usize {
+        if self.step < 0.1 {
+            2
+        } else if self.step < 1.0 {
+            1
+        } else {
+            0
+        }
+    }
+
     /// How many decimals the slider's values carry.
     fn precision(&self) -> f64 {
         if self.step < 0.1 {
@@ -202,22 +217,104 @@ pub(crate) struct State {
     pub(crate) show_spoiler: bool,
     /// Whether the Rank and Path runs use the inferred Play strategy.
     pub(crate) use_inferred: bool,
+    /// The dashboard's figures and upgrade rows, built from `inputs` the
+    /// first time the dashboard shows and dropped whenever `inputs` change.
+    dashboard: Option<dashboard::Dashboard>,
+    /// The currency/hr the breakdown tree shows; `None` until the tree is
+    /// built from the current `inputs`.
+    currency_total: Option<f64>,
+    /// The dashboard's A_MineCost field.
+    server_cost: Entity<InputState>,
+    /// Each knob's low and high fields, in `ranges` order.
+    knob_fields: Vec<[Entity<InputState>; 2]>,
+    _subscriptions: Vec<Subscription>,
 }
 
 impl State {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+        let ranges = default_ranges();
+        let server_cost = number_state(1.0, 20.0, 0.01, window, cx);
+        let knob_fields: Vec<[Entity<InputState>; 2]> = ranges
+            .iter()
+            .map(|range| {
+                std::array::from_fn(|_| number_state(range.min, range.max, range.step, window, cx))
+            })
+            .collect();
+        // Edits flow field -> value through the setters, which clamp.
+        let mut subscriptions = vec![cx.subscribe(
+            &server_cost,
+            |state, field, event: &InputEvent, cx| {
+                if matches!(event, InputEvent::Change)
+                    && let Some(cost) = number_value(field.read(cx))
+                {
+                    state.research.minehead.set_server_var_cost(cost, cx);
+                }
+            },
+        )];
+        for (index, [low, high]) in knob_fields.iter().enumerate() {
+            subscriptions.push(cx.subscribe(low, move |state, field, event: &InputEvent, cx| {
+                if matches!(event, InputEvent::Change)
+                    && let Some(value) = number_value(field.read(cx))
+                {
+                    state.research.minehead.set_knob_low(index, value, cx);
+                }
+            }));
+            subscriptions.push(cx.subscribe(high, move |state, field, event: &InputEvent, cx| {
+                if matches!(event, InputEvent::Change)
+                    && let Some(value) = number_value(field.read(cx))
+                {
+                    state.research.minehead.set_knob_high(index, value, cx);
+                }
+            }));
+        }
         Self {
             tab: Tab::default(),
             inputs: None,
             warnings: Vec::new(),
-            ranges: default_ranges(),
+            ranges,
             play: None,
             decisions: Vec::new(),
             games: 0,
             inferred: None,
             show_spoiler: false,
             use_inferred: false,
+            dashboard: None,
+            currency_total: None,
+            server_cost,
+            knob_fields,
+            _subscriptions: subscriptions,
         }
+    }
+
+    /// Set the A_MineCost server variable every upgrade price scales by.
+    pub(crate) fn set_server_var_cost(&mut self, cost: f64, cx: &mut Context<AppState>) {
+        if let Some(inputs) = self.inputs.as_mut() {
+            inputs.server_var_cost = cost.clamp(1.0, 20.0);
+            self.inputs_changed();
+        }
+        cx.notify();
+    }
+
+    /// Set the low end of knob `index`'s search range, at most its high end.
+    pub(crate) fn set_knob_low(&mut self, index: usize, value: f64, cx: &mut Context<AppState>) {
+        if let Some(range) = self.ranges.get_mut(index) {
+            range.lo = value.clamp(range.min, range.hi);
+        }
+        cx.notify();
+    }
+
+    /// Set the high end of knob `index`'s search range, at least its low end.
+    pub(crate) fn set_knob_high(&mut self, index: usize, value: f64, cx: &mut Context<AppState>) {
+        if let Some(range) = self.ranges.get_mut(index) {
+            range.hi = value.clamp(range.lo, range.max);
+        }
+        cx.notify();
+    }
+
+    /// Drop what the panes derived from the old `inputs`.
+    fn inputs_changed(&mut self) {
+        self.dashboard = None;
+        self.currency_total = None;
     }
 
     /// Decode the tab's inputs from a newly applied save.
@@ -233,6 +330,7 @@ impl State {
                 self.warnings.clear();
             }
         }
+        self.inputs_changed();
         // A new save draws its own floors, so the game on screen is stale.
         self.play = None;
     }
@@ -249,38 +347,7 @@ impl State {
 
     /// The optimizer search grid the slider ranges describe.
     pub(crate) fn search_grid(&self) -> Grid {
-        const MAX_COMBOS: usize = 50_000;
-        let mut values: Vec<Vec<f64>> = self.ranges.iter().map(KnobRange::values).collect();
-        while values.iter().map(Vec::len).product::<usize>() > MAX_COMBOS {
-            let Some((index, _)) = values
-                .iter()
-                .enumerate()
-                .max_by_key(|(_, values)| values.len())
-            else {
-                break;
-            };
-            let old = values[index].clone();
-            if old.len() <= 2 {
-                break;
-            }
-            let new_len = old.len().div_ceil(2).max(2);
-            let mut sampled = vec![old[0]];
-            for position in 1..new_len - 1 {
-                sampled.push(old[position * (old.len() - 1) / (new_len - 1)]);
-            }
-            sampled.push(old[old.len() - 1]);
-            sampled.sort_by(f64::total_cmp);
-            sampled.dedup_by(|left, right| (*left - *right).abs() < f64::EPSILON);
-            values[index] = sampled;
-        }
-        Grid {
-            knobs: self
-                .ranges
-                .iter()
-                .zip(values)
-                .map(|(range, values)| (range.key, values))
-                .collect(),
-        }
+        search_grid(&self.ranges)
     }
 
     /// The number of combos the current ranges expand to.
@@ -313,6 +380,42 @@ impl State {
     }
 }
 
+/// The optimizer search grid `ranges` describe, halving the widest knob
+/// until the combos fit the cap.
+fn search_grid(ranges: &[KnobRange]) -> Grid {
+    const MAX_COMBOS: usize = 50_000;
+    let mut values: Vec<Vec<f64>> = ranges.iter().map(KnobRange::values).collect();
+    while values.iter().map(Vec::len).product::<usize>() > MAX_COMBOS {
+        let Some((index, _)) = values
+            .iter()
+            .enumerate()
+            .max_by_key(|(_, values)| values.len())
+        else {
+            break;
+        };
+        let old = values[index].clone();
+        if old.len() <= 2 {
+            break;
+        }
+        let new_len = old.len().div_ceil(2).max(2);
+        let mut sampled = vec![old[0]];
+        for position in 1..new_len - 1 {
+            sampled.push(old[position * (old.len() - 1) / (new_len - 1)]);
+        }
+        sampled.push(old[old.len() - 1]);
+        sampled.sort_by(f64::total_cmp);
+        sampled.dedup_by(|left, right| (*left - *right).abs() < f64::EPSILON);
+        values[index] = sampled;
+    }
+    Grid {
+        knobs: ranges
+            .iter()
+            .zip(values)
+            .map(|(range, values)| (range.key, values))
+            .collect(),
+    }
+}
+
 /// The inputs the Rank and Path runs read, from the loaded save.
 pub(super) fn run_inputs(state: &AppState, max_steps: u32, trials: u32) -> Option<RunInputs> {
     let inputs = state.research.minehead.inputs.as_ref()?;
@@ -342,7 +445,9 @@ pub(crate) fn pane(
     let mut strip = div().id("minehead-tabs").flex().items_center().gap_1();
     for candidate in Tab::ALL {
         let entity = cx.entity();
-        let mut button = Button::new(candidate.id(), candidate.label()).size(ControlSize::Sm);
+        let mut button = Button::new(candidate.id())
+            .label(candidate.label())
+            .small();
         if candidate == tab {
             button = button.primary();
         }
@@ -370,7 +475,7 @@ pub(crate) fn pane(
                 .child(strip),
         )
         .child(match tab {
-            Tab::Dashboard => dashboard::pane(state, cx),
+            Tab::Dashboard => dashboard::pane(state, window, cx),
             Tab::Optimize => optimize::pane(state, window, cx),
             Tab::Rank => rank::pane(state, cx),
             Tab::Path => path::pane(state, cx),
@@ -392,24 +497,18 @@ mod tests {
 
     #[test]
     fn the_default_slider_ranges_stay_under_the_combo_cap() {
-        let state = State::new();
-        assert!(state.combo_count() <= 50_000, "{}", state.combo_count());
-        assert!(state.combo_count() > 1_000, "{}", state.combo_count());
-        assert!(
-            state
-                .search_grid()
-                .knobs
-                .iter()
-                .all(|(_, values)| !values.is_empty())
-        );
+        let grid = search_grid(&default_ranges());
+        assert!(grid.combos() <= 50_000, "{}", grid.combos());
+        assert!(grid.combos() > 1_000, "{}", grid.combos());
+        assert!(grid.knobs.iter().all(|(_, values)| !values.is_empty()));
     }
 
     #[test]
     fn a_narrow_range_shrinks_the_search() {
-        let mut state = State::new();
-        for range in &mut state.ranges {
+        let mut ranges = default_ranges();
+        for range in &mut ranges {
             range.lo = range.hi;
         }
-        assert_eq!(state.combo_count(), 1);
+        assert_eq!(search_grid(&ranges).combos(), 1);
     }
 }

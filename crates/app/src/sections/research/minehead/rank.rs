@@ -1,19 +1,20 @@
 //! Rank Upgrades: what one more level of each unlocked upgrade buys.
 
 use super::{boss_name, run_inputs};
+use crate::sections::research::sushi::columns::{self, Column};
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::Checkbox;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::table::{Table, TableBody, TableRow};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_minehead::RankOutcome;
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone};
 
 impl AppState {
     /// Rank every unlocked upgrade's +1 against a baseline run.
@@ -45,10 +46,11 @@ impl AppState {
 }
 
 pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(inputs) = state.research.minehead.inputs.clone() else {
+    let Some(inputs) = state.research.minehead.inputs.as_ref() else {
         return crate::ui::section::no_save(cx);
     };
-    let muted = cx.theme().colors.fg_muted;
+    let (floor, currency) = (inputs.floor, inputs.currency);
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
     let running = state.minehead_rank.read(cx).running();
     let run_inputs = run_inputs(state, 0, 10_000);
@@ -58,9 +60,11 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     let params_label = super::optimize::strategy_label(&state.research.minehead.params());
     let checked = state.research.minehead.use_inferred;
     let toggle_entity = entity.clone();
-    let use_inferred = Checkbox::new("mh-rank-inferred", checked)
+    let use_inferred = Checkbox::new("mh-rank-inferred")
         .label("Your Strategy")
-        .on_change(move |on, _window, cx| {
+        .checked(checked)
+        .on_click(move |on, _window, cx| {
+            let on = *on;
             toggle_entity.update(cx, |state, cx| {
                 state.research.minehead.use_inferred = on;
                 cx.notify();
@@ -73,26 +77,27 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
             CardHeader::new("Rank upgrades")
                 .description(format!(
                     "Simulates each unlocked upgrade +1 on {} with 10,000 trials.",
-                    boss_name(inputs.floor)
+                    boss_name(floor)
                 ))
-                .action(Badge::new(params_label).tone(Tone::Info)),
+                .action(
+                    Tag::new()
+                        .with_variant(Tone::Info.into())
+                        .outline()
+                        .small()
+                        .child(params_label),
+                ),
         )
         .child(
             div()
                 .flex()
                 .items_center()
                 .gap_2()
-                .px_3()
-                .pb_3()
                 .child(
-                    Button::new(
-                        "mh-rank-run",
-                        if running {
+                    Button::new("mh-rank-run").label(if running {
                             "Ranking…"
                         } else {
                             "Rank Upgrades"
-                        },
-                    )
+                        })
                     .primary()
                     .icon(IconName::Play)
                     .disabled(running)
@@ -101,14 +106,14 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                     }),
                 )
                 .when(running, |row| {
-                    row.child(Button::new("mh-rank-cancel", "Cancel").on_click(
+                    row.child(Button::new("mh-rank-cancel").label("Cancel").on_click(
                         move |_event, _window, cx| {
                             cancel.update(cx, |state, cx| state.cancel_minehead_rank(cx));
                         },
                     ))
                 })
                 .child(use_inferred)
-                .child(Caption::new(format::value(inputs.currency)).text_color(muted)),
+                .child(Caption::new(format::value(currency)).text_color(muted)),
         );
 
     let mut body = div().flex().flex_col().gap_3().min_h_0();
@@ -136,8 +141,8 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     if task.as_ref().is_some_and(|task| task.stale) {
         body = body.child(idleon_ui::run_chrome::stale_banner("mh-rank-stale"));
     }
-    if let Some(result) = task.as_ref().and_then(|task| task.result.clone()) {
-        body = body.child(result_card(&result, muted, cx.theme().colors.success));
+    if let Some(result) = task.as_ref().and_then(|task| task.result.as_ref()) {
+        body = body.child(result_card(result, muted, cx.theme().success));
     }
 
     div()
@@ -151,55 +156,59 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         .into_any_element()
 }
 
+/// The ranking table's columns.
+const COLUMNS: [Column; 9] = [
+    ("#", Some(36.0), true),
+    ("Upgrade", Some(150.0), false),
+    ("Affordable", Some(80.0), false),
+    ("Dmg%", None, true),
+    ("Cost", None, true),
+    ("Dmg/Cost", None, true),
+    ("Win%", Some(110.0), true),
+    ("Avg Dmg", None, true),
+    ("Turns", None, true),
+];
+
 fn result_card(result: &RankOutcome, muted: gpui::Hsla, success: gpui::Hsla) -> AnyElement {
-    let mut table = Table::new([
-        "#",
-        "Upgrade",
-        "Affordable",
-        "Dmg%",
-        "Cost",
-        "Dmg/Cost",
-        "Win%",
-        "Avg Dmg",
-        "Turns",
-    ]);
-    for (rank, row) in result.rows.iter().enumerate() {
-        table = table.row([
-            div().child(format!("{}", rank + 1)).into_any_element(),
-            div()
-                .id(("mh-rank-name", row.idx))
-                .child(row.name.replace('_', " "))
-                .into_any_element(),
-            div()
-                .text_color(if row.can_afford { success } else { muted })
-                .child(if row.can_afford { "Yes" } else { "No" })
-                .into_any_element(),
-            div()
-                .child(format!("{:+.1}%", row.dmg_pct))
-                .into_any_element(),
-            div().child(format::value(row.cost)).into_any_element(),
-            div()
-                .child(format::value(row.dmg_per_cost))
-                .into_any_element(),
-            div()
-                .child(format!(
-                    "{:.1}% ({:+.1})",
-                    row.result.win_rate * 100.0,
-                    row.win_delta
-                ))
-                .into_any_element(),
-            div()
-                .child(format::value(row.result.avg_dmg))
-                .into_any_element(),
-            div()
-                .child(format!("{:.1}", row.result.avg_turns))
-                .into_any_element(),
-        ]);
-    }
-    let table = ScrollArea::new("mh-rank-table")
-        .vertical()
-        .h(px(420.0))
-        .child(div().min_w_0().child(table));
+    let cell = |index| columns::cell(&COLUMNS, index).min_w(px(56.0));
+    let body = TableBody::new().children(result.rows.iter().enumerate().map(|(rank, row)| {
+        TableRow::new()
+            .child(cell(0).child(format!("{}", rank + 1)))
+            .child(
+                cell(1).child(
+                    div()
+                        .id(("mh-rank-name", row.idx))
+                        .child(row.name.replace('_', " ")),
+                ),
+            )
+            .child(
+                cell(2)
+                    .text_color(if row.can_afford { success } else { muted })
+                    .child(if row.can_afford { "Yes" } else { "No" }),
+            )
+            .child(cell(3).child(format!("{:+.1}%", row.dmg_pct)))
+            .child(cell(4).child(format::value(row.cost)))
+            .child(cell(5).child(format::value(row.dmg_per_cost)))
+            .child(cell(6).child(format!(
+                "{:.1}% ({:+.1})",
+                row.result.win_rate * 100.0,
+                row.win_delta
+            )))
+            .child(cell(7).child(format::value(row.result.avg_dmg)))
+            .child(cell(8).child(format!("{:.1}", row.result.avg_turns)))
+    }));
+    let table = div().h(px(420.0)).child(
+        div()
+            .overflow_y_scrollbar()
+            .id("mh-rank-table")
+            .size_full()
+            .child(
+                Table::new()
+                    .small()
+                    .child(columns::header(&COLUMNS))
+                    .child(body),
+            ),
+    );
     Card::new()
         .header(CardHeader::new("Upgrade rankings").description(format!(
             "Baseline {} avg dmg · {:.1}% win · {} trials",
@@ -207,12 +216,10 @@ fn result_card(result: &RankOutcome, muted: gpui::Hsla, success: gpui::Hsla) -> 
             result.baseline.win_rate * 100.0,
             result.trials
         )))
-        .child(div().min_h_0().overflow_hidden().p_3().child(table))
+        .child(table)
         .child(
             div()
-                .px_3()
-                .pb_3()
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child("Sorted by damage gained per currency spent."),
         )
