@@ -170,5 +170,18 @@ reliably on macOS. The parallel run proves lane isolation and interaction paths;
 sequential run owns the screenshots.
 
 Every lane owns a private `--endpoint-dir`, and `script/mcp-lane.mjs` is the shared spawn/stdio
-client for the three harnesses.
+client for the four harnesses. The bridge's socket path must fit `sun_path` (104 bytes on macOS), so
+the endpoint directory falls back to `/tmp` when `TMPDIR` is too long for it.
+
+## Frame times
+
+`script/mcp-perf.mjs` measures frame draw times per scenario (cold start, idle, scroll, typing,
+navigation, sidebar, resize) on a release build and checks them against the UI budget:
+
+```console
+cargo build --release -p idleon-optimizer
+node script/mcp-perf.mjs --release --compare docs/ui-kit/baseline.json
+```
+
+Scenarios, flags, the budget and the baseline live in [`ui-kit/performance.md`](ui-kit/performance.md).
 

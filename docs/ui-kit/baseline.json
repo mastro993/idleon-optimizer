@@ -1,0 +1,1374 @@
+{
+  "date": "2026-11-18",
+  "commit": "c0179b4e",
+  "binary": "target/release/idleon-optimizer",
+  "machine": {
+    "cpu": "Apple M4 Pro",
+    "os": "macOS 26.7.1"
+  },
+  "budget": {
+    "frame_p95_ms": 8.3,
+    "frame_max_ms": 16.7,
+    "idle_frames": 0,
+    "first_frame_ms": 500
+  },
+  "results": [
+    {
+      "name": "startup",
+      "kind": "startup",
+      "note": "median of 3 launches restoring a session that holds fixtures/data.json; frames of the last",
+      "discovered_ms": 435.8,
+      "first_frame_ms": 436.7,
+      "session_ms": 1876.9,
+      "runs": [
+        {
+          "discovered_ms": 384.3,
+          "first_frame_ms": 384.8,
+          "session_ms": 1876.9
+        },
+        {
+          "discovered_ms": 435.8,
+          "first_frame_ms": 436.7,
+          "session_ms": 1928.9
+        },
+        {
+          "discovered_ms": 449.8,
+          "first_frame_ms": 450.3,
+          "session_ms": 1838.9
+        }
+      ],
+      "frames": 33,
+      "truncated": false,
+      "p50_ms": 45.4,
+      "p95_ms": 47.7,
+      "max_ms": 56,
+      "prepaint_p50_ms": 44.7,
+      "paint_p50_ms": 0.4,
+      "over_8ms": 33,
+      "over_16ms": 33,
+      "worst": [
+        {
+          "draw_ms": 56,
+          "prepaint_ms": 50.3,
+          "paint_ms": 5.6,
+          "views": 2
+        },
+        {
+          "draw_ms": 47.7,
+          "prepaint_ms": 47.2,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 46.9,
+          "prepaint_ms": 46.3,
+          "paint_ms": 0.5,
+          "views": 2
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 33,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 33,
+          "reused": 0
+        }
+      ],
+      "over_budget": []
+    },
+    {
+      "name": "home-idle-3s",
+      "kind": "idle",
+      "note": "Home, no input for 3 s",
+      "act_ms": 3001,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 0,
+      "truncated": false,
+      "p50_ms": null,
+      "p95_ms": null,
+      "max_ms": null,
+      "prepaint_p50_ms": null,
+      "paint_p50_ms": null,
+      "over_8ms": 0,
+      "over_16ms": 0,
+      "worst": [],
+      "views": [],
+      "over_budget": []
+    },
+    {
+      "name": "home-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on dashboard-scroll",
+      "act_ms": 1540,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 31,
+      "truncated": false,
+      "p50_ms": 43.2,
+      "p95_ms": 45.1,
+      "max_ms": 45.3,
+      "prepaint_p50_ms": 42.6,
+      "paint_p50_ms": 0.4,
+      "over_8ms": 31,
+      "over_16ms": 31,
+      "worst": [
+        {
+          "draw_ms": 45.3,
+          "prepaint_ms": 44.7,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 45.1,
+          "prepaint_ms": 44.5,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 44.9,
+          "prepaint_ms": 44.2,
+          "paint_ms": 0.4,
+          "views": 2
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 31,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 31,
+          "reused": 0
+        }
+      ],
+      "over_budget": [
+        "p95 45.1 ms",
+        "max 45.3 ms"
+      ]
+    },
+    {
+      "name": "home-search-typing",
+      "kind": "interaction",
+      "note": "focus the search field and type \"research\" one key at a time",
+      "act_ms": 370,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 15,
+      "truncated": false,
+      "p50_ms": 19.5,
+      "p95_ms": 42.9,
+      "max_ms": 42.9,
+      "prepaint_p50_ms": 19,
+      "paint_p50_ms": 0.4,
+      "over_8ms": 8,
+      "over_16ms": 8,
+      "worst": [
+        {
+          "draw_ms": 42.9,
+          "prepaint_ms": 42.4,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 42.9,
+          "prepaint_ms": 42.3,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 42.7,
+          "prepaint_ms": 42.1,
+          "paint_ms": 0.4,
+          "views": 2
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 15,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 15,
+          "reused": 0
+        }
+      ],
+      "over_budget": [
+        "p95 42.9 ms",
+        "max 42.9 ms"
+      ]
+    },
+    {
+      "name": "home-hover",
+      "kind": "interaction",
+      "note": "pointer across 7 dashboard cards (hover_element is not supported on cards)",
+      "act_ms": 98,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 3,
+      "truncated": false,
+      "p50_ms": 43.1,
+      "p95_ms": 43.4,
+      "max_ms": 43.4,
+      "prepaint_p50_ms": 42.6,
+      "paint_p50_ms": 0.4,
+      "over_8ms": 3,
+      "over_16ms": 3,
+      "worst": [
+        {
+          "draw_ms": 43.4,
+          "prepaint_ms": 42.8,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 43.1,
+          "prepaint_ms": 42.6,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 42.6,
+          "prepaint_ms": 42,
+          "paint_ms": 0.4,
+          "views": 2
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 3,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 3,
+          "reused": 0
+        }
+      ],
+      "over_budget": [
+        "p95 43.4 ms",
+        "max 43.4 ms"
+      ]
+    },
+    {
+      "name": "stats-all-open",
+      "kind": "interaction",
+      "note": "click the sidebar item until the section root shows, 1.5 s settle",
+      "act_ms": 802,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 20,
+      "truncated": false,
+      "p50_ms": 11.7,
+      "p95_ms": 43,
+      "max_ms": 735.6,
+      "prepaint_p50_ms": 10.8,
+      "paint_p50_ms": 0.6,
+      "over_8ms": 20,
+      "over_16ms": 2,
+      "worst": [
+        {
+          "draw_ms": 735.6,
+          "prepaint_ms": 732.3,
+          "paint_ms": 3,
+          "views": 12
+        },
+        {
+          "draw_ms": 43,
+          "prepaint_ms": 42.5,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 12.5,
+          "prepaint_ms": 11.4,
+          "paint_ms": 0.7,
+          "views": 12
+        }
+      ],
+      "views": [
+        {
+          "type": "TextInput",
+          "rendered": 210,
+          "reused": 0
+        },
+        {
+          "type": "AppState",
+          "rendered": 20,
+          "reused": 0
+        }
+      ],
+      "open_ms": 802,
+      "over_budget": [
+        "p95 43 ms",
+        "max 735.6 ms"
+      ]
+    },
+    {
+      "name": "stats-all-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on stats-all-scroll",
+      "act_ms": 567,
+      "attempts": 3,
+      "focus_lost": true,
+      "frames": 31,
+      "truncated": false,
+      "p50_ms": 12.5,
+      "p95_ms": 12.9,
+      "max_ms": 13.3,
+      "prepaint_p50_ms": 11.4,
+      "paint_p50_ms": 0.7,
+      "over_8ms": 31,
+      "over_16ms": 0,
+      "worst": [
+        {
+          "draw_ms": 13.3,
+          "prepaint_ms": 11.7,
+          "paint_ms": 0.8,
+          "views": 12
+        },
+        {
+          "draw_ms": 12.9,
+          "prepaint_ms": 11.8,
+          "paint_ms": 0.8,
+          "views": 12
+        },
+        {
+          "draw_ms": 12.8,
+          "prepaint_ms": 11.7,
+          "paint_ms": 0.7,
+          "views": 12
+        }
+      ],
+      "views": [
+        {
+          "type": "TextInput",
+          "rendered": 341,
+          "reused": 0
+        },
+        {
+          "type": "AppState",
+          "rendered": 31,
+          "reused": 0
+        }
+      ],
+      "scroll_target": "stats-all-scroll",
+      "over_budget": [
+        "p95 12.9 ms"
+      ]
+    },
+    {
+      "name": "research-open",
+      "kind": "interaction",
+      "note": "click the sidebar item until the section root shows, 1.5 s settle",
+      "act_ms": 143,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 24,
+      "truncated": false,
+      "p50_ms": 30.2,
+      "p95_ms": 43.6,
+      "max_ms": 50.4,
+      "prepaint_p50_ms": 28.4,
+      "paint_p50_ms": 1.3,
+      "over_8ms": 24,
+      "over_16ms": 24,
+      "worst": [
+        {
+          "draw_ms": 50.4,
+          "prepaint_ms": 44.3,
+          "paint_ms": 5.8,
+          "views": 9
+        },
+        {
+          "draw_ms": 43.6,
+          "prepaint_ms": 43,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 30.7,
+          "prepaint_ms": 28.8,
+          "paint_ms": 1.4,
+          "views": 9
+        }
+      ],
+      "views": [
+        {
+          "type": "TextInput",
+          "rendered": 93,
+          "reused": 0
+        },
+        {
+          "type": "FormulaTree",
+          "rendered": 92,
+          "reused": 0
+        },
+        {
+          "type": "AppState",
+          "rendered": 24,
+          "reused": 0
+        }
+      ],
+      "open_ms": 143,
+      "over_budget": [
+        "p95 43.6 ms",
+        "max 50.4 ms"
+      ]
+    },
+    {
+      "name": "research-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on dashboard-scroll",
+      "act_ms": 1059,
+      "attempts": 3,
+      "focus_lost": false,
+      "frames": 31,
+      "truncated": false,
+      "p50_ms": 30.4,
+      "p95_ms": 31.9,
+      "max_ms": 32.2,
+      "prepaint_p50_ms": 28.6,
+      "paint_p50_ms": 1.4,
+      "over_8ms": 31,
+      "over_16ms": 31,
+      "worst": [
+        {
+          "draw_ms": 32.2,
+          "prepaint_ms": 30.4,
+          "paint_ms": 1.2,
+          "views": 9
+        },
+        {
+          "draw_ms": 31.9,
+          "prepaint_ms": 30.3,
+          "paint_ms": 1.2,
+          "views": 9
+        },
+        {
+          "draw_ms": 31.9,
+          "prepaint_ms": 30.1,
+          "paint_ms": 1.2,
+          "views": 9
+        }
+      ],
+      "views": [
+        {
+          "type": "FormulaTree",
+          "rendered": 124,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 124,
+          "reused": 0
+        },
+        {
+          "type": "AppState",
+          "rendered": 31,
+          "reused": 0
+        }
+      ],
+      "scroll_target": "dashboard-scroll",
+      "over_budget": [
+        "p95 31.9 ms",
+        "max 32.2 ms"
+      ]
+    },
+    {
+      "name": "spelunking-open",
+      "kind": "interaction",
+      "note": "click the sidebar item until the section root shows, 1.5 s settle",
+      "act_ms": 130,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 3,
+      "truncated": false,
+      "p50_ms": 42.6,
+      "p95_ms": 43.6,
+      "max_ms": 43.6,
+      "prepaint_p50_ms": 37.3,
+      "paint_p50_ms": 1.4,
+      "over_8ms": 3,
+      "over_16ms": 3,
+      "worst": [
+        {
+          "draw_ms": 43.6,
+          "prepaint_ms": 42.9,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 42.6,
+          "prepaint_ms": 37.3,
+          "paint_ms": 4.9,
+          "views": 25
+        },
+        {
+          "draw_ms": 30.7,
+          "prepaint_ms": 28.8,
+          "paint_ms": 1.4,
+          "views": 25
+        }
+      ],
+      "views": [
+        {
+          "type": "TextInput",
+          "rendered": 49,
+          "reused": 0
+        },
+        {
+          "type": "AppState",
+          "rendered": 3,
+          "reused": 0
+        }
+      ],
+      "open_ms": 130,
+      "over_budget": [
+        "p95 43.6 ms",
+        "max 43.6 ms"
+      ]
+    },
+    {
+      "name": "spelunking-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on scroll-body",
+      "act_ms": 1043,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 31,
+      "truncated": false,
+      "p50_ms": 30.7,
+      "p95_ms": 31.8,
+      "max_ms": 31.8,
+      "prepaint_p50_ms": 29.1,
+      "paint_p50_ms": 1.3,
+      "over_8ms": 31,
+      "over_16ms": 31,
+      "worst": [
+        {
+          "draw_ms": 31.8,
+          "prepaint_ms": 29.9,
+          "paint_ms": 1.5,
+          "views": 25
+        },
+        {
+          "draw_ms": 31.8,
+          "prepaint_ms": 29.7,
+          "paint_ms": 1.7,
+          "views": 25
+        },
+        {
+          "draw_ms": 31.8,
+          "prepaint_ms": 30,
+          "paint_ms": 1.4,
+          "views": 25
+        }
+      ],
+      "views": [
+        {
+          "type": "TextInput",
+          "rendered": 744,
+          "reused": 0
+        },
+        {
+          "type": "AppState",
+          "rendered": 31,
+          "reused": 0
+        }
+      ],
+      "scroll_target": "scroll-body",
+      "over_budget": [
+        "p95 31.8 ms",
+        "max 31.8 ms"
+      ]
+    },
+    {
+      "name": "royal-guardian-open",
+      "kind": "interaction",
+      "note": "click the sidebar item until the section root shows, 1.5 s settle",
+      "act_ms": 80,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 78,
+      "truncated": false,
+      "p50_ms": 7.9,
+      "p95_ms": 8.3,
+      "max_ms": 45.1,
+      "prepaint_p50_ms": 7,
+      "paint_p50_ms": 0.7,
+      "over_8ms": 2,
+      "over_16ms": 2,
+      "worst": [
+        {
+          "draw_ms": 45.1,
+          "prepaint_ms": 44.4,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 19.2,
+          "prepaint_ms": 14.6,
+          "paint_ms": 4.3,
+          "views": 1
+        },
+        {
+          "draw_ms": 8.3,
+          "prepaint_ms": 7.3,
+          "paint_ms": 0.7,
+          "views": 1
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 78,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 1,
+          "reused": 0
+        }
+      ],
+      "open_ms": 80,
+      "over_budget": [
+        "max 45.1 ms"
+      ]
+    },
+    {
+      "name": "royal-guardian-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on royal-pane.scroll-body",
+      "act_ms": 519,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 31,
+      "truncated": false,
+      "p50_ms": 8.2,
+      "p95_ms": 8.4,
+      "max_ms": 8.5,
+      "prepaint_p50_ms": 7.2,
+      "paint_p50_ms": 0.7,
+      "over_8ms": 8,
+      "over_16ms": 0,
+      "worst": [
+        {
+          "draw_ms": 8.5,
+          "prepaint_ms": 7.4,
+          "paint_ms": 0.8,
+          "views": 1
+        },
+        {
+          "draw_ms": 8.4,
+          "prepaint_ms": 7.3,
+          "paint_ms": 0.8,
+          "views": 1
+        },
+        {
+          "draw_ms": 8.4,
+          "prepaint_ms": 7.2,
+          "paint_ms": 1,
+          "views": 1
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 31,
+          "reused": 0
+        }
+      ],
+      "scroll_target": "royal-pane.scroll-body",
+      "over_budget": [
+        "p95 8.4 ms"
+      ]
+    },
+    {
+      "name": "jelly-operator-open",
+      "kind": "interaction",
+      "note": "click the sidebar item until the section root shows, 1.5 s settle",
+      "act_ms": 66,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 76,
+      "truncated": false,
+      "p50_ms": 4.8,
+      "p95_ms": 5.1,
+      "max_ms": 43.6,
+      "prepaint_p50_ms": 4,
+      "paint_p50_ms": 0.5,
+      "over_8ms": 2,
+      "over_16ms": 1,
+      "worst": [
+        {
+          "draw_ms": 43.6,
+          "prepaint_ms": 42.9,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 9.9,
+          "prepaint_ms": 7.4,
+          "paint_ms": 2.2,
+          "views": 3
+        },
+        {
+          "draw_ms": 5.2,
+          "prepaint_ms": 4.4,
+          "paint_ms": 0.5,
+          "views": 3
+        }
+      ],
+      "views": [
+        {
+          "type": "TextInput",
+          "rendered": 151,
+          "reused": 0
+        },
+        {
+          "type": "AppState",
+          "rendered": 76,
+          "reused": 0
+        }
+      ],
+      "open_ms": 66,
+      "over_budget": [
+        "max 43.6 ms"
+      ]
+    },
+    {
+      "name": "jelly-operator-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on jelly-scroll",
+      "act_ms": 260,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 31,
+      "truncated": false,
+      "p50_ms": 4.5,
+      "p95_ms": 4.9,
+      "max_ms": 4.9,
+      "prepaint_p50_ms": 3.9,
+      "paint_p50_ms": 0.5,
+      "over_8ms": 0,
+      "over_16ms": 0,
+      "worst": [
+        {
+          "draw_ms": 4.9,
+          "prepaint_ms": 4.2,
+          "paint_ms": 0.5,
+          "views": 3
+        },
+        {
+          "draw_ms": 4.9,
+          "prepaint_ms": 4.1,
+          "paint_ms": 0.6,
+          "views": 3
+        },
+        {
+          "draw_ms": 4.9,
+          "prepaint_ms": 4.1,
+          "paint_ms": 0.5,
+          "views": 3
+        }
+      ],
+      "views": [
+        {
+          "type": "TextInput",
+          "rendered": 62,
+          "reused": 0
+        },
+        {
+          "type": "AppState",
+          "rendered": 31,
+          "reused": 0
+        }
+      ],
+      "scroll_target": "jelly-scroll",
+      "over_budget": []
+    },
+    {
+      "name": "worship-td-open",
+      "kind": "interaction",
+      "note": "click the sidebar item until the section root shows, 1.5 s settle",
+      "act_ms": 76,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 26,
+      "truncated": false,
+      "p50_ms": 5,
+      "p95_ms": 10.4,
+      "max_ms": 43.2,
+      "prepaint_p50_ms": 4.2,
+      "paint_p50_ms": 0.6,
+      "over_8ms": 2,
+      "over_16ms": 1,
+      "worst": [
+        {
+          "draw_ms": 43.2,
+          "prepaint_ms": 42.5,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 10.4,
+          "prepaint_ms": 8.6,
+          "paint_ms": 1.6,
+          "views": 1
+        },
+        {
+          "draw_ms": 6.4,
+          "prepaint_ms": 4.2,
+          "paint_ms": 1.9,
+          "views": 1
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 26,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 1,
+          "reused": 0
+        }
+      ],
+      "open_ms": 76,
+      "over_budget": [
+        "p95 10.4 ms",
+        "max 43.2 ms"
+      ]
+    },
+    {
+      "name": "worship-td-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on worship-body",
+      "act_ms": 4,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 0,
+      "truncated": false,
+      "p50_ms": null,
+      "p95_ms": null,
+      "max_ms": null,
+      "prepaint_p50_ms": null,
+      "paint_p50_ms": null,
+      "over_8ms": 0,
+      "over_16ms": 0,
+      "worst": [],
+      "views": [],
+      "scroll_target": "worship-body",
+      "over_budget": []
+    },
+    {
+      "name": "combat-sim-open",
+      "kind": "interaction",
+      "note": "click the sidebar item until the section root shows, 1.5 s settle",
+      "act_ms": 69,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 27,
+      "truncated": false,
+      "p50_ms": 5.4,
+      "p95_ms": 9.4,
+      "max_ms": 44.9,
+      "prepaint_p50_ms": 4.6,
+      "paint_p50_ms": 0.5,
+      "over_8ms": 2,
+      "over_16ms": 1,
+      "worst": [
+        {
+          "draw_ms": 44.9,
+          "prepaint_ms": 44.2,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 9.4,
+          "prepaint_ms": 7.3,
+          "paint_ms": 1.8,
+          "views": 2
+        },
+        {
+          "draw_ms": 5.7,
+          "prepaint_ms": 4.9,
+          "paint_ms": 0.5,
+          "views": 2
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 27,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 27,
+          "reused": 0
+        }
+      ],
+      "open_ms": 69,
+      "over_budget": [
+        "p95 9.4 ms",
+        "max 44.9 ms"
+      ]
+    },
+    {
+      "name": "combat-sim-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on combat-slot-scroll",
+      "act_ms": 270,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 31,
+      "truncated": false,
+      "p50_ms": 5.4,
+      "p95_ms": 5.5,
+      "max_ms": 5.7,
+      "prepaint_p50_ms": 4.7,
+      "paint_p50_ms": 0.5,
+      "over_8ms": 0,
+      "over_16ms": 0,
+      "worst": [
+        {
+          "draw_ms": 5.7,
+          "prepaint_ms": 4.8,
+          "paint_ms": 0.7,
+          "views": 2
+        },
+        {
+          "draw_ms": 5.5,
+          "prepaint_ms": 4.7,
+          "paint_ms": 0.7,
+          "views": 2
+        },
+        {
+          "draw_ms": 5.5,
+          "prepaint_ms": 4.8,
+          "paint_ms": 0.6,
+          "views": 2
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 31,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 31,
+          "reused": 0
+        }
+      ],
+      "scroll_target": "combat-slot-scroll",
+      "over_budget": []
+    },
+    {
+      "name": "farming-open",
+      "kind": "interaction",
+      "note": "click the sidebar item until the section root shows, 1.5 s settle",
+      "act_ms": 73,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 27,
+      "truncated": false,
+      "p50_ms": 5,
+      "p95_ms": 12.4,
+      "max_ms": 43.2,
+      "prepaint_p50_ms": 4.3,
+      "paint_p50_ms": 0.5,
+      "over_8ms": 2,
+      "over_16ms": 1,
+      "worst": [
+        {
+          "draw_ms": 43.2,
+          "prepaint_ms": 42.6,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 12.4,
+          "prepaint_ms": 8.5,
+          "paint_ms": 3.6,
+          "views": 1
+        },
+        {
+          "draw_ms": 5.3,
+          "prepaint_ms": 4.6,
+          "paint_ms": 0.5,
+          "views": 1
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 27,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 1,
+          "reused": 0
+        }
+      ],
+      "open_ms": 73,
+      "over_budget": [
+        "p95 12.4 ms",
+        "max 43.2 ms"
+      ]
+    },
+    {
+      "name": "farming-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on farming-overview-scroll",
+      "act_ms": 276,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 31,
+      "truncated": false,
+      "p50_ms": 5.1,
+      "p95_ms": 5.4,
+      "max_ms": 5.5,
+      "prepaint_p50_ms": 4.4,
+      "paint_p50_ms": 0.5,
+      "over_8ms": 0,
+      "over_16ms": 0,
+      "worst": [
+        {
+          "draw_ms": 5.5,
+          "prepaint_ms": 4.5,
+          "paint_ms": 0.8,
+          "views": 1
+        },
+        {
+          "draw_ms": 5.4,
+          "prepaint_ms": 4.7,
+          "paint_ms": 0.5,
+          "views": 1
+        },
+        {
+          "draw_ms": 5.4,
+          "prepaint_ms": 4.6,
+          "paint_ms": 0.5,
+          "views": 1
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 31,
+          "reused": 0
+        }
+      ],
+      "scroll_target": "farming-overview-scroll",
+      "over_budget": []
+    },
+    {
+      "name": "killroy-open",
+      "kind": "interaction",
+      "note": "click the sidebar item until the section root shows, 1.5 s settle",
+      "act_ms": 59,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 40,
+      "truncated": false,
+      "p50_ms": 1.3,
+      "p95_ms": 1.5,
+      "max_ms": 43.6,
+      "prepaint_p50_ms": 1,
+      "paint_p50_ms": 0.3,
+      "over_8ms": 1,
+      "over_16ms": 1,
+      "worst": [
+        {
+          "draw_ms": 43.6,
+          "prepaint_ms": 42.9,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 3.3,
+          "prepaint_ms": 1.9,
+          "paint_ms": 1.2,
+          "views": 1
+        },
+        {
+          "draw_ms": 1.5,
+          "prepaint_ms": 1.1,
+          "paint_ms": 0.3,
+          "views": 1
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 40,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 1,
+          "reused": 0
+        }
+      ],
+      "open_ms": 59,
+      "over_budget": [
+        "max 43.6 ms"
+      ]
+    },
+    {
+      "name": "killroy-scroll",
+      "kind": "interaction",
+      "note": "30 wheel events on section-killroy",
+      "act_ms": 4,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 0,
+      "truncated": false,
+      "p50_ms": null,
+      "p95_ms": null,
+      "max_ms": null,
+      "prepaint_p50_ms": null,
+      "paint_p50_ms": null,
+      "over_8ms": 0,
+      "over_16ms": 0,
+      "worst": [],
+      "views": [],
+      "scroll_target": "section-killroy",
+      "over_budget": []
+    },
+    {
+      "name": "switch-10x",
+      "kind": "interaction",
+      "note": "research → royal-guardian → research, 10 times, through the sidebar",
+      "act_ms": 1682,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 101,
+      "truncated": false,
+      "p50_ms": 28.7,
+      "p95_ms": 34.6,
+      "max_ms": 35.5,
+      "prepaint_p50_ms": 27,
+      "paint_p50_ms": 1.2,
+      "over_8ms": 72,
+      "over_16ms": 62,
+      "worst": [
+        {
+          "draw_ms": 35.5,
+          "prepaint_ms": 33.7,
+          "paint_ms": 1.4,
+          "views": 9
+        },
+        {
+          "draw_ms": 35.2,
+          "prepaint_ms": 33.5,
+          "paint_ms": 1.4,
+          "views": 9
+        },
+        {
+          "draw_ms": 35,
+          "prepaint_ms": 33.4,
+          "paint_ms": 1.3,
+          "views": 9
+        }
+      ],
+      "views": [
+        {
+          "type": "FormulaTree",
+          "rendered": 248,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 248,
+          "reused": 0
+        },
+        {
+          "type": "AppState",
+          "rendered": 101,
+          "reused": 0
+        }
+      ],
+      "over_budget": [
+        "p95 34.6 ms",
+        "max 35.5 ms"
+      ]
+    },
+    {
+      "name": "sidebar-fold",
+      "kind": "interaction",
+      "note": "Home: collapse to the rail, 1 s settle",
+      "act_ms": 99,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 8,
+      "truncated": false,
+      "p50_ms": 41.8,
+      "p95_ms": 43.4,
+      "max_ms": 43.4,
+      "prepaint_p50_ms": 41.2,
+      "paint_p50_ms": 0.4,
+      "over_8ms": 8,
+      "over_16ms": 8,
+      "worst": [
+        {
+          "draw_ms": 43.4,
+          "prepaint_ms": 42.6,
+          "paint_ms": 0.6,
+          "views": 2
+        },
+        {
+          "draw_ms": 43.2,
+          "prepaint_ms": 42.7,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 42.5,
+          "prepaint_ms": 41.8,
+          "paint_ms": 0.5,
+          "views": 2
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 8,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 8,
+          "reused": 0
+        }
+      ],
+      "over_budget": [
+        "p95 43.4 ms",
+        "max 43.4 ms"
+      ]
+    },
+    {
+      "name": "sidebar-unfold",
+      "kind": "interaction",
+      "note": "Home: expand from the rail, 1 s settle",
+      "act_ms": 94,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 8,
+      "truncated": false,
+      "p50_ms": 42.2,
+      "p95_ms": 44,
+      "max_ms": 44,
+      "prepaint_p50_ms": 41.4,
+      "paint_p50_ms": 0.4,
+      "over_8ms": 8,
+      "over_16ms": 8,
+      "worst": [
+        {
+          "draw_ms": 44,
+          "prepaint_ms": 43.4,
+          "paint_ms": 0.4,
+          "views": 2
+        },
+        {
+          "draw_ms": 42.9,
+          "prepaint_ms": 42.2,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 42.4,
+          "prepaint_ms": 41.8,
+          "paint_ms": 0.4,
+          "views": 2
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 8,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 8,
+          "reused": 0
+        }
+      ],
+      "over_budget": [
+        "p95 44 ms",
+        "max 44 ms"
+      ]
+    },
+    {
+      "name": "window-resize",
+      "kind": "interaction",
+      "note": "Home: 20 width steps 1180 → 1920 px and back, height 900",
+      "act_ms": 13716,
+      "attempts": 1,
+      "focus_lost": false,
+      "frames": 60,
+      "truncated": false,
+      "p50_ms": 43.6,
+      "p95_ms": 45.7,
+      "max_ms": 46.6,
+      "prepaint_p50_ms": 43,
+      "paint_p50_ms": 0.5,
+      "over_8ms": 60,
+      "over_16ms": 60,
+      "worst": [
+        {
+          "draw_ms": 46.6,
+          "prepaint_ms": 45.9,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 45.9,
+          "prepaint_ms": 45.2,
+          "paint_ms": 0.5,
+          "views": 2
+        },
+        {
+          "draw_ms": 45.8,
+          "prepaint_ms": 45.1,
+          "paint_ms": 0.5,
+          "views": 2
+        }
+      ],
+      "views": [
+        {
+          "type": "AppState",
+          "rendered": 60,
+          "reused": 0
+        },
+        {
+          "type": "TextInput",
+          "rendered": 60,
+          "reused": 0
+        }
+      ],
+      "widest_px": 1728,
+      "over_budget": [
+        "p95 45.7 ms",
+        "max 46.6 ms"
+      ]
+    }
+  ],
+  "errors": []
+}
