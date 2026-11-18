@@ -37,7 +37,10 @@ sidebar uncached.
 GPUI builds the AccessKit tree in prepaint and never replayed it for a cached view, so a replayed
 view dropped out of the tree (`click_element: element "nav-home" does not support Click`, and the
 same for a screen reader). The vendored GPUI in `vendor/gpui-mcp` now replays a reused range's
-nodes, focus and action listeners (mastro993/gpui-mcp#4).
+nodes, focus and action listeners (mastro993/gpui-mcp#4). Two more upstream assumptions broke with
+cached views: a div cleared its hover only after a mouse move had flagged it, so a press without a
+move left a cached view hovered; and the bridge sent a key sequence in one update, so a cached
+view's observer ran only after the last key. Both are fixed there too (mastro993/gpui-mcp#4, #5).
 
 Considered:
 
