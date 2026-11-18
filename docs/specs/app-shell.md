@@ -156,7 +156,9 @@ flowchart LR
 ```
 
 - **Shell layout** (`ui/shell.rs`): header across the full width, then a row of sidebar and
-  workspace (no status bar). `layout::page_header`, `dashboard_header`, `missing_header` and
+  workspace (no status bar). The header, sidebar, Home, status line and each section page are
+  cached views (`ui/views.rs`); a run reports through `RunReported` rather than a notify
+  ([ADR 0004](../adr/0004-the-window-renders-cached-views-that-follow-what-they-read.md)). `layout::page_header`, `dashboard_header`, `missing_header` and
   `back_button` merge into one `ui/header.rs`, which holds no place title.
   ([ADR 0001](../adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md))
 - **Sidebar** (`ui/sidebar.rs`): Ely `Sidebar` with one `NavGroup` per `Group` in `Group::ALL`

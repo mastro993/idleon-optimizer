@@ -1308,10 +1308,43 @@ const INTERACTIONS = {
     for (let press = 0; press < 17; press += 1) {
       await lane.call('click_element', { id: 'killroy-trials-up' });
     }
-    await lane.call('click_element', { id: 'killroy-run' });
-    await waitForNode(lane, 'killroy-run-progress', 'killroy: the run reports progress');
-    await lane.call('click_element', { id: 'killroy-run-cancel' });
-    await waitForNode(lane, 'killroy-cancelled', 'killroy: cancel stops the run');
+    // Even twenty trials end within a few hundred milliseconds, about as long as
+    // a click takes to land, so the cancel can lose the race. Click it where the
+    // progress card put it as soon as it shows, and start again when the run
+    // finished first.
+    for (let attempt = 1; ; attempt += 1) {
+      await lane.call('click_element', { id: 'killroy-run' });
+      let cancel = null;
+      await waitFor(
+        lane,
+        (nodes) => {
+          cancel = nodes.find((node) => node.id === 'killroy-run-cancel')?.bounds ?? null;
+          return has(nodes, 'killroy-run-progress') && cancel;
+        },
+        'killroy: the run reports progress',
+      );
+      await lane.call('click_coordinates', {
+        x: cancel.x + cancel.width / 2,
+        y: cancel.y + cancel.height / 2,
+      });
+      let outcome = null;
+      await waitFor(
+        lane,
+        (nodes) => {
+          const status = labelOf(nodes, 'status-status') ?? '';
+          outcome = has(nodes, 'killroy-cancelled')
+            ? 'cancelled'
+            : status.startsWith('Killroy trials finished')
+              ? 'finished'
+              : null;
+          return outcome;
+        },
+        `killroy: cancel attempt ${attempt} settles`,
+      );
+      if (outcome === 'cancelled') break;
+      if (attempt === 5) throw new Error('killroy: cancel stops the run (every run finished first)');
+    }
+    log('ok   killroy: cancel stops the run');
     await lane.call('click_element', { id: 'killroy-run' });
     await waitForNode(lane, 'killroy-comparison', 'killroy: the comparison runs', 120000);
     await waitFor(

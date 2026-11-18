@@ -68,6 +68,10 @@ Shell (`ui/shell.rs`):
   icons; a fade into the ground at each edge with more items beyond it shows there is more. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
   in a tooltip, group headings shortened to "Gen", "W2" … "W7", "Tools") and back; the fold is saved in the session file as
   `"shell": {"sidebar": "expanded" | "rail"}` and a session without it opens expanded.
+- Rendering: `AppState` is the root view. The header, the sidebar, Home, the status line and each
+  opened section's page are cached `Entity` views (`ui/views.rs`), each re-rendered only when what
+  it reads changes, so a notify in one part leaves the others replaying their last frame
+  ([ADR 0004](adr/0004-the-window-renders-cached-views-that-follow-what-they-read.md)).
 - The workspace beside the sidebar holds the place and, on a section without a save, the
   `no-save-state` banner. There is no status bar: the last run or import message
   (`AppState::status`) is a zero-size labelled node, `status-status`, for screen readers and the
@@ -133,7 +137,10 @@ progress card, the cancelled notice and the stale marker for every section, with
 Runs in different sections go on side by side. Every runner is created through `report_run`
 (`state/subscriptions.rs`), which mirrors it in the status line and records its events, under the
 section named by `RunStatus.section`, in one `Activity` table on `AppState` (`state/activity.rs`,
-[ADR 0002](adr/0002-section-activity-is-pushed-from-runner-events.md)). The sidebar reads it and
+[ADR 0002](adr/0002-section-activity-is-pushed-from-runner-events.md)). Each event is announced as
+`RunReported { section }` instead of a notify, so a run redraws the sidebar mark, the status line
+and its own section's page, never Home or another section
+([ADR 0004](adr/0004-the-window-renders-cached-views-that-follow-what-they-read.md)). The sidebar reads it and
 marks the section's item (`ui/mark.rs`, id `nav-<section>-activity`): a progress ring at the least
 advanced run's fraction while any run is in flight (tooltip and label "Running · 42%", or
 "2 runs · 42%"), an accent dot ("Finished") when a run stored its result while another place was
