@@ -7,7 +7,6 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-ely-gpui-component = { workspace = true }
 gpui = { workspace = true }
 gpui-kit = { workspace = true }
 idleon-common = { workspace = true }

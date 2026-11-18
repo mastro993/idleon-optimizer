@@ -127,7 +127,8 @@ discards the runs it invalidates: whatever a discarded run still returns is drop
 cancelled run, so the runner is usable again, but the runner reports it as failed: a run ends
 `Stored`, `Cancelled` (stopped or discarded) or `Failed` (`TaskEvent::Finished(Ending)`).
 `crates/ui/src/run_chrome.rs` renders the
-progress card, the cancelled notice and the stale marker for every section.
+progress card, the cancelled notice and the stale marker for every section, with GPUI Kit's
+`Progress`, `Button`, `Tag` and `Alert`.
 
 Runs in different sections go on side by side. Every runner is created through `report_run`
 (`state/subscriptions.rs`), which mirrors it in the status line and records its events, under the
@@ -283,7 +284,9 @@ cannot start, the window opens without it.
   inputs, multiplier, source and result, plus search highlights and a copy action. The research
   Rates pane is the first consumer. Node ids are scoped by the tree's own id, so a page can show
   several trees (the All Stats breakdown card and its formula card, for instance) without the
-  accessibility tree collapsing their rows onto one another.
+  accessibility tree collapsing their rows onto one another. The tree lays out its visible rows
+  when its root, search or open branches change, so a parent redrawing every frame does not walk
+  the formula again. It draws with GPUI Kit (`crates/ui/src/formula.rs`).
 - One shared header (sidebar toggle, history arrows, save status, Export, Import), one
   sidebar and one tab strip; a section owns its tab strip and the shell owns the header and sidebar.
 - Palette and spacing follow one dark theme: `#1a1a2e` ground, `#16213e` surfaces, `#0f3460`
