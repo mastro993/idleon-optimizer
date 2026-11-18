@@ -10,6 +10,7 @@
 //   --keep      leave the spawned window running for a look
 //   --shot      where to write the closing window screenshot
 //   --dt-shot   where to write a Decision Tree tab screenshot (RES-08 evidence)
+import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { DEFAULT_APP_BIN, McpLane, flag, hasFlag } from './mcp-lane.mjs';
 
@@ -115,11 +116,17 @@ try {
     keep,
   });
 
-  // The dashboard is the landing page: every section card is exposed.
+  // The dashboard is the landing page: every registry card is exposed.
+  const registry = JSON.parse(execFileSync(appBin, ['--list-sections'], { encoding: 'utf8' }));
+  const expected = registry.filter((unit) => unit.dashboard).length;
   await waitFor((current) => has(current, 'card-research'), 'dashboard opens');
   let nodes = await tree();
   const cards = nodes.filter((node) => /^card-/.test(node.id ?? ''));
-  check('all 25 dashboard cards are exposed', cards.length === 25, String(cards.length));
+  check(
+    `all ${expected} dashboard cards are exposed`,
+    cards.length === expected,
+    String(cards.length),
+  );
   check('cards carry their world badge', (labelOf(nodes, 'card-research') ?? '').includes('W7'));
 
   // Search filters by world, and Escape clears it.
