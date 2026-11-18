@@ -19,11 +19,12 @@ pub(crate) const DEFAULT_DIR: &str = "assets/game";
 pub(crate) const ENV_DIR: &str = "IDLEON_ASSETS_DIR";
 
 /// The one source `Application::with_assets` takes while Ely and GPUI Kit
-/// coexist: Ely's fonts, then the kit's icons. The two sets share no path, so
-/// the order only decides which source answers first. The game artwork is read
-/// from disk by path and never goes through it.
+/// coexist: Ely's fonts, then the kit's icons with the extra ones the app
+/// draws (`idleon_ui::widgets::Icons`). The sets share no path, so the order
+/// only decides which source answers first. The game artwork is read from disk
+/// by path and never goes through it.
 pub(crate) fn source() -> impl AssetSource {
-    ely_gpui_component::Assets::before(gpui_kit::assets::Assets)
+    ely_gpui_component::Assets::before(idleon_ui::widgets::Icons)
 }
 
 /// What an image reference resolves to.
@@ -177,13 +178,14 @@ mod tests {
     }
 
     #[test]
-    fn the_window_source_serves_ely_s_fonts_and_the_kit_s_icons() {
+    fn the_window_source_serves_ely_s_fonts_and_the_kit_and_app_icons() {
         use gpui_kit::assets::IconName;
 
         let source = source();
         for path in [
             "fonts/Inter-Regular.ttf".to_string(),
             IconName::Check.path().to_string(),
+            IconName::SearchX.path().to_string(),
         ] {
             let data = source.load(&path).expect("the source answers");
             assert!(data.is_some_and(|data| !data.is_empty()), "{path}");

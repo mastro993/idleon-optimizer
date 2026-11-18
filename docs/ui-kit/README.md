@@ -14,7 +14,8 @@ root `Cargo.toml`: kit releases are weekly and each can move the GPUI snapshot.
 
 - `ely_gpui_component::init` and `gpui_kit::init`, then `ui::theme::install`, which applies Ely's
   palette and the kit theme;
-- one asset source, `assets::source()`: Ely's fonts, then the kit's icons;
+- one asset source, `assets::source()`: Ely's fonts, then the kit's icons and the extra Lucide
+  icons the app draws (`idleon_ui::widgets::Icons`);
 - the window through `gpui_kit::open_window`, which wraps `AppState` in the kit's `Root`. Kit
   dialogs, sheets, notifications, popovers and tooltips need it. The gpui-mcp bridge still
   installs from `AppState::new`.
@@ -48,3 +49,4 @@ Sections read colors, radii and fonts from `cx.theme()` (the kit's `ActiveTheme`
 | [`design.md`](design.md) | The Console visual direction: tokens, type, density, patterns |
 | [`theme.json`](theme.json) | The Console theme set, dark and light |
 | [`performance.md`](performance.md) | Frame-time harness, the Ely baseline and the budget |
+| [`display.md`](display.md) | Layout, typography, display and feedback: each Ely item's kit or `idleon_ui` replacement |
