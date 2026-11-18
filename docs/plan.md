@@ -351,7 +351,7 @@ The app, Ely and the automation bridge must share one GPUI build.
 | GPUI | `gpui-pre = 0.3.12`, patched to the bridge's vendored tree |
 | `gpui_platform` | `gpui-pre-platform = 0.3.12`, features `font-kit`, `wayland`, `x11` |
 | Ely | `ely-gpui-component`, rev `49270f2` |
-| gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.12`, commit `2e1df8b` |
+| gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.12`, commit `d0e97a4` |
 
 GPUI Kit 0.10.0 pins `0.3.12` exactly, Ely `main` pins the same snapshot, and the bridge's
 `gpui-pre-0.3.12` branch vendors it. That is the intersection, so Ely and GPUI Kit can sit in one
