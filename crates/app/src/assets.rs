@@ -1,4 +1,4 @@
-//! Manifest-backed game artwork.
+//! The window's asset source and the manifest-backed game artwork.
 //!
 //! The images are Legends of Idleon game artwork, committed under
 //! `assets/game/` with a credit note. The app never assumes a path exists: it
@@ -6,6 +6,7 @@
 //! is on disk, and reports the rest as missing so the UI can draw a labelled
 //! placeholder.
 
+use gpui::AssetSource;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -16,6 +17,14 @@ pub(crate) const MANIFEST_FILE: &str = "manifest.json";
 pub(crate) const DEFAULT_DIR: &str = "assets/game";
 /// Overrides the asset folder, for packaged builds and harnesses.
 pub(crate) const ENV_DIR: &str = "IDLEON_ASSETS_DIR";
+
+/// The one source `Application::with_assets` takes while Ely and GPUI Kit
+/// coexist: Ely's fonts, then the kit's icons. The two sets share no path, so
+/// the order only decides which source answers first. The game artwork is read
+/// from disk by path and never goes through it.
+pub(crate) fn source() -> impl AssetSource {
+    ely_gpui_component::Assets::before(gpui_kit::assets::Assets)
+}
 
 /// What an image reference resolves to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -165,6 +174,20 @@ mod tests {
             serde_json::to_string(&manifest).expect("manifest JSON"),
         )
         .expect("manifest file");
+    }
+
+    #[test]
+    fn the_window_source_serves_ely_s_fonts_and_the_kit_s_icons() {
+        use gpui_kit::assets::IconName;
+
+        let source = source();
+        for path in [
+            "fonts/Inter-Regular.ttf".to_string(),
+            IconName::Check.path().to_string(),
+        ] {
+            let data = source.load(&path).expect("the source answers");
+            assert!(data.is_some_and(|data| !data.is_empty()), "{path}");
+        }
     }
 
     #[test]

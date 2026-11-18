@@ -23,6 +23,13 @@ gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features =
   "wayland",
   "x11",
 ] }
+# GPUI Kit, next to Ely until every screen moves to it (#335). Pinned exactly:
+# kit releases are weekly and each one can move the GPUI snapshot. `component`
+# and `assets` are the kit's defaults, named so a new default stays opt-in.
+gpui-kit = { version = "=0.10.0", default-features = false, features = [
+  "component",
+  "assets",
+] }
 ely-gpui-component = { git = "https://github.com/ELY-Open-Source/Ely-GPUI-Components", rev = "49270f27ca5d368d3429c049f5badc67b965d975" }
 gpui-mcp = { path = "vendor/gpui-mcp/crates/gpui-mcp", default-features = false, features = [
   "gpui-pre",

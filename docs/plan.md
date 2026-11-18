@@ -277,6 +277,8 @@ cannot start, the window opens without it.
 ## 6. UI and assets
 
 - Reuse Ely components for cards, tabs, tables, steppers, badges, banners, scroll areas and dialogs.
+  The GPUI Kit migration (#335) adds `gpui-kit` beside Ely: the window is wrapped in the kit's
+  `Root` and a migrated screen uses kit components; see [`ui-kit/README.md`](ui-kit/README.md).
 - Every calculator's breakdown renders through the shared formula tree: expandable nodes with label,
   inputs, multiplier, source and result, plus search highlights and a copy action. The research
   Rates pane is the first consumer. Node ids are scoped by the tree's own id, so a page can show
@@ -285,7 +287,8 @@ cannot start, the window opens without it.
 - One shared header (sidebar toggle, history arrows, save status, Export, Import), one
   sidebar and one tab strip; a section owns its tab strip and the shell owns the header and sidebar.
 - Palette and spacing follow one dark theme: `#1a1a2e` ground, `#16213e` surfaces, `#0f3460`
-  borders, `#00d4ff` accent; world badges use per-world colours. The GPUI Kit migration replaces it
+  borders, `#00d4ff` accent; world badges use per-world colours. The kit theme
+  (`crates/app/data/theme.json`) carries the same colors. The GPUI Kit migration replaces it
   with the Console design in [`ui-kit/design.md`](ui-kit/design.md) (dark and light) once #360
   applies it.
 - When the workspace (the window minus the sidebar) is narrower than 1180 px, the fixed side rails
@@ -322,7 +325,8 @@ crates/import                       save -> every calculator's state (`import`),
 crates/project                      project document format and migration
 crates/ui                           GPUI building blocks: TaskRunner, run chrome, formula tree,
                                     number formats
-crates/app                          GPUI + Ely binary
+crates/app                          GPUI binary (Ely and GPUI Kit during the migration)
+  data/theme.json                   the GPUI Kit theme
   sections/                         the registry and one module per section
     mod.rs                          id, title, group, icon, art, spec, status, factory, keys, cards
     <section>/state.rs              the section's own state, import step and project config
@@ -344,13 +348,14 @@ private state; a section owns its state, its import step and its config in its o
 
 ## 8. Stack pins
 
-The app, Ely and the automation bridge must share one GPUI build.
+The app, Ely, GPUI Kit and the automation bridge must share one GPUI build.
 
 | Piece | Pin |
 | --- | --- |
 | GPUI | `gpui-pre = 0.3.12`, patched to the bridge's vendored tree |
 | `gpui_platform` | `gpui-pre-platform = 0.3.12`, features `font-kit`, `wayland`, `x11` |
 | Ely | `ely-gpui-component`, rev `49270f2` |
+| GPUI Kit | `gpui-kit = 0.10.0` (exact), features `component`, `assets` |
 | gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.12`, commit `d0e97a4` |
 
 GPUI Kit 0.10.0 pins `0.3.12` exactly, Ely `main` pins the same snapshot, and the bridge's
