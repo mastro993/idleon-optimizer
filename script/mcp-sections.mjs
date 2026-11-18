@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DEFAULT_APP_BIN, McpLane, flag, hasFlag } from './mcp-lane.mjs';
+import { DEFAULT_APP_BIN, McpLane, flag, hasFlag, openNav } from './mcp-lane.mjs';
 import { comparePng, decodePng } from './png.mjs';
 
 const argv = process.argv.slice(2);
@@ -4779,33 +4779,6 @@ const searchFor = async (lane, text, cardId, label) => {
     }
   }
 };
-
-/// Click a sidebar item, scrolling the sidebar first when the item sits
-/// outside it (the Tools group is below the fold at the default height).
-async function openNav(lane, id) {
-  let previous = null;
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const nodes = await lane.tree();
-    const node = nodes.find((entry) => entry.id === id);
-    if (!node) throw new Error(`${id} is not in the sidebar`);
-    const frame = nodes.find((entry) => entry.id === 'app-sidebar')?.bounds;
-    if (!frame) throw new Error('the sidebar is not in the tree');
-    const { y, height } = node.bounds;
-    // An item that cannot move further is pressed where it is.
-    if ((y >= frame.y && y + height <= frame.y + frame.height) || y === previous) {
-      await lane.call('click_element', { id });
-      return;
-    }
-    previous = y;
-    await lane.call('scroll', {
-      x: frame.x + frame.width / 2,
-      y: frame.y + frame.height / 2,
-      delta_y: Math.ceil(y - (frame.y + frame.height / 2)),
-    });
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-  throw new Error(`${id} did not scroll into the sidebar`);
-}
 
 /// Open a card from the dashboard, then verify the section it routes to.
 async function visitCard(lane, unit) {

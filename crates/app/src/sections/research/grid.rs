@@ -1,14 +1,15 @@
 //! The 20×12 research grid: cells, level badges and the shape polygons over them.
 
 use crate::state::AppState;
+use crate::ui::key_binding;
 use ely_gpui_component::buttons::IconButton;
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    App, Context, Hsla, IntoElement, KeyBinding, ParentElement, PathBuilder, Pixels, Point, Styled,
-    Window, canvas, div, point, px,
+    App, Context, Hsla, IntoElement, ParentElement, PathBuilder, Pixels, Point, Styled, Window,
+    canvas, div, point, px,
 };
 use idleon_research::game;
 
@@ -35,21 +36,21 @@ pub(crate) const GRID_CONTEXT: &str = "ResearchGrid";
 /// Arrow keys move the selected square, `+`/`-` level it, `[`/`]` turn the
 /// picked shape, `secondary-z` undoes and Escape deselects.
 pub(crate) fn bind_keys(cx: &mut App) {
-    let context = Some(GRID_CONTEXT);
-    cx.bind_keys([
-        KeyBinding::new("left", SelectLeft, context),
-        KeyBinding::new("right", SelectRight, context),
-        KeyBinding::new("up", SelectUp, context),
-        KeyBinding::new("down", SelectDown, context),
-        KeyBinding::new("=", LevelUp, context),
-        KeyBinding::new("shift-=", LevelUp, context),
-        KeyBinding::new("-", LevelDown, context),
-        KeyBinding::new("[", RotateLeft, context),
-        KeyBinding::new("]", RotateRight, context),
-        KeyBinding::new("secondary-z", Undo, context),
-        KeyBinding::new("secondary-shift-z", Redo, context),
-        KeyBinding::new("escape", Deselect, context),
-    ]);
+    let bindings = [
+        key_binding("left", SelectLeft, GRID_CONTEXT, cx),
+        key_binding("right", SelectRight, GRID_CONTEXT, cx),
+        key_binding("up", SelectUp, GRID_CONTEXT, cx),
+        key_binding("down", SelectDown, GRID_CONTEXT, cx),
+        key_binding("=", LevelUp, GRID_CONTEXT, cx),
+        key_binding("shift-=", LevelUp, GRID_CONTEXT, cx),
+        key_binding("-", LevelDown, GRID_CONTEXT, cx),
+        key_binding("[", RotateLeft, GRID_CONTEXT, cx),
+        key_binding("]", RotateRight, GRID_CONTEXT, cx),
+        key_binding("secondary-z", Undo, GRID_CONTEXT, cx),
+        key_binding("secondary-shift-z", Redo, GRID_CONTEXT, cx),
+        key_binding("escape", Deselect, GRID_CONTEXT, cx),
+    ];
+    cx.bind_keys(bindings);
 }
 
 /// Logical pixels per grid cell.

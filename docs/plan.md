@@ -348,13 +348,15 @@ The app, Ely and the automation bridge must share one GPUI build.
 
 | Piece | Pin |
 | --- | --- |
-| GPUI | `gpui-pre = 0.3.9`, patched to the bridge's vendored tree |
-| `gpui_platform` | `gpui-pre-platform = 0.3.9`, features `font-kit`, `wayland`, `x11` |
-| Ely | `ely-gpui-component`, rev `28e5690` |
-| gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.9`, commit `ac15850` |
+| GPUI | `gpui-pre = 0.3.12`, patched to the bridge's vendored tree |
+| `gpui_platform` | `gpui-pre-platform = 0.3.12`, features `font-kit`, `wayland`, `x11` |
+| Ely | `ely-gpui-component`, rev `49270f2` |
+| gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.12`, commit `d0e97a4` |
 
-Newer Ely pins `0.3.10`/`0.3.11`; the bridge patches up to `0.3.9`. These are the intersection. A
-bump moves all three together and the smoke harness is the check.
+GPUI Kit 0.10.0 pins `0.3.12` exactly, Ely `main` pins the same snapshot, and the bridge's
+`gpui-pre-0.3.12` branch vendors it. That is the intersection, so Ely and GPUI Kit can sit in one
+graph during the UI kit migration. A bump moves all three together and the smoke harness is the
+check.
 
 ## 9. Section status
 

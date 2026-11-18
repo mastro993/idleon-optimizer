@@ -466,7 +466,7 @@ fn results_card(
             table.row([
                 bubble_cell(result),
                 level_cell(result),
-                status_cell(result.row.status),
+                status_cell(result),
                 bonus_cell(result),
                 change_cell(result, selected_metric, compact),
             ])
@@ -609,7 +609,8 @@ fn level_cell(result: &RowResult) -> AnyElement {
         .into_any_element()
 }
 
-fn status_cell(status: Status) -> AnyElement {
+fn status_cell(result: &RowResult) -> AnyElement {
+    let status = result.row.status;
     let tone = match status {
         Status::Ready => Tone::Success,
         Status::Already => Tone::Info,
@@ -617,7 +618,10 @@ fn status_cell(status: Status) -> AnyElement {
         Status::Unavailable | Status::Unpurchased => Tone::Warning,
     };
     div()
-        .id(SharedString::from(format!("prisma-status-{}", status.id())))
+        .id(SharedString::from(format!(
+            "prisma-status-{}-{}",
+            result.row.cauldron, result.row.index
+        )))
         .role(Role::Label)
         .child(Badge::new(status.label()).tone(tone))
         .into_any_element()

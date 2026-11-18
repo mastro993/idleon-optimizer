@@ -10,8 +10,9 @@
 //   --keep      leave the spawned window running for a look
 //   --shot      where to write the closing window screenshot
 //   --dt-shot   where to write a Decision Tree tab screenshot (RES-08 evidence)
+import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
-import { DEFAULT_APP_BIN, McpLane, flag, hasFlag } from './mcp-lane.mjs';
+import { DEFAULT_APP_BIN, McpLane, flag, hasFlag, openNav } from './mcp-lane.mjs';
 
 const keep = hasFlag('--keep');
 const appBin = flag('--app-bin', DEFAULT_APP_BIN);
@@ -115,11 +116,17 @@ try {
     keep,
   });
 
-  // The dashboard is the landing page: every section card is exposed.
+  // The dashboard is the landing page: every registry card is exposed.
+  const registry = JSON.parse(execFileSync(appBin, ['--list-sections'], { encoding: 'utf8' }));
+  const expected = registry.filter((unit) => unit.dashboard).length;
   await waitFor((current) => has(current, 'card-research'), 'dashboard opens');
   let nodes = await tree();
   const cards = nodes.filter((node) => /^card-/.test(node.id ?? ''));
-  check('all 25 dashboard cards are exposed', cards.length === 25, String(cards.length));
+  check(
+    `all ${expected} dashboard cards are exposed`,
+    cards.length === expected,
+    String(cards.length),
+  );
   check('cards carry their world badge', (labelOf(nodes, 'card-research') ?? '').includes('W7'));
 
   // Search filters by world, and Escape clears it.
@@ -145,7 +152,7 @@ try {
   );
   await call('click_element', { id: 'dashboard-resume' });
   await waitFor((current) => has(current, 'section-fishing'), 'resume reopens the section');
-  await call('click_element', { id: 'nav-home' });
+  await openNav(lane, 'nav-home');
   await waitFor((current) => has(current, 'card-fishing'), 'back returns to the dashboard');
 
   // The research card opens the one implemented section. Filter first so the
@@ -445,7 +452,7 @@ try {
 
   // Killroy: the forecast reads raw save fields, names the encounter, and the
   // week range re-renders the table.
-  await call('click_element', { id: 'nav-home' });
+  await openNav(lane, 'nav-home');
   await waitFor((current) => has(current, 'dashboard-search'), 'the dashboard reopens');
   await call('click_element', { id: 'dashboard-search' });
   await call('keyboard', { keystroke: 'secondary-a' });
@@ -494,7 +501,7 @@ try {
   await waitForNode('killroy-forecast', 'the baseline tab reopens');
 
   // Back to the research rates pane for the failed-import checks.
-  await call('click_element', { id: 'nav-home' });
+  await openNav(lane, 'nav-home');
   await waitFor((current) => has(current, 'dashboard-search'), 'the dashboard reopens after killroy');
   await call('click_element', { id: 'dashboard-search' });
   await call('keyboard', { keystroke: 'secondary-a' });
