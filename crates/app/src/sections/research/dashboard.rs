@@ -180,17 +180,17 @@ fn summary_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement 
                     Statistic::new(
                         "dash-active",
                         "Active EXP/hr",
-                        format::count(summary.active_rate.round() as u64),
+                        format::rate(summary.active_rate),
                     )
-                    .caption(format::rate(summary.active_rate)),
+                    .caption(format::count(summary.active_rate.round() as u64)),
                 )
                 .child(
                     Statistic::new(
                         "dash-offline",
                         "Offline EXP/hr",
-                        format::count(summary.offline_rate.round() as u64),
+                        format::rate(summary.offline_rate),
                     )
-                    .caption(format::rate(summary.offline_rate)),
+                    .caption(format::count(summary.offline_rate.round() as u64)),
                 )
                 .child(
                     Statistic::new(

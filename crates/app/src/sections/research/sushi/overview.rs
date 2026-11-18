@@ -35,6 +35,17 @@ fn figure(
     caption: impl Into<SharedString>,
 ) -> Figure {
     let (scaled, scale) = idleon_ui::format::scale(value);
+    // Past a thousand Q the scale runs out; an exponent keeps the strip cell
+    // from overflowing.
+    if scaled.abs() >= 1e3 && scale == "Q" {
+        return Figure {
+            id,
+            label,
+            value: format!("{value:.2e}").into(),
+            suffix: None,
+            caption: caption.into(),
+        };
+    }
     let suffix = suffix.or((!scale.is_empty()).then_some(scale));
     Figure {
         id,

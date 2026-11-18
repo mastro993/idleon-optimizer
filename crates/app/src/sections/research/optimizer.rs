@@ -6,7 +6,9 @@ use gpui::prelude::*;
 use gpui::{Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::alert::Alert;
-use gpui_kit::component::button::{Button, ButtonVariants as _, Toggle, ToggleGroup};
+use gpui_kit::component::button::{
+    Button, ButtonVariants as _, Toggle, ToggleGroup, ToggleVariants as _,
+};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::input::NumberInput;
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
@@ -129,9 +131,12 @@ fn controls(
 
     let active = &state.simulation.preset;
     let preset_entity = entity.clone();
+    // The group is one row; wrapping keeps every preset whole in the rail.
     let presets = ToggleGroup::new("preset")
         .single()
+        .outline()
         .small()
+        .flex_wrap()
         .children(game().presets.iter().map(|preset| {
             Toggle::new(SharedString::from(preset.id.clone()))
                 .label(preset.name.clone())

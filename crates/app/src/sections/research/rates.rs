@@ -44,22 +44,21 @@ pub(crate) fn rates_pane(
             Statistic::new(
                 "kpi-rate",
                 "Research EXP/hr",
-                format::count(rate.total.max(0.0).round() as u64),
+                format::rate(rate.total.max(0.0)),
             )
-            .caption("observations × multipliers")
+            .caption(format!(
+                "{} · observations × multipliers",
+                format::count(rate.total.max(0.0).round() as u64)
+            ))
             .large(),
         )
         .child(
-            Statistic::new("kpi-multi", "Multiplier", format!("{:.2}", rate.multi))
+            Statistic::new("kpi-multi", "Multiplier", grouped(rate.multi, 2))
                 .caption("additive and grid bonuses"),
         )
         .child(
-            Statistic::new(
-                "kpi-obs",
-                "Observation EXP",
-                format!("{:.1}", rate.obs_base),
-            )
-            .caption("before multipliers"),
+            Statistic::new("kpi-obs", "Observation EXP", grouped(rate.obs_base, 1))
+                .caption("before multipliers"),
         )
         .child(
             Statistic::new(
@@ -499,4 +498,16 @@ fn observations_card(
                 .text_color(accent)
                 .child(selection),
         )
+}
+
+/// `value` with `decimals` places and its whole part grouped in thousands,
+/// as Ely's statistic drew it: `30,808.96`.
+fn grouped(value: f64, decimals: usize) -> String {
+    let text = format!("{value:.decimals$}");
+    match text.split_once('.') {
+        Some((whole, fraction)) => {
+            format!("{}.{fraction}", format::exact(whole.parse().unwrap_or(0.0)))
+        }
+        None => format::exact(value),
+    }
 }

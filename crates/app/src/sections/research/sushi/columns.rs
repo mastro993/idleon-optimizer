@@ -25,10 +25,14 @@ pub(crate) fn header(columns: &[Column]) -> TableHeader {
     )))
 }
 
-/// A cell of column `index`, sized and aligned like its head.
+/// A cell of column `index`, sized and aligned like its head. A shared
+/// column wraps its text inside its share instead of spilling into the next.
 pub(crate) fn cell(columns: &[Column], index: usize) -> TableCell {
     let (_, width, number) = columns[index];
     TableCell::new()
-        .when_some(width, |cell, width| cell.w(px(width)).min_w(px(width)))
+        .map(|cell| match width {
+            Some(width) => cell.w(px(width)).min_w(px(width)),
+            None => cell.overflow_hidden().whitespace_normal(),
+        })
         .when(number, TableCell::text_right)
 }
