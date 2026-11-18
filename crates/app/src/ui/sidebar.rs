@@ -1,27 +1,40 @@
 //! The sidebar: Home, then one group of sections per world, then the Tools.
 //!
-//! Ely's `NavItem` takes a vector icon only, so the items are the app's own
-//! [`SidebarItem`] with `NavItem`'s look, each section's game sprite and its
-//! activity mark (ADR 0003).
+//! The kit's `SidebarMenuItem` takes a vector icon only, hides its suffix in
+//! the rail and draws no keyboard focus, so the column and its items are the
+//! app's own, drawn from the kit theme: each section's game sprite and its
+//! activity mark (ADR 0005).
 
 use crate::sections::{self, Group, Section};
 use crate::session::SidebarFold;
 use crate::state::{AppState, Route, Shown};
 use crate::ui::assets::section_icon;
 use crate::ui::mark::ActivityMark;
-use ely_gpui_component::forms::Run;
-use ely_gpui_component::layout::{Sidebar, bring_into_view};
-use ely_gpui_component::navigation::NavGroup;
-use ely_gpui_component::primitives::{FocusRing as _, Icon, IconName, Tooltip};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, IconSize, Radius, TextSize};
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Axis, Bounds, Context, FontWeight, Hsla, IntoElement, MouseButton,
     ParentElement, Pixels, RenderOnce, Role, ScrollHandle, SharedString, Styled, Window, canvas,
     div, fill, linear_color_stop, linear_gradient, point, px, size,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::base::{Transition, transition};
+use gpui_kit::component::animation::ease_in_out_cubic;
+use gpui_kit::component::tooltip::Tooltip;
+use gpui_kit::component::{ActiveTheme as _, Icon, ThemeStyled as _};
+use idleon_ui::widgets::{TEXT_BODY, TEXT_CAPTION, bring_into_view};
 use std::rc::Rc;
 use std::time::Duration;
+
+/// The sidebar's width expanded, with icon and title.
+const WIDE: Pixels = px(240.0);
+/// The sidebar's width folded to the rail of icons.
+const RAIL: Pixels = px(56.0);
+/// How long the sidebar animates its width when it folds or unfolds.
+pub(crate) const FOLD_TIME: Duration = Duration::from_millis(200);
+/// An item's height.
+const ROW: Pixels = px(28.0);
+/// A group heading's height.
+const HEADING: Pixels = px(24.0);
 
 /// The sidebar's groups in order, each with its sections. Tools lists every
 /// section without a dashboard card, whatever world it belongs to.
@@ -42,45 +55,49 @@ pub(crate) fn groups() -> Vec<(Group, Vec<&'static Section>)> {
 }
 
 /// The sidebar's width at `fold`, which the shell lays its cached view out at.
-pub(crate) fn width(fold: SidebarFold, window: &Window, cx: &App) -> Pixels {
-    cx.theme()
-        .sidebar_width(fold == SidebarFold::Rail)
-        .to_pixels(window.rem_size())
-}
-
-/// How long the sidebar animates its width when it folds or unfolds.
-pub(crate) fn fold_duration(cx: &App) -> Duration {
-    ely_gpui_component::motion::duration(ely_gpui_component::motion::BASE, cx)
+pub(crate) fn width(fold: SidebarFold) -> Pixels {
+    match fold {
+        SidebarFold::Expanded => WIDE,
+        SidebarFold::Rail => RAIL,
+    }
 }
 
 /// The sidebar column: Home, then every group, scrolling on its own.
-pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let rail = state.session.shell.sidebar == SidebarFold::Rail;
-    let ground = cx.theme().colors.bg;
+pub(crate) fn sidebar(
+    state: &AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let fold = state.session.shell.sidebar;
+    let rail = fold == SidebarFold::Rail;
     let entity = cx.entity();
     let scroll = &state.sidebar_scroll;
 
     let home = entity.clone();
     let mut list = div().flex().flex_col().gap_3().p_2().child(
-        SidebarItem::new("nav-home", "Home", glyph(IconName::House))
-            .active(state.route().is_dashboard())
-            .folded(rail)
-            .reveal(scroll)
-            .on_click(move |window, cx| {
-                home.update(cx, |state, cx| {
-                    state.open_place(Route::Dashboard, window, cx)
-                });
-            }),
+        SidebarItem::new(
+            "nav-home",
+            "Home",
+            glyph(Icon::new(IconName::House).size_3p5()),
+        )
+        .active(state.route().is_dashboard())
+        .folded(rail)
+        .reveal(scroll)
+        .on_click(move |window, cx| {
+            home.update(cx, |state, cx| {
+                state.open_place(Route::Dashboard, window, cx)
+            });
+        }),
     );
     for (group, sections) in groups() {
-        // Folded, NavGroup renders its items alone; the heading is drawn here
-        // because NavGroup's title always carries a fold chevron, and these
-        // headings do not fold.
-        let mut nav =
-            NavGroup::new(format!("nav-group-{}", group.id()), group.label(), true).folded(true);
+        let mut items = div()
+            .id(SharedString::from(format!("nav-group-{}", group.id())))
+            .flex()
+            .flex_col()
+            .gap_0p5();
         for section in sections {
             let open = entity.clone();
-            nav = nav.child(
+            items = items.child(
                 SidebarItem::new(
                     format!("nav-{}", section.id),
                     section.title,
@@ -103,13 +120,34 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
                 .flex_col()
                 .gap_0p5()
                 .child(heading(group, rail, cx))
-                .child(nav),
+                .child(items),
         );
     }
 
+    // The width eases between the two folds; everything inside keeps one
+    // layout, so only the column's edge moves.
+    let ground = cx.theme().sidebar;
+    let shown = transition(
+        "app-sidebar-width",
+        width(fold),
+        Transition::new(FOLD_TIME).ease(ease_in_out_cubic),
+        window,
+        cx,
+    );
     // A fade at each edge says there is more to scroll; a scrollbar would sit
     // on the icons, the rail's narrow column most of all.
-    Sidebar::new("app-sidebar", rail)
+    div()
+        .id("app-sidebar")
+        .flex()
+        .flex_col()
+        .flex_none()
+        .h_full()
+        .w(shown)
+        .overflow_hidden()
+        .border_r_1()
+        .border_color(cx.theme().sidebar_border)
+        .bg(ground)
+        .text_color(cx.theme().sidebar_foreground)
         .child(
             div()
                 .relative()
@@ -130,10 +168,8 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
 
 /// A fade into the sidebar's ground at each edge with more items beyond it.
 ///
-/// Ely's `ScrollShadow` casts its shadows downward, so its bottom edge is
-/// clipped away, and it reads the scroll offsets during render, before the
-/// frame's layout. This paints after the list is laid out, so a fold or a
-/// scroll always shows the current edges.
+/// It paints after the list is laid out, so a fold or a scroll always shows
+/// the current edges.
 fn edge_fades(scroll: &ScrollHandle, ground: Hsla) -> impl IntoElement {
     let scroll = scroll.clone();
     canvas(
@@ -166,10 +202,9 @@ fn edge_fades(scroll: &ScrollHandle, ground: Hsla) -> impl IntoElement {
     .size_full()
 }
 
-/// A group's title in `NavGroup`'s type, without the fold chevron; the rail
-/// shows its short form at the same left edge.
+/// A group's title, which does not fold; the rail shows its short form at the
+/// same left edge.
 fn heading(group: Group, rail: bool, cx: &App) -> impl IntoElement {
-    let theme = cx.theme();
     div()
         .id(SharedString::from(format!(
             "nav-group-title-{}",
@@ -179,13 +214,11 @@ fn heading(group: Group, rail: bool, cx: &App) -> impl IntoElement {
         .aria_label(group.label())
         .flex()
         .items_center()
-        .h(theme.control_height(ControlSize::Sm))
-        .border_1()
-        .border_color(gpui::transparent_black())
-        .text_size(theme.text_size(TextSize::Xs))
-        .font_weight(FontWeight::MEDIUM)
-        .text_color(theme.colors.fg_subtle)
+        .h(HEADING)
         .px_2()
+        .text_size(TEXT_CAPTION)
+        .font_weight(FontWeight::MEDIUM)
+        .text_color(cx.theme().muted_foreground)
         .whitespace_nowrap()
         .child(if rail {
             rail_label(group)
@@ -207,23 +240,26 @@ fn rail_label(group: Group) -> &'static str {
 const ICON: Pixels = px(20.0);
 
 /// A vector icon in the slot.
-fn glyph(icon: IconName) -> AnyElement {
+fn glyph(icon: Icon) -> AnyElement {
     div()
         .flex()
         .flex_none()
         .items_center()
         .justify_center()
         .size(ICON)
-        .child(Icon::new(icon).size(IconSize::Sm))
+        .child(icon)
         .into_any_element()
 }
 
 /// How far a rail mark's disc sits past the icon's bottom-right corner.
 const RAIL_MARK_OFFSET: f32 = 5.0;
 
-/// One place in the sidebar: `NavItem`'s height, radius, hover, active fill
-/// and focus ring, with any element as its icon and an optional activity mark:
-/// at the row's end when expanded, on the icon's corner in the rail.
+/// What a click on an item runs.
+type Run = Rc<dyn Fn(&mut Window, &mut App)>;
+
+/// One place in the sidebar: the kit's sidebar fill on hover and while
+/// active, its focus ring, any element as its icon and an optional activity
+/// mark: at the row's end when expanded, on the icon's corner in the rail.
 #[derive(IntoElement)]
 pub(crate) struct SidebarItem {
     id: SharedString,
@@ -307,13 +343,23 @@ impl RenderOnce for SidebarItem {
             }
             _ => None,
         };
+        let focus = window
+            .use_keyed_state(
+                SharedString::from(format!("{}-focus", self.id)),
+                cx,
+                |_, cx| cx.focus_handle(),
+            )
+            .read(cx)
+            .clone();
+        let focused = focus.is_focused(window);
         let theme = cx.theme();
-        let colors = &theme.colors;
+        let (ground, fill) = (theme.sidebar, theme.sidebar_accent);
         let fg = if self.active {
-            colors.fg
+            theme.sidebar_accent_foreground
         } else {
-            colors.fg_muted
+            theme.sidebar_foreground
         };
+        let hover_fg = theme.sidebar_accent_foreground;
         let label = self.label.clone();
         let mark_id = SharedString::from(format!("{}-activity", self.id));
         let (end_mark, corner_mark) = match (self.activity, self.folded) {
@@ -332,13 +378,12 @@ impl RenderOnce for SidebarItem {
                     .right(px(-RAIL_MARK_OFFSET))
                     .bottom(px(-RAIL_MARK_OFFSET))
                     .p(px(1.5))
-                    .rounded_full()
+                    .rounded_full_style(cx)
                     .map(|disc| {
                         if self.active {
-                            disc.bg(colors.hover)
+                            disc.bg(fill)
                         } else {
-                            disc.bg(colors.bg)
-                                .group_hover(row, |style| style.bg(colors.hover))
+                            disc.bg(ground).group_hover(row, |style| style.bg(fill))
                         }
                     })
                     .child(mark);
@@ -365,21 +410,22 @@ impl RenderOnce for SidebarItem {
             .flex_none()
             .items_center()
             .gap_2()
-            .h(theme.control_height(ControlSize::Md))
-            .rounded(theme.radius(Radius::Md))
+            .h(ROW)
+            .rounded(theme.radius)
             .border_1()
             .border_color(gpui::transparent_black())
-            .text_size(theme.text_size(TextSize::Sm))
+            .text_size(TEXT_BODY)
             .text_color(fg)
             .cursor_pointer()
+            .track_focus(&focus)
             .tab_index(0)
-            .focus_ring(cx)
+            .when(focused, |item| item.focus_ring_style(window, cx))
             .on_mouse_down(MouseButton::Left, |_, window, _| window.prevent_default())
             .map(|item| {
                 if self.active {
-                    item.bg(colors.hover).font_weight(FontWeight::MEDIUM)
+                    item.bg(fill).font_weight(FontWeight::MEDIUM)
                 } else {
-                    item.hover(|style| style.bg(colors.hover).text_color(colors.fg))
+                    item.hover(|style| style.bg(fill).text_color(hover_fg))
                 }
             })
             .when_some(self.on_click.filter(|_| !self.active), |item, click| {
@@ -394,7 +440,9 @@ impl RenderOnce for SidebarItem {
         // dropping it, which would reflow the row mid-animation.
         item.px_2()
             .overflow_hidden()
-            .when(self.folded, |item| item.tooltip(Tooltip::text(tooltip)))
+            .when(self.folded, |item| {
+                item.tooltip(move |window, cx| Tooltip::new(tooltip.clone()).build(window, cx))
+            })
             .child(
                 div()
                     .flex_1()

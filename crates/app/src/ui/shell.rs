@@ -47,7 +47,7 @@ pub(crate) fn shell(
     // Published before the place renders, so its breakpoint measures the
     // workspace the sidebar leaves.
     let fold = state.session.shell.sidebar;
-    let sidebar_width = sidebar::width(fold, window, cx);
+    let sidebar_width = sidebar::width(fold);
     // Only on a change: setting a global notifies its observers every time.
     if cx.try_global::<SidebarWidth>().map(|width| width.0) != Some(sidebar_width) {
         cx.set_global(SidebarWidth(sidebar_width));
@@ -60,9 +60,8 @@ pub(crate) fn shell(
     };
 
     let entity = cx.entity();
-    let fold_time = sidebar::fold_duration(cx);
     let views = Views::of(state, cx);
-    let folding = views.sidebar_folding(fold, fold_time);
+    let folding = views.sidebar_folding(fold, sidebar::FOLD_TIME);
     let (header, sidebar, status) = (
         views.header.clone(),
         views.sidebar.clone(),
