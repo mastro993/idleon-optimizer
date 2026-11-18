@@ -1,8 +1,14 @@
-//! The segmented choice the Research panes share, on the kit `ToggleGroup`.
+//! The controls the Research panes share: the segmented choice on the kit
+//! `ToggleGroup`, and the number field with Ely's stepper buttons.
 
-use gpui::{App, ElementId, SharedString, Window};
+use gpui::{App, ElementId, Entity, SharedString, Window};
+use gpui_kit::assets::IconName;
 use gpui_kit::component::Sizable as _;
-use gpui_kit::component::button::{Toggle, ToggleGroup, ToggleVariants as _};
+use gpui_kit::component::button::{
+    Button, ButtonVariants as _, Toggle, ToggleGroup, ToggleVariants as _,
+};
+use gpui_kit::component::input::{InputState, NumberInput};
+use std::rc::Rc;
 
 /// A small segmented single choice under `id`, one segment per
 /// `(value, label)` with `current` checked.
@@ -67,4 +73,33 @@ fn group<V: Copy + PartialEq + 'static>(
                 on_change(values[ix], window, cx);
             }
         })
+}
+
+/// A kit `NumberInput` over `field` whose −/+ buttons keep the Ely stepper's
+/// `<id>-less` and `<id>-more` ids, which the harnesses click.
+///
+/// A press moves `value` by `step`, rounded to `decimals`, through `set`: the
+/// section setter, which clamps and stores it. The field catches up through
+/// `show_number` on the next frame, as after any other change.
+pub(crate) fn stepper(
+    id: &str,
+    field: &Entity<InputState>,
+    (value, step, decimals): (f64, f64, usize),
+    set: impl Fn(f64, &mut Window, &mut App) + 'static,
+) -> NumberInput {
+    let set = Rc::new(set);
+    let scale = 10_f64.powi(decimals as i32);
+    let button = |suffix: &str, icon: IconName, next: f64| {
+        let set = set.clone();
+        let next = (next * scale).round() / scale;
+        Button::new(SharedString::from(format!("{id}-{suffix}")))
+            .icon(icon)
+            .ghost()
+            .xsmall()
+            .on_click(move |_event, window, cx| set(next, window, cx))
+    };
+    NumberInput::new(field)
+        .stepper(false)
+        .prefix(button("less", IconName::Minus, value - step))
+        .suffix(button("more", IconName::Plus, value + step))
 }

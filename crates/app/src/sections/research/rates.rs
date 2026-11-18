@@ -1,5 +1,6 @@
 //! Rates pane: the EXP breakdown and the observation board.
 
+use super::controls::stepper;
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
 use gpui::prelude::*;
@@ -9,7 +10,7 @@ use gpui::{
 };
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
-use gpui_kit::component::input::{InputEvent, InputState, NumberInput};
+use gpui_kit::component::input::{InputEvent, InputState};
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
@@ -245,12 +246,20 @@ pub(super) fn supplement_fields(
 }
 
 /// One supplement row: its name, its value, and the field that edits it.
-fn supplement_row(state: &AppState, index: usize, window: &mut Window, cx: &mut App) -> AnyElement {
+fn supplement_row(
+    state: &AppState,
+    entity: Entity<AppState>,
+    index: usize,
+    window: &mut Window,
+    cx: &mut App,
+) -> AnyElement {
     let supplement = &SUPPLEMENTS[index];
     let value = (supplement.get)(&state.context);
     let precision = supplement.precision;
     let field = &state.research.supplement_fields[index];
     show_number(field, value, precision, window, cx);
+    let set = supplement.set;
+    let id = format!("{}-stepper", supplement.id);
     let shown = format!("{value:.precision$}");
     div()
         .id(supplement.id)
@@ -264,14 +273,18 @@ fn supplement_row(state: &AppState, index: usize, window: &mut Window, cx: &mut 
         .h(px(30.0))
         .child(Caption::new(supplement.label))
         .child(
-            div()
-                .id(SharedString::from(format!("{}-stepper", supplement.id)))
-                .w(px(140.0))
-                .child(
-                    NumberInput::new(field)
-                        .accessibility_label(supplement.label)
-                        .small(),
-                ),
+            div().id(SharedString::from(id.clone())).w(px(140.0)).child(
+                stepper(
+                    &id,
+                    field,
+                    (value, supplement.step, precision),
+                    move |value, _window, cx| {
+                        entity.update(cx, |state, cx| set(state, value, cx));
+                    },
+                )
+                .accessibility_label(supplement.label)
+                .small(),
+            ),
         )
         .into_any_element()
 }
@@ -322,7 +335,10 @@ fn supplements_card(
             .flex()
             .flex_col()
             .gap_1()
-            .children((0..SUPPLEMENTS.len()).map(|index| supplement_row(state, index, window, cx))),
+            .children(
+                (0..SUPPLEMENTS.len())
+                    .map(|index| supplement_row(state, entity.clone(), index, window, cx)),
+            ),
     )
 }
 

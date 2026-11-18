@@ -109,7 +109,7 @@ pub(crate) struct KnobRange {
 
 impl KnobRange {
     /// How many decimals the knob's field shows.
-    fn decimals(&self) -> usize {
+    pub(super) fn decimals(&self) -> usize {
         if self.step < 0.1 {
             2
         } else if self.step < 1.0 {

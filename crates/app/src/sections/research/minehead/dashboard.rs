@@ -1,6 +1,7 @@
 //! The Minehead dashboard: the floor's stat cards, the upgrade table and the
 //! floor rewards.
 
+use super::super::controls::stepper;
 use super::boss_name;
 use crate::sections::research::sushi::columns::{self, Column};
 use crate::state::AppState;
@@ -11,7 +12,6 @@ use gpui::{
 use gpui_kit::component::ActiveTheme as _;
 use gpui_kit::component::Sizable as _;
 use gpui_kit::component::checkbox::Checkbox;
-use gpui_kit::component::input::NumberInput;
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::table::{Table, TableBody, TableCell, TableRow};
 use idleon_minehead::{Inputs, game, upgrade_desc};
@@ -202,6 +202,7 @@ pub(super) fn pane(
     let theme = cx.theme();
     let muted = theme.muted_foreground;
     let entity = cx.entity();
+    let cost_entity = entity.clone();
 
     let cards =
         div()
@@ -227,9 +228,18 @@ pub(super) fn pane(
                 .child(Caption::new("A_MineCost").text_color(muted))
                 .child(
                     div().id("mh-svar-cost").w(px(120.0)).child(
-                        NumberInput::new(&minehead.server_cost)
-                            .accessibility_label("A_MineCost")
-                            .small(),
+                        stepper(
+                            "mh-svar-cost",
+                            &minehead.server_cost,
+                            (server_var_cost, 0.01, 2),
+                            move |cost, _window, cx| {
+                                cost_entity.update(cx, |state, cx| {
+                                    state.research.minehead.set_server_var_cost(cost, cx);
+                                });
+                            },
+                        )
+                        .accessibility_label("A_MineCost")
+                        .small(),
                     ),
                 ),
         );
