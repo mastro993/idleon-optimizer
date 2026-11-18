@@ -3,86 +3,79 @@
 //!
 //! The six trees show one at a time behind a rail, and every tree is the same
 //! [`FormulaTree`](idleon_ui::formula::FormulaTree) the other calculators use.
+//! The section reads the tree and the per-cell output again only when the board
+//! or the picked tree changes (`derived::BoardFigures`).
 //!
 //! A breakdown the save cannot compute (Cell EXP without Cell Biology,
 //! Bloodcells without Bloodcell Coagulation, a board the rules refuse) prints a
 //! warning naming what is missing instead of a guessed factor.
 
-use super::estimate::{stat, text_kpi};
+use super::parts::{figure, stat, strips, text_kpi, text_table};
 use crate::state::AppState;
-use ely_gpui_component::data_display::KpiCard;
-use ely_gpui_component::feedback::Callout;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui::layout::tab_bar;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
-use idleon_jelly::{BreakdownCategory, Jelly, MetricOptions};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use idleon_jelly::{BreakdownCategory, CellRow, LayoutBreakdown};
 use idleon_ui::format;
+use idleon_ui::widgets::{Callout, Caption, Card, CardHeader, PANEL_GAP, Tone};
 
 /// The breakdowns pane.
-pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
+pub(crate) fn pane(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let category = state.jelly_state.breakdown;
-    let options = MetricOptions {
-        fever: Some(jelly.progress.fever),
-        ..MetricOptions::default()
+    let figures = &state.jelly_state.board;
+    let body = div()
+        .id("jelly-breakdowns")
+        .flex()
+        .flex_col()
+        .gap(PANEL_GAP)
+        .child(rail(category, cx));
+    let Some(breakdown) = figures.breakdown.as_ref() else {
+        return body.into_any_element();
     };
-    let breakdown = jelly.breakdown(category, &state.jelly_state.layout, options);
-    let tree = state.jelly_breakdown.clone();
-    tree.update(cx, |tree, cx| tree.set_root(breakdown.root.clone(), cx));
-    let muted = cx.theme().colors.fg_muted;
-    let layout = jelly.layout_breakdown(&state.jelly_state.layout, options.fever);
+    if !breakdown.available {
+        // The locked text prints instead of a tree, so a factor the save
+        // cannot compute never reads as a number.
+        return body
+            .child(
+                div().id("jelly-breakdown-warning").child(
+                    Callout::new(Tone::Warning, "This breakdown is not available")
+                        .child(Caption::new(format!(
+                            "{}.",
+                            breakdown.reason.trim_end_matches('.')
+                        )))
+                        .child(Caption::new(description(category))),
+                ),
+            )
+            .into_any_element();
+    }
     let summary = format!(
         "{}: {} × across {} nodes",
         category.label(),
         format::value(breakdown.root.value),
         breakdown.root.node_count()
     );
-
-    let mut body = div()
-        .id("jelly-breakdowns")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .child(rail(category, cx));
-    if !breakdown.available {
-        // The locked text prints instead of a tree, so a factor the save
-        // cannot compute never reads as a number.
-        body = body.child(
-            div().id("jelly-breakdown-warning").child(
-                Callout::new(Severity::Warning)
-                    .title("This breakdown is not available")
-                    .child(
-                        Caption::new(format!("{}.", breakdown.reason.trim_end_matches('.')))
-                            .text_color(muted),
-                    )
-                    .child(Caption::new(description(category)).text_color(muted)),
-            ),
-        );
-        return body.into_any_element();
-    }
     body.child(
         div()
             .id("jelly-breakdown-head")
             .flex()
             .flex_wrap()
             .items_center()
-            .gap_3()
-            .child(
-                KpiCard::new(stat(
-                    "jelly-breakdown-value",
-                    category.label(),
-                    breakdown.root.value,
-                ))
-                .caption(format!(
-                    "{} · {} nodes",
-                    category.id(),
-                    breakdown.root.node_count()
-                )),
-            )
+            .gap(PANEL_GAP)
+            .child(strips(
+                "jelly-breakdown-figure",
+                vec![
+                    stat(
+                        "jelly-breakdown-value",
+                        category.label(),
+                        breakdown.root.value,
+                    )
+                    .caption(format!(
+                        "{} · {} nodes",
+                        category.id(),
+                        breakdown.root.node_count()
+                    )),
+                ],
+            ))
             .child(
                 div()
                     .id("jelly-breakdown-summary")
@@ -90,7 +83,7 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jel
                     .aria_label(summary.clone())
                     .child(summary),
             )
-            .child(Caption::new(description(category)).text_color(muted)),
+            .child(Caption::new(description(category))),
     )
     .child(
         Card::new()
@@ -103,35 +96,36 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jel
                     .id("jelly-breakdown-panel")
                     .h(px(460.0))
                     .min_h_0()
-                    .child(tree),
+                    .child(state.jelly_breakdown.clone()),
             ),
     )
-    .when(layout.available, |body| body.child(per_cell(&layout, cx)))
+    .when(figures.layout.available, |body| {
+        body.child(per_cell(&figures.layout, &figures.cells))
+    })
     .into_any_element()
 }
 
 /// The six trees, as the pane's rail.
 fn rail(category: BreakdownCategory, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    let mut tabs = TabBar::new("jelly-breakdown-tabs").selected(SharedString::from(format!(
-        "jelly-breakdown-{}",
-        category.id()
-    )));
-    for entry in BreakdownCategory::ALL {
-        tabs = tabs.tab(WindowTab::new(
-            format!("jelly-breakdown-{}", entry.id()),
-            entry.label(),
-        ));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        let category = id
-            .as_ref()
-            .strip_prefix("jelly-breakdown-")
-            .and_then(BreakdownCategory::from_id);
-        if let Some(category) = category {
+    let selected = BreakdownCategory::ALL
+        .iter()
+        .position(|entry| *entry == category)
+        .unwrap_or(0);
+    let tabs = tab_bar(
+        "jelly-breakdown-tabs",
+        BreakdownCategory::ALL.map(|entry| {
+            (
+                format!("jelly-breakdown-{}", entry.id()).into(),
+                entry.label().into(),
+            )
+        }),
+        selected,
+        move |index, _window, cx| {
+            let category = BreakdownCategory::ALL[index];
             entity.update(cx, |state, cx| state.set_jelly_breakdown(category, cx));
-        }
-    });
+        },
+    );
     div()
         .id("jelly-breakdown-rail")
         .flex()
@@ -165,75 +159,66 @@ fn description(category: BreakdownCategory) -> &'static str {
 }
 
 /// The page's per-cell output table and the board's steady-state headline.
-fn per_cell(layout: &idleon_jelly::LayoutBreakdown, cx: &mut Context<AppState>) -> AnyElement {
+fn per_cell(layout: &LayoutBreakdown, rows: &[CellRow]) -> AnyElement {
     let metrics = &layout.metrics;
-    let rows = layout.cell_rows();
-    let mut table = Table::new(["Cell type", "Placed", "Average hit", "Attack rate", "DPS"]);
-    for row in &rows {
-        table = table.row([
-            div()
-                .id(format!("jelly-cell-row-{}", row.cell_type))
-                .child(row.name.clone())
-                .into_any_element(),
-            div()
-                .child(format::number(row.placed as f64))
-                .into_any_element(),
-            div()
-                .child(format::value(row.average_hit))
-                .into_any_element(),
-            div()
-                .child(format!("{}/sec", format::value(row.attacks_per_second)))
-                .into_any_element(),
-            div().child(format::value(row.dps)).into_any_element(),
-        ]);
-    }
+    let table = text_table(
+        &[
+            ("Cell type", false),
+            ("Placed", true),
+            ("Average hit", true),
+            ("Attack rate", true),
+            ("DPS", true),
+        ],
+        rows.iter().map(|row| {
+            vec![
+                row.name.clone(),
+                format::number(row.placed as f64),
+                format::value(row.average_hit),
+                format!("{}/sec", format::value(row.attacks_per_second)),
+                format::value(row.dps),
+            ]
+        }),
+    );
     div()
         .id("jelly-breakdown-cells")
         .flex()
         .flex_col()
-        .gap_3()
-        .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .gap_3()
-                .child(
-                    KpiCard::new(stat("jelly-breakdown-dps", "Total steady DPS", metrics.dps))
-                        .caption(format!(
-                            "{}/sec attack rate",
-                            format::value(metrics.attacks_per_second)
-                        )),
-                )
-                .child(text_kpi(
+        .gap(PANEL_GAP)
+        .child(strips(
+            "jelly-breakdown-kpis",
+            vec![
+                stat("jelly-breakdown-dps", "Total steady DPS", metrics.dps).caption(format!(
+                    "{}/sec attack rate",
+                    format::value(metrics.attacks_per_second)
+                )),
+                text_kpi(
                     "jelly-damage-passive",
                     "Damage passive",
                     format!("{:.3}x", layout.damage_multiplier()),
                     "Amoeba, Ribosome, Gigacyst and virus reach".to_string(),
-                    cx,
-                ))
-                .child(text_kpi(
+                ),
+                text_kpi(
                     "jelly-speed-passive",
                     "Speed passive",
                     format!("{:.3}x", layout.speed_multiplier()),
                     "Plasmid, Organelle and Mitochondria".to_string(),
-                    cx,
-                ))
-                .child(
-                    KpiCard::new(stat(
-                        "jelly-virus-multiplier",
-                        "Virus multiplier",
-                        metrics.virus_multiplier,
-                    ))
-                    .caption(format!("{} infected slots", metrics.infected_slots)),
                 ),
-        )
+                figure(
+                    "jelly-virus-multiplier",
+                    "Virus multiplier",
+                    metrics.virus_multiplier,
+                    0,
+                )
+                .caption(format!("{} infected slots", metrics.infected_slots)),
+            ],
+        ))
         .child(
             Card::new()
                 .header(
                     CardHeader::new("Per-cell output")
                         .description("One row per shipped cell type over the board on screen"),
                 )
-                .child(div().p_3().child(table)),
+                .child(table),
         )
         .into_any_element()
 }

@@ -1,21 +1,17 @@
 //! The simulated run: its cards, cell contribution and critical timeline.
 
-use crate::sections::jelly_operator::estimate::{stat, text_kpi};
-use crate::state::AppState;
-use ely_gpui_component::data_display::{KpiCard, Statistic, Timeline, TimelineItem, Tone};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::typography::Caption;
+use crate::sections::jelly_operator::outlook::CONTRIBUTION;
+use crate::sections::jelly_operator::parts::{figure, stat, strips, text_kpi, text_table};
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
+use gpui::{AnyElement, IntoElement, ParentElement, Styled, div};
+use gpui_kit::component::alert::Alert;
 use idleon_jelly::Trial;
 use idleon_ui::format;
 use idleon_ui::run_chrome;
+use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP, Timeline, TimelineItem, Tone};
 
 /// The simulated run: its outcome, cell contribution and critical timeline.
-pub(crate) fn card(trial: &Trial, stale: bool, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(trial: &Trial, stale: bool) -> AnyElement {
     let mut header = CardHeader::new("Simulated run").description(format!(
         "{} · {:.2}s · {} cell type(s) fired",
         status(trial),
@@ -32,21 +28,23 @@ pub(crate) fn card(trial: &Trial, stale: bool, cx: &mut Context<AppState>) -> An
     let card = Card::new().header(header);
     if !trial.valid {
         return card
-            .child(div().p_3().child(Banner::new(
-                "jelly-sim-invalid",
-                Severity::Warning,
-                format!("The sandbox board is not valid: {}", trial.reason),
-            )))
+            .child(
+                Alert::new(
+                    "jelly-sim-invalid",
+                    format!("The sandbox board is not valid: {}", trial.reason),
+                )
+                .with_variant(Tone::Warning.into())
+                .banner(),
+            )
             .into_any_element();
     }
     card.child(
         div()
             .id("jelly-sim-result")
-            .p_3()
             .flex()
             .flex_col()
-            .gap_3()
-            .child(cards(trial, cx))
+            .gap(PANEL_GAP)
+            .child(cards(trial))
             .child(contribution(trial))
             .child(timeline(trial)),
     )
@@ -75,114 +73,86 @@ fn roid_label(trial: &Trial) -> String {
     }
 }
 
-fn cards(trial: &Trial, cx: &mut Context<AppState>) -> AnyElement {
-    div()
-        .id("jelly-sim-cards")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(text_kpi(
-            "jelly-sim-outcome",
-            "Outcome",
-            status(trial).to_string(),
-            format!("{:.2}s · {}", trial.time, trial.ended_by.replace('-', " ")),
-            cx,
-        ))
-        .child(
-            KpiCard::new(stat("jelly-sim-damage", "Damage", trial.damage)).caption(format!(
+fn cards(trial: &Trial) -> AnyElement {
+    strips(
+        "jelly-sim-cards",
+        vec![
+            text_kpi(
+                "jelly-sim-outcome",
+                "Outcome",
+                status(trial).to_string(),
+                format!("{:.2}s · {}", trial.time, trial.ended_by.replace('-', " ")),
+            ),
+            stat("jelly-sim-damage", "Damage", trial.damage).caption(format!(
                 "{} of {} boss HP · {:.1}%",
                 format::value(trial.damage),
                 format::value(trial.hp),
                 100.0 * trial.damage_pct
             )),
-        )
-        .child(
-            KpiCard::new(stat("jelly-sim-peak-dps", "Peak DPS", trial.peak_dps)).caption(format!(
+            stat("jelly-sim-peak-dps", "Peak DPS", trial.peak_dps).caption(format!(
                 "Best DPS {} → {}",
                 format::value(trial.best_dps_before),
                 format::value(trial.best_dps_after)
             )),
-        )
-        .child(
-            KpiCard::new(stat(
+            stat(
                 "jelly-sim-bloodcells",
                 "Bloodcells earned",
                 trial.bloodcells,
-            ))
-            .caption(format!("Attempt change: {:+.0}", trial.attempt_delta)),
-        )
-        .child(
-            KpiCard::new(stat(
-                "jelly-sim-cell-exp",
-                "Cell EXP earned",
-                trial.cell_exp,
-            ))
-            .caption(format!("{} hits from {} shots", trial.hits, trial.shots)),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "jelly-sim-critical-time",
-                    "Critical survival",
-                    trial.critical_time,
-                )
-                .decimals(2)
-                .suffix("s"),
             )
+            .caption(format!("Attempt change: {:+.0}", trial.attempt_delta)),
+            stat("jelly-sim-cell-exp", "Cell EXP earned", trial.cell_exp)
+                .caption(format!("{} hits from {} shots", trial.hits, trial.shots)),
+            figure(
+                "jelly-sim-critical-time",
+                "Critical survival",
+                trial.critical_time,
+                2,
+            )
+            .suffix("s")
             .caption(format!(
                 "{} deaths · {} revives used",
                 trial.deaths, trial.revives_used
             )),
-        )
-        .child(
-            KpiCard::new(stat(
-                "jelly-sim-amoeba",
-                "Amoeba weakening",
-                trial.amoeba_stacks,
-            ))
-            .caption(format!(
+            stat("jelly-sim-amoeba", "Amoeba weakening", trial.amoeba_stacks).caption(format!(
                 "{} at Critical start",
                 trial.amoeba_stacks_at_critical_start
             )),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "jelly-sim-immunoid",
-                    "Immunoid focus",
-                    trial.immunoid_focus_time,
-                )
-                .decimals(2)
-                .suffix("s"),
+            figure(
+                "jelly-sim-immunoid",
+                "Immunoid focus",
+                trial.immunoid_focus_time,
+                2,
             )
+            .suffix("s")
             .caption(format!("{} focused attacks", trial.immunoid_hits)),
-        )
-        .child(text_kpi(
-            "jelly-sim-roid-card",
-            "Stronkroid",
-            roid_label(trial),
-            format!("{}s normal phase", trial.standard_time),
-            cx,
-        ))
-        .into_any_element()
+            text_kpi(
+                "jelly-sim-roid-card",
+                "Stronkroid",
+                roid_label(trial),
+                format!("{}s normal phase", trial.standard_time),
+            ),
+        ],
+    )
 }
 
 fn contribution(trial: &Trial) -> AnyElement {
-    let mut table = Table::new(["Cell", "Shots", "Hits", "Damage", "Bloodcells", "EXP"]);
-    for row in trial
-        .contribution
-        .iter()
-        .filter(|row| row.shots > 0.0 || row.hits > 0.0)
-    {
-        table = table.row([
-            row.name.clone(),
-            format::number(row.shots),
-            format::number(row.hits),
-            format::value(row.damage),
-            format::value(row.bloodcells),
-            format::value(row.exp),
-        ]);
-    }
+    let table = text_table(
+        &CONTRIBUTION,
+        trial
+            .contribution
+            .iter()
+            .filter(|row| row.shots > 0.0 || row.hits > 0.0)
+            .map(|row| {
+                vec![
+                    row.name.clone(),
+                    format::number(row.shots),
+                    format::number(row.hits),
+                    format::value(row.damage),
+                    format::value(row.bloodcells),
+                    format::value(row.exp),
+                ]
+            }),
+    );
     div()
         .id("jelly-sim-contribution")
         .flex()

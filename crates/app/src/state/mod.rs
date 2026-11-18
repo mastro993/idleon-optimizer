@@ -27,8 +27,9 @@ use crate::sections::fountain::{MarblePlanInputs, SimInputs, State as FountainSt
 use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::{
-    OptimizerRunInputs as JellyOptimizerRunInputs, PlannerRunInputs as JellyPlanRunInputs,
-    RunInputs as JellyRunInputs, SimulatorRunInputs as JellySimRunInputs, State as JellyState,
+    Controls as JellyControls, OptimizerRunInputs as JellyOptimizerRunInputs,
+    PlannerRunInputs as JellyPlanRunInputs, RunInputs as JellyRunInputs,
+    SimulatorRunInputs as JellySimRunInputs, State as JellyState,
 };
 use crate::sections::killroy::{
     Controls as KillroyControls, KillroyOutcome, State as KillroyState,
@@ -289,6 +290,8 @@ pub(crate) struct AppState {
     pub(crate) jelly: Option<Jelly>,
     /// The Jelly Operator section's board on screen and its palette pick.
     pub(crate) jelly_state: JellyState,
+    /// The Jelly Operator section's kit controls and its sequences table.
+    pub(crate) jelly_controls: JellyControls,
     /// The jar section's active tab, kept across dashboard visits.
     pub(crate) jar_tab: JarTab,
     /// The tier the rupie value tab projects its income for.
@@ -897,6 +900,16 @@ impl AppState {
                 ))
             },
         );
+        let jelly_controls = JellyControls::new(
+            crate::sections::jelly_operator::Runs {
+                estimate: &jelly_run,
+                trial: &jelly_sim_run,
+                plan: &jelly_plan_run,
+                optimization: &jelly_optimize_run,
+            },
+            window,
+            cx,
+        );
         let coral_run = report_run::<CoralPlan, CoralInputs>(
             cx,
             &mut subscriptions,
@@ -1288,6 +1301,7 @@ impl AppState {
             jar_tier: 0,
             jelly: None,
             jelly_state: JellyState::default(),
+            jelly_controls,
             jar_breakdown,
             jar: None,
             jar_state: JarState::default(),

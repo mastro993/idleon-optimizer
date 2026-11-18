@@ -879,8 +879,12 @@ save's Fever and revive policy on shared seeds, rank by the simulated objective 
 paired confidence against the board the run started from; the recommendation is never worse than
 that board, and `Use this board` puts it on the layout. The search is single-process, with no worker
 pooling, policy screening, exact enumeration or certification. Grid nodes 185 and 187 read the
-save's shape overlay as it is. Details:
-[`docs/sections/jelly-operator.md`](sections/jelly-operator.md).
+save's shape overlay as it is. The section draws with GPUI Kit (#349): its selects and number fields
+are kit controls built once in `controls.rs` that show the section's own persisted values, the
+ranked section sequences are a virtualized `DataTable` filled when a plan is stored, and what the
+tabs compute (the save's rewards and upgrades, the board's metrics and breakdown tree, the sandbox's
+unlocked slots, each run's outlook) is read when its inputs change (`derived.rs`), never per frame.
+Details: [`docs/sections/jelly-operator.md`](sections/jelly-operator.md).
 
 The Coral God Rank section implements CR-01, CR-02 and CR-03: the planner controls with
 validation and the save's current coral state, the bounded deterministic beam search through the

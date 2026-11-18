@@ -1,128 +1,67 @@
 //! The operation estimate: the run controls, its aggregate and its outlook.
 
 use super::outlook;
+use super::parts::{figure, info, number_field, run_button, stat, strips};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::NumberInput;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_jelly::{Estimate, Jelly};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui_kit::component::alert::Alert;
+use idleon_jelly::Estimate;
 use idleon_ui::format;
 use idleon_ui::run_chrome;
+use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP, Tone};
 
-/// A number with a game suffix (`1.23M`), as the KPI cards read.
-pub(crate) fn stat(id: &'static str, label: &'static str, value: f64) -> Statistic {
-    let (scaled, suffix) = format::scaled(value);
-    let decimals = if suffix.is_empty() { 1 } else { 2 };
-    Statistic::new(id, label, scaled)
-        .decimals(decimals)
-        .suffix(suffix)
-}
-
-/// A headline that is not a number, in the KPI row's own type scale.
-pub(crate) fn text_kpi(
-    id: &'static str,
-    label: impl Into<String>,
-    value: String,
-    caption: String,
+pub(crate) fn pane(
+    state: &mut AppState,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = &cx.theme().colors;
-    div()
-        .id(id)
-        .flex()
-        .flex_col()
-        .gap_1()
-        .min_w(px(150.0))
-        .p_3()
-        .rounded(px(8.0))
-        .border_1()
-        .border_color(colors.border)
-        .bg(colors.surface)
-        .child(
-            div()
-                .text_size(px(11.0))
-                .text_color(colors.fg_muted)
-                .child(label.into()),
-        )
-        .child(
-            div()
-                .text_size(px(20.0))
-                .font_weight(gpui::FontWeight::BOLD)
-                .child(value),
-        )
-        .child(
-            div()
-                .text_size(px(10.0))
-                .text_color(colors.fg_muted)
-                .child(caption),
-        )
-        .into_any_element()
-}
-
-pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
     let task = state.jelly_task(cx);
-    let inputs = state.jelly_state.inputs(Some(jelly));
-    let trials = state.jelly_state.trials;
-    let seed = state.jelly_state.seed;
     let running = task.running;
-
-    let entity = cx.entity();
-    let trials_entity = entity.clone();
-    let trials_input = NumberInput::new("jelly-trials", f64::from(trials))
-        .label("Trials")
-        .range(1.0, 1024.0)
-        .step(1.0)
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            let trials_entity = trials_entity.clone();
-            trials_entity.update(cx, |state, cx| state.set_jelly_trials(value, cx));
-        });
-    let seed_entity = entity.clone();
-    let seed_input = NumberInput::new("jelly-seed", f64::from(seed))
-        .label("Seed")
-        .range(0.0, 4_294_967_295.0)
-        .step(1.0)
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            let seed_entity = seed_entity.clone();
-            seed_entity.update(cx, |state, cx| state.set_jelly_seed(value, cx));
-        });
-    let run_entity = entity.clone();
-    let run = Button::new("jelly-run-estimate", "Run estimate")
-        .variant(ButtonVariant::Primary)
-        .size(ControlSize::Sm)
-        .icon(IconName::Play)
-        .disabled(running)
-        .on_click(move |_event, _window, cx| {
-            let run_entity = run_entity.clone();
-            run_entity.update(cx, |state, cx| state.run_jelly_estimate(cx));
-        });
+    let trials = number_field(
+        "jelly-trials",
+        "Trials",
+        &state.jelly_controls.trials.clone(),
+        f64::from(state.jelly_state.trials),
+        window,
+        cx,
+    );
+    let seed = number_field(
+        "jelly-seed",
+        "Seed",
+        &state.jelly_controls.seed.clone(),
+        f64::from(state.jelly_state.seed),
+        window,
+        cx,
+    );
+    let run = run_button(
+        "jelly-run-estimate",
+        "Run estimate",
+        running,
+        |state, cx| state.run_jelly_estimate(cx),
+        cx,
+    );
     let stale = task.stale;
 
-    let mut body = div().id("jelly-estimate").flex().flex_col().gap_3().child(
-        div()
-            .id("jelly-estimate-controls")
-            .flex()
-            .flex_wrap()
-            .items_end()
-            .gap_3()
-            .child(trials_input)
-            .child(seed_input)
-            .child(run)
-            .child(
-                Caption::new(
+    let mut body = div()
+        .id("jelly-estimate")
+        .flex()
+        .flex_col()
+        .gap(PANEL_GAP)
+        .child(
+            div()
+                .id("jelly-estimate-controls")
+                .flex()
+                .flex_wrap()
+                .items_center()
+                .gap(PANEL_GAP)
+                .child(trials)
+                .child(seed)
+                .child(run)
+                .child(Caption::new(
                     "One seeded 60 FPS operation per trial, aggregated across the trials.",
-                )
-                .text_color(cx.theme().colors.fg_muted),
-            ),
-    );
+                )),
+        );
     if running && let Some(progress) = task.progress.clone() {
         let entity = cx.entity();
         body = body.child(run_chrome::progress_card(
@@ -138,46 +77,45 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jel
     if task.cancelled {
         body = body.child(run_chrome::cancelled_banner("jelly-cancelled", stale));
     }
-    let Some(result) = task.result.clone() else {
+    let (Some(result), Some(insights)) = (task.result, state.jelly_state.results.insights.clone())
+    else {
         if !running && !task.cancelled {
-            body = body.child(
-                Banner::new(
-                    "jelly-estimate-empty",
-                    Severity::Info,
-                    "Run the estimate to see the clear probability, the Bloodcell gain, the cell contributions and the outlook for the next obstructions.",
-                ),
-            );
+            body = body.child(info(
+                "jelly-estimate-empty",
+                "Run the estimate to see the clear probability, the Bloodcell gain, the cell contributions and the outlook for the next obstructions.",
+            ));
         }
         return body.into_any_element();
     };
     if stale {
         body = body.child(run_chrome::stale_banner("jelly-estimate-stale"));
     }
-    let stale_badge = stale.then(|| run_chrome::stale_badge("jelly-estimate"));
-    body = body
-        .child(
-            div()
-                .id("jelly-estimate-result")
-                .flex()
-                .flex_col()
-                .gap_3()
-                .child(result_cards(&result, stale_badge))
-                .child(outlook::insights_card(jelly, &inputs, &result, cx)),
-        )
-        .child(outlook::contribution_card(&result))
-        .child(outlook::timeline_card(&result, cx));
-    body.into_any_element()
+    body.child(
+        div()
+            .id("jelly-estimate-result")
+            .flex()
+            .flex_col()
+            .gap(PANEL_GAP)
+            .child(result_cards(&result, stale))
+            .child(outlook::insights_card(&insights)),
+    )
+    .child(outlook::contribution_card(&result))
+    .child(outlook::timeline_card(&result, cx))
+    .into_any_element()
 }
 
-fn result_cards(result: &Estimate, stale_badge: Option<impl IntoElement>) -> AnyElement {
+fn result_cards(result: &Estimate, stale: bool) -> AnyElement {
     if !result.valid {
         return Card::new()
             .header(CardHeader::new("Estimate result"))
-            .child(div().p_3().child(Banner::new(
-                "jelly-estimate-invalid",
-                Severity::Warning,
-                format!("The board is not a valid layout: {}", result.reason),
-            )))
+            .child(
+                Alert::new(
+                    "jelly-estimate-invalid",
+                    format!("The board is not a valid layout: {}", result.reason),
+                )
+                .with_variant(Tone::Warning.into())
+                .banner(),
+            )
             .into_any_element();
     }
     let clear = 100.0 * result.clear_probability;
@@ -187,115 +125,89 @@ fn result_cards(result: &Estimate, stale_badge: Option<impl IntoElement>) -> Any
         result.trials,
         100.0 * result.mean_damage / result.representative.hp.max(1.0)
     ));
-    if let Some(badge) = stale_badge {
-        header = header.action(badge);
+    if stale {
+        header = header.action(run_chrome::stale_badge("jelly-estimate"));
     }
     Card::new()
         .header(header)
-        .child(
-            div()
-                .p_3()
-                .flex()
-                .flex_wrap()
-                .gap_3()
-                .child(
-                    KpiCard::new(
-                        Statistic::new(
-                            "jelly-estimate-clear-probability",
-                            "Clear probability",
-                            clear,
-                        )
-                        .decimals(1)
-                        .suffix("%"),
-                    )
-                    .caption(format!(
-                        "{} to {:.1}% Wilson interval",
-                        100.0 * result.clear_probability_low,
-                        100.0 * result.clear_probability_high
-                    )),
+        .child(strips(
+            "jelly-estimate-cards",
+            vec![
+                figure(
+                    "jelly-estimate-clear-probability",
+                    "Clear probability",
+                    clear,
+                    1,
                 )
-                .child(
-                    KpiCard::new(stat(
-                        "jelly-estimate-clear-time",
-                        "Median clear",
-                        result.median_time.unwrap_or(0.0),
-                    ))
-                    .caption(match result.p90_time {
-                        Some(p90) => format!("{} · 90th {:.2}s", format::duration(p90), p90),
-                        None => "No clears observed".to_string(),
-                    }),
+                .suffix("%")
+                .caption(format!(
+                    "{} to {:.1}% Wilson interval",
+                    100.0 * result.clear_probability_low,
+                    100.0 * result.clear_probability_high
+                )),
+                stat(
+                    "jelly-estimate-clear-time",
+                    "Median clear",
+                    result.median_time.unwrap_or(0.0),
                 )
-                .child(
-                    KpiCard::new(stat(
-                        "jelly-estimate-damage",
-                        "Mean damage",
-                        result.mean_damage,
-                    ))
-                    .caption(format!(
-                        "Normal {} · critical {}",
-                        format::value(result.mean_normal_damage),
-                        format::value(result.mean_critical_damage)
-                    )),
+                .caption(match result.p90_time {
+                    Some(p90) => format!("{} · 90th {:.2}s", format::duration(p90), p90),
+                    None => "No clears observed".to_string(),
+                }),
+                stat("jelly-estimate-damage", "Mean damage", result.mean_damage).caption(format!(
+                    "Normal {} · critical {}",
+                    format::value(result.mean_normal_damage),
+                    format::value(result.mean_critical_damage)
+                )),
+                stat(
+                    "jelly-estimate-bloodcells",
+                    "Bloodcells / attempt",
+                    result.mean_bloodcells,
                 )
-                .child(
-                    KpiCard::new(stat(
-                        "jelly-estimate-bloodcells",
-                        "Bloodcells / attempt",
-                        result.mean_bloodcells,
-                    ))
-                    .caption(format!(
-                        "Median {} · max {}",
-                        format::value(result.median_bloodcells.unwrap_or(0.0)),
-                        format::value(result.max_bloodcells)
-                    )),
+                .caption(format!(
+                    "Median {} · max {}",
+                    format::value(result.median_bloodcells.unwrap_or(0.0)),
+                    format::value(result.max_bloodcells)
+                )),
+                stat(
+                    "jelly-estimate-cell-exp",
+                    "Cell EXP / attempt",
+                    result.mean_cell_exp,
                 )
-                .child(
-                    KpiCard::new(stat(
-                        "jelly-estimate-cell-exp",
-                        "Cell EXP / attempt",
-                        result.mean_cell_exp,
-                    ))
-                    .caption("Spread over the cells the shots hit"),
+                .caption("Spread over the cells the shots hit"),
+                figure(
+                    "jelly-estimate-critical",
+                    "Critical time",
+                    result.mean_critical_time,
+                    2,
                 )
-                .child(
-                    KpiCard::new(
-                        Statistic::new(
-                            "jelly-estimate-critical",
-                            "Critical time",
-                            result.mean_critical_time,
-                        )
-                        .decimals(2)
-                        .suffix("s"),
-                    )
-                    .caption(format!(
-                        "{} deaths · {} revives",
-                        format::number(result.mean_deaths),
-                        format::number(result.mean_revives)
-                    )),
+                .suffix("s")
+                .caption(format!(
+                    "{} deaths · {} revives",
+                    format::number(result.mean_deaths),
+                    format::number(result.mean_revives)
+                )),
+                stat(
+                    "jelly-estimate-peak-dps",
+                    "Mean peak DPS",
+                    result.mean_peak_dps,
                 )
-                .child(
-                    KpiCard::new(stat(
-                        "jelly-estimate-peak-dps",
-                        "Mean peak DPS",
-                        result.mean_peak_dps,
-                    ))
-                    .caption(format!(
-                        "Best DPS ×{:.3} Bloodcells",
-                        result.mean_best_dps_multiplier
-                    )),
+                .caption(format!(
+                    "Best DPS ×{:.3} Bloodcells",
+                    result.mean_best_dps_multiplier
+                )),
+                figure(
+                    "jelly-estimate-live-slots",
+                    "Live slots",
+                    result.mean_live_slots,
+                    0,
                 )
-                .child(
-                    KpiCard::new(Statistic::new(
-                        "jelly-estimate-live-slots",
-                        "Live slots",
-                        result.mean_live_slots,
-                    ))
-                    .caption(format!(
-                        "{} boss attacks · {} hits",
-                        format::number(result.mean_boss_attacks),
-                        format::number(result.mean_hits)
-                    )),
-                ),
-        )
+                .caption(format!(
+                    "{} boss attacks · {} hits",
+                    format::number(result.mean_boss_attacks),
+                    format::number(result.mean_hits)
+                )),
+            ],
+        ))
         .into_any_element()
 }

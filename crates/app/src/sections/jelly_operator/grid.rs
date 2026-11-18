@@ -9,14 +9,15 @@
 
 use crate::state::AppState;
 use crate::ui::assets::asset_image_sized;
-use ely_gpui_component::primitives::Tooltip;
-use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Role, Styled, div, px};
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::tooltip::Tooltip;
 use idleon_jelly::PROXIMITY_ANCHORS;
 use idleon_jelly::board::{self, Layout};
 use idleon_jelly::data;
 use idleon_ui::format;
+use idleon_ui::widgets::{Card, CardHeader, TEXT_CAPTION};
 
 /// Where a board click goes: the layout tab's editable save board, the
 /// simulator's sandbox, or nowhere for a board a result only shows.
@@ -87,7 +88,8 @@ pub(crate) fn board(
     } = view;
     let data = data();
     let occupied = board::occupancy(layout);
-    let colors = &cx.theme().colors;
+    let theme = cx.theme();
+    let (hairline, proximity, new_ring) = (theme.border, theme.success, theme.warning);
     let entity = cx.entity();
     let width = data.cols as f32 * PITCH + PADDING * 2.0;
     let height = data.rows as f32 * PITCH + PADDING * 2.0;
@@ -135,7 +137,7 @@ pub(crate) fn board(
         let hover = format!("Slot {slot} · {label}");
         let tint = cell
             .map(|(_, cell_type)| format::hex(CELL_COLORS[cell_type].0))
-            .unwrap_or(colors.border);
+            .unwrap_or(hairline);
         let entity = entity.clone();
         slots.push(
             div()
@@ -158,11 +160,9 @@ pub(crate) fn board(
                     slot.opacity(0.35)
                 })
                 .when(PROXIMITY_ANCHORS.contains(&slot), |slot| {
-                    slot.border_color(colors.success)
+                    slot.border_color(proximity)
                 })
-                .when(new_section, |slot| {
-                    slot.border_color(format::hex("#ffd166"))
-                })
+                .when(new_section, |slot| slot.border_color(new_ring))
                 .when(cell.is_some_and(|(anchor, _)| anchor == slot), |slot| {
                     // The core slot carries a small marker.
                     slot.child(
@@ -188,7 +188,7 @@ pub(crate) fn board(
                             .bg(format::hex(CELL_COLORS[cell_type].1)),
                     )
                 })
-                .tooltip(Tooltip::text(hover))
+                .tooltip(move |window, cx| Tooltip::new(hover.clone()).build(window, cx))
                 .when(action != BoardAction::ReadOnly, |element| {
                     element.on_click(move |_event, _window, cx| {
                         let entity = entity.clone();
@@ -254,7 +254,7 @@ pub(crate) fn board(
             .top(px(PADDING
                 + 3.0 * PITCH
                 + (4.0 * PITCH - OBSTRUCTION_SIZE) / 2.0))
-            .tooltip(Tooltip::text(obstruction_name))
+            .tooltip(move |window, cx| Tooltip::new(obstruction_name.clone()).build(window, cx))
             .child(asset_image_sized(
                 format!("{prefix}-obstruction-image"),
                 &state.assets,
@@ -287,6 +287,19 @@ pub(crate) fn board(
         .into_any_element()
 }
 
+/// A titled card holding one read-only board.
+pub(crate) fn panel(
+    state: &AppState,
+    title: &'static str,
+    view: BoardView<'_>,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    Card::new()
+        .header(CardHeader::new(title))
+        .child(board(state, view, cx))
+        .into_any_element()
+}
+
 /// The legend: one chip per unlocked cell type.
 pub(crate) fn legend(state: &AppState) -> AnyElement {
     let Some(jelly) = state.jelly.as_ref() else {
@@ -308,7 +321,7 @@ pub(crate) fn legend(state: &AppState) -> AnyElement {
                 .border_1()
                 .border_color(format::hex(border))
                 .bg(format::hex(background))
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .font_weight(gpui::FontWeight::BOLD)
                 .child(data().cell_name(cell_type).to_string())
                 .into_any_element()
@@ -336,6 +349,8 @@ pub(crate) fn palette(
 ) -> AnyElement {
     let data = data();
     let entity = cx.entity();
+    let theme = cx.theme();
+    let (radius, ring, muted) = (theme.radius, theme.ring, theme.muted_foreground);
     let buttons = (0..8).map(|cell_type| {
         let unlocked = cell_type < owned;
         let (background, border) = cell_color(cell_type);
@@ -354,10 +369,10 @@ pub(crate) fn palette(
             .gap_2()
             .px_2()
             .py_1()
-            .rounded(px(6.0))
+            .rounded(radius)
             .border_1()
             .border_color(if selected == Some(cell_type) {
-                format::hex("#00d4ff")
+                ring
             } else {
                 border
             })
@@ -384,14 +399,14 @@ pub(crate) fn palette(
                     .flex_col()
                     .child(
                         div()
-                            .text_size(px(11.0))
+                            .text_size(TEXT_CAPTION)
                             .font_weight(gpui::FontWeight::BOLD)
                             .child(data.cell_name(cell_type).to_string()),
                     )
                     .child(
                         div()
-                            .text_size(px(9.0))
-                            .text_color(cx.theme().colors.fg_muted)
+                            .text_size(TEXT_CAPTION)
+                            .text_color(muted)
                             .child(format!("{} slot(s)", data.footprint(cell_type).len())),
                     ),
             )

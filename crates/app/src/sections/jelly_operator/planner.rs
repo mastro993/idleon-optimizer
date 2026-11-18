@@ -5,25 +5,23 @@
 //! planner itself lives in `idleon_jelly::planner`; this module owns the
 //! controls and renders the plan.
 
+use super::controls::{self, SequenceTable};
 use super::grid;
-use crate::sections::jelly_operator::estimate::text_kpi;
+use super::parts::{
+    SELECT_WIDTH, boxed, figure, info, number_field, run_button, select, strips, text_kpi,
+    text_table,
+};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::{Choice, NumberInput, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::component::table::DataTable;
+use gpui_kit::component::tag::Tag;
 use idleon_jelly::board::Layout;
-use idleon_jelly::planner::{self, Objective, Plan, PlanOptions, Quality, SectionRow, Strategy};
+use idleon_jelly::planner::{Objective, Plan, PlanOptions, Quality, SectionRow, Strategy};
 use idleon_jelly::{Estimate, Jelly, board};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
+use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP, Tone};
 
 /// The planner controls. The token count starts
 /// unset so the first imported save fills in its unused sections.
@@ -121,19 +119,19 @@ impl RunInputs {
 /// The Sections tab: the controls, the run and the ranked plan.
 pub(crate) fn pane(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
     jelly: &Jelly,
 ) -> AnyElement {
     let task = state.jelly_plan_task(cx);
     let running = task.running;
     let available = board::slot_purchases_left(jelly).max(0.0) as usize;
-    let controls = controls(state, cx, jelly, available);
+    let controls = controls(state, window, cx, jelly, available, running);
     let mut body = div()
         .id("jelly-sections")
         .flex()
         .flex_col()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(
             Card::new()
                 .header(
@@ -141,17 +139,12 @@ pub(crate) fn pane(
                         "Ranks every unpurchased section, then simulates the strongest geometry and multi-section combinations.",
                     ),
                 )
-                .child(div().p_3().child(controls)),
+                .child(controls),
         )
-        .child(
-            div()
-                .id("jelly-sections-tokens-note")
-                .child(Caption::new(format!(
-                    "{available} unused section token{} in the current save. Values above that are hypothetical.",
-                    if available == 1 { "" } else { "s" }
-                )))
-                .text_color(cx.theme().colors.fg_muted),
-        );
+        .child(div().id("jelly-sections-tokens-note").child(Caption::new(format!(
+            "{available} unused section token{} in the current save. Values above that are hypothetical.",
+            if available == 1 { "" } else { "s" }
+        ))));
     if running && let Some(progress) = task.progress.clone() {
         let entity = cx.entity();
         body = body.child(run_chrome::progress_card(
@@ -172,9 +165,8 @@ pub(crate) fn pane(
     }
     let Some(plan) = task.result else {
         if !running && !task.cancelled {
-            body = body.child(Banner::new(
+            body = body.child(info(
                 "jelly-sections-empty",
-                Severity::Info,
                 "Rank the sections to see which token buys the most board, and how its operation compares with the current one.",
             ));
         }
@@ -183,343 +175,251 @@ pub(crate) fn pane(
     if task.stale {
         body = body.child(run_chrome::stale_banner("jelly-sections-stale"));
     }
-    body.child(result(state, cx, jelly, &plan))
-        .into_any_element()
+    body.child(result(state, cx, &plan)).into_any_element()
 }
 
 /// Strategy, objective, EXP target, token count, quality, beam and seed.
 fn controls(
     state: &AppState,
+    window: &mut Window,
     cx: &mut Context<AppState>,
     jelly: &Jelly,
     available: usize,
+    running: bool,
 ) -> AnyElement {
-    let task = state.jelly_plan_task(cx);
-    let running = task.running;
     let planner = &state.jelly_state.planner;
-    let entity = cx.entity();
-
-    let strategy_entity = entity.clone();
-    let strategy = Select::new(
-        "jelly-sections-strategy",
-        Strategy::PAGE.map(|strategy| Choice::new(strategy.id(), strategy.label())),
-    )
-    .label("Strategy")
-    .selected(planner.strategy.id())
-    .size(ControlSize::Sm)
-    .on_change(move |value, _window, cx| {
-        if let Some(strategy) = Strategy::from_id(value) {
-            let entity = strategy_entity.clone();
-            entity.update(cx, |state, cx| state.set_jelly_plan_strategy(strategy, cx));
-        }
-    });
-
-    let objective_entity = entity.clone();
-    let objectives: Vec<Choice> = [
-        Objective::Clear,
-        Objective::Bloodcells,
-        Objective::Exp,
-        Objective::Dps,
-        Objective::Survival,
-    ]
-    .into_iter()
-    .filter(|objective| objective.visible(jelly))
-    .map(|objective| Choice::new(objective.id(), objective.label()))
-    .collect();
-    let objective = Select::new("jelly-sections-objective", objectives)
-        .label("Objective")
-        .selected(planner.objective.id())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Some(objective) = Objective::from_id(value) {
-                let entity = objective_entity.clone();
-                entity.update(cx, |state, cx| {
-                    state.set_jelly_plan_objective(objective, cx)
-                });
-            }
-        });
-
-    let exp_entity = entity.clone();
-    let mut exp_choices = vec![Choice::new("total", "Total EXP")];
-    exp_choices.extend((0..jelly.units_owned()).map(|cell_type| {
-        Choice::new(
-            cell_type.to_string(),
-            idleon_jelly::data().cell_name(cell_type),
-        )
-    }));
-    let exp_target = Select::new("jelly-sections-exp-cell-type", exp_choices)
-        .label("EXP target")
-        .selected(
-            planner
-                .exp_cell_type
-                .map(|cell_type| cell_type.to_string())
-                .unwrap_or_else(|| "total".to_string()),
-        )
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            let cell_type = value.parse::<usize>().ok();
-            let entity = exp_entity.clone();
-            entity.update(cx, |state, cx| {
-                state.set_jelly_plan_exp_cell_type(cell_type, cx)
-            });
-        });
-
-    let tokens_entity = entity.clone();
-    let tokens_input = NumberInput::new(
-        "jelly-sections-tokens",
-        planner.tokens.unwrap_or(available.max(1)) as f64,
-    )
-    .label("Sections to unlock")
-    .range(1.0, 40.0)
-    .step(1.0)
-    .size(ControlSize::Sm)
-    .on_change(move |value, _window, cx| {
-        let tokens = value.clamp(1.0, 40.0).round() as usize;
-        let entity = tokens_entity.clone();
-        entity.update(cx, |state, cx| state.set_jelly_plan_tokens(tokens, cx));
-    });
-
-    let quality_entity = entity.clone();
-    let quality = Select::new(
-        "jelly-sections-quality",
-        [Quality::Fast, Quality::Balanced, Quality::Thorough]
-            .map(|quality| Choice::new(quality.id(), quality.label())),
-    )
-    .label("Quality")
-    .selected(planner.quality.id())
-    .size(ControlSize::Sm)
-    .on_change(move |value, _window, cx| {
-        if let Some(quality) = Quality::from_id(value) {
-            let entity = quality_entity.clone();
-            entity.update(cx, |state, cx| state.set_jelly_plan_quality(quality, cx));
-        }
-    });
-
-    let beam_entity = entity.clone();
-    let beam = NumberInput::new("jelly-sections-beam", planner.beam_width as f64)
-        .label("Combination beam")
-        .range(2.0, 24.0)
-        .step(1.0)
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            let beam_width = value.clamp(2.0, 24.0).round() as usize;
-            let entity = beam_entity.clone();
-            entity.update(cx, |state, cx| state.set_jelly_plan_beam(beam_width, cx));
-        });
-
-    let seed_entity = entity.clone();
-    let seed = NumberInput::new("jelly-sections-seed", f64::from(planner.seed))
-        .label("Seed")
-        .range(0.0, f64::from(u32::MAX))
-        .step(1.0)
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            let seed = if value.is_finite() {
-                value.clamp(0.0, f64::from(u32::MAX)) as u32
-            } else {
-                1
-            };
-            let entity = seed_entity.clone();
-            entity.update(cx, |state, cx| state.set_jelly_plan_seed(seed, cx));
-        });
-
-    let run_entity = entity;
-    let run = Button::new("jelly-sections-run", "Rank sections")
-        .variant(ButtonVariant::Primary)
-        .size(ControlSize::Sm)
-        .icon(IconName::Play)
-        .disabled(running)
-        .on_click(move |_event, _window, cx| {
-            let run_entity = run_entity.clone();
-            run_entity.update(cx, |state, cx| state.run_jelly_plan(cx));
-        });
-
+    let controls = &state.jelly_controls;
+    controls.plan_strategy.show(
+        controls::strategy_choices(),
+        Some(&planner.strategy),
+        window,
+        cx,
+    );
+    controls.plan_objective.show(
+        controls::objective_choices(jelly),
+        Some(&planner.objective),
+        window,
+        cx,
+    );
+    controls.plan_quality.show(
+        controls::quality_choices(),
+        Some(&planner.quality),
+        window,
+        cx,
+    );
     let mut row = div()
         .id("jelly-sections-controls")
         .flex()
         .flex_wrap()
-        .items_end()
-        .gap_3()
-        .child(strategy)
-        .child(objective);
+        .items_center()
+        .gap(PANEL_GAP)
+        .child(boxed(
+            SELECT_WIDTH,
+            select(
+                &controls.plan_strategy,
+                "jelly-sections-strategy",
+                "Strategy",
+            ),
+        ))
+        .child(boxed(
+            SELECT_WIDTH,
+            select(
+                &controls.plan_objective,
+                "jelly-sections-objective",
+                "Objective",
+            ),
+        ));
     if planner.objective == Objective::Exp {
-        row = row.child(exp_target);
+        controls.plan_exp.show(
+            controls::exp_choices(jelly),
+            Some(&planner.exp_cell_type),
+            window,
+            cx,
+        );
+        row = row.child(boxed(
+            SELECT_WIDTH,
+            select(
+                &controls.plan_exp,
+                "jelly-sections-exp-cell-type",
+                "EXP target",
+            ),
+        ));
     }
-    row.child(tokens_input)
-        .child(quality)
-        .child(beam)
-        .child(seed)
-        .child(run)
-        .into_any_element()
+    row.child(number_field(
+        "jelly-sections-tokens",
+        "Sections to unlock",
+        &controls.plan_tokens,
+        planner.tokens.unwrap_or(available.max(1)) as f64,
+        window,
+        cx,
+    ))
+    .child(boxed(
+        SELECT_WIDTH,
+        select(&controls.plan_quality, "jelly-sections-quality", "Quality"),
+    ))
+    .child(number_field(
+        "jelly-sections-beam",
+        "Combination beam",
+        &controls.plan_beam,
+        planner.beam_width as f64,
+        window,
+        cx,
+    ))
+    .child(number_field(
+        "jelly-sections-seed",
+        "Seed",
+        &controls.plan_seed,
+        f64::from(planner.seed),
+        window,
+        cx,
+    ))
+    .child(run_button(
+        "jelly-sections-run",
+        "Rank sections",
+        running,
+        |state, cx| state.run_jelly_plan(cx),
+        cx,
+    ))
+    .into_any_element()
 }
 
 /// The plan: the recommendation, the two boards, the operation comparison and
 /// both tables.
-fn result(state: &AppState, cx: &mut Context<AppState>, jelly: &Jelly, plan: &Plan) -> AnyElement {
+fn result(state: &AppState, cx: &mut Context<AppState>, plan: &Plan) -> AnyElement {
     let Some(recommended) = plan.recommended.as_ref() else {
         return div()
             .id("jelly-sections-result")
             .flex()
             .flex_col()
-            .gap_3()
-            .child(Card::new().child(div().p_3().child(Caption::new(
+            .gap(PANEL_GAP)
+            .child(Card::new().child(Caption::new(
                 "No section was ranked: the plan asked for no tokens.",
-            ))))
+            )))
             .child(individual_sections(&plan.plots))
             .into_any_element();
     };
-    let sections = sequence_label(&recommended.plot_ids);
     let chance = recommended
         .chance_beats_baseline
         .map(format::chance)
         .unwrap_or_else(|| "Adaptive shared-seed comparison".to_string());
-    let cards = div()
-        .id("jelly-sections-summary")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(text_kpi(
-            "jelly-sections-recommended",
-            "Recommended sections",
-            sections.clone(),
-            format!(
-                "{} newly usable slots",
-                format::count(recommended.new_usable_slots as u64)
+    let cards = strips(
+        "jelly-sections-summary",
+        vec![
+            text_kpi(
+                "jelly-sections-recommended",
+                "Recommended sections",
+                sequence_label(&recommended.plot_ids),
+                format!(
+                    "{} newly usable slots",
+                    format::count(recommended.new_usable_slots as u64)
+                ),
             ),
-            cx,
-        ))
-        .child(text_kpi(
-            "jelly-sections-gain",
-            "Objective gain",
-            signed(recommended.objective_gain),
-            format!("{chance} chance to beat the baseline"),
-            cx,
-        ))
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "jelly-sections-proximity",
-                    "Proximity slots",
-                    recommended.proximity_slots as f64,
-                )
-                .decimals(0),
+            text_kpi(
+                "jelly-sections-gain",
+                "Objective gain",
+                signed(recommended.objective_gain),
+                format!("{chance} chance to beat the baseline"),
+            ),
+            figure(
+                "jelly-sections-proximity",
+                "Proximity slots",
+                recommended.proximity_slots as f64,
+                0,
             )
             .caption(footprint_summary(recommended)),
-        )
-        .child(text_kpi(
-            "jelly-sections-quality-card",
-            "Quality",
-            plan.quality.label().to_string(),
-            format!(
-                "{} section sequences evaluated · beam {}",
-                format::count(plan.sequences.len() as u64),
-                plan.beam_width
+            text_kpi(
+                "jelly-sections-quality-card",
+                "Quality",
+                plan.quality.label().to_string(),
+                format!(
+                    "{} section sequences evaluated · beam {}",
+                    format::count(plan.sequences.len() as u64),
+                    plan.beam_width
+                ),
             ),
-            cx,
-        ));
+        ],
+    );
     let steps = div()
         .id("jelly-sections-steps")
         .flex()
         .flex_wrap()
-        .gap_2()
+        .gap(PANEL_GAP)
         .children(
             recommended
                 .plot_ids
                 .iter()
                 .enumerate()
                 .map(|(index, plot_id)| {
-                    let step = format!("{}. Section {}", index + 1, plot_id + 1);
-                    div()
-                        .id(("jelly-section-step", index))
-                        .px_2()
-                        .py_1()
-                        .rounded_2xl()
-                        .border_1()
-                        .border_color(cx.theme().colors.border)
-                        .child(step)
-                        .into_any_element()
+                    div().id(("jelly-section-step", index)).child(
+                        Tag::new()
+                            .with_variant(Tone::Neutral.into())
+                            .outline()
+                            .child(format!("{}. Section {}", index + 1, plot_id + 1)),
+                    )
                 }),
         );
 
-    let baseline_unlocked = board::unlocked_slots(jelly);
-    let expanded = planner::save_with_plots(jelly, &recommended.plot_ids);
-    let final_unlocked = board::unlocked_slots(&expanded);
-    let baseline_board = board_panel(
+    let baseline_board = grid::panel(
         state,
-        cx,
         "Current board",
         grid::BoardView {
             prefix: "jelly-sections-baseline",
             layout: &plan.baseline_layout,
-            unlocked: &baseline_unlocked,
+            unlocked: &state.jelly_state.save.unlocked,
             highlight: &[],
             obstruction: plan.baseline_obstruction,
             selected: None,
             action: grid::BoardAction::ReadOnly,
         },
-    );
-    let final_board = board_panel(
-        state,
         cx,
+    );
+    let final_board = grid::panel(
+        state,
         "Recommended sections",
         grid::BoardView {
             prefix: "jelly-sections-final",
             layout: &recommended.layout,
-            unlocked: &final_unlocked,
+            unlocked: &state.jelly_state.results.plan_unlocked,
             highlight: &recommended.new_slots,
             obstruction: plan.baseline_obstruction,
             selected: None,
             action: grid::BoardAction::ReadOnly,
         },
+        cx,
     );
 
-    let mut body = div()
+    div()
         .id("jelly-sections-result")
         .flex()
         .flex_col()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(cards)
         .child(steps)
         .child(
             div()
                 .flex()
                 .flex_wrap()
-                .gap_3()
+                .gap(PANEL_GAP)
                 .child(baseline_board)
                 .child(final_board),
-        );
-    if let Some(comparison) = comparison(plan, cx) {
-        body = body.child(comparison);
-    }
-    body.child(sequences_table(&plan.sequences))
+        )
+        .children(comparison(plan))
+        .child(sequences_table(&state.jelly_controls.sequences))
         .child(individual_sections(&plan.plots))
         .into_any_element()
 }
 
-fn board_panel(
-    state: &AppState,
-    cx: &mut Context<AppState>,
-    title: &'static str,
-    view: grid::BoardView<'_>,
-) -> AnyElement {
-    Card::new()
-        .header(CardHeader::new(title))
-        .child(div().p_3().child(grid::board(state, view, cx)))
-        .into_any_element()
-}
-
 /// The baseline and final operations side by side.
-fn comparison(plan: &Plan, cx: &mut Context<AppState>) -> Option<AnyElement> {
+fn comparison(plan: &Plan) -> Option<AnyElement> {
     let baseline = plan.baseline_operation.as_ref()?;
     let final_operation = plan.final_operation.as_ref()?;
     let delta_pct = |before: f64, after: f64| format!("{:+.3} pp", 100.0 * (after - before));
-    Some(
-        div()
-            .id("jelly-sections-comparison")
-            .flex()
-            .flex_wrap()
-            .gap_3()
-            .child(text_kpi(
+    let exp_before = exp_value(baseline, plan.exp_cell_type);
+    let exp_after = exp_value(final_operation, plan.exp_cell_type);
+    Some(strips(
+        "jelly-sections-comparison",
+        vec![
+            text_kpi(
                 "jelly-sections-clear",
                 "Clear probability",
                 format!(
@@ -531,9 +431,8 @@ fn comparison(plan: &Plan, cx: &mut Context<AppState>) -> Option<AnyElement> {
                     baseline.clear_probability,
                     final_operation.clear_probability,
                 ),
-                cx,
-            ))
-            .child(text_kpi(
+            ),
+            text_kpi(
                 "jelly-sections-damage",
                 "Damage",
                 format!(
@@ -542,9 +441,8 @@ fn comparison(plan: &Plan, cx: &mut Context<AppState>) -> Option<AnyElement> {
                     format::value(final_operation.mean_damage)
                 ),
                 signed_value(final_operation.mean_damage - baseline.mean_damage),
-                cx,
-            ))
-            .child(text_kpi(
+            ),
+            text_kpi(
                 "jelly-sections-bloodcells",
                 "Bloodcells",
                 format!(
@@ -553,93 +451,71 @@ fn comparison(plan: &Plan, cx: &mut Context<AppState>) -> Option<AnyElement> {
                     format::value(final_operation.mean_bloodcells)
                 ),
                 signed_value(final_operation.mean_bloodcells - baseline.mean_bloodcells),
-                cx,
-            ))
-            .child(text_kpi(
+            ),
+            text_kpi(
                 "jelly-sections-exp",
                 format!("{} / attempt", exp_label(plan.exp_cell_type)),
                 format!(
                     "{} → {}",
-                    format::value(exp_value(baseline, plan.exp_cell_type)),
-                    format::value(exp_value(final_operation, plan.exp_cell_type))
+                    format::value(exp_before),
+                    format::value(exp_after)
                 ),
-                signed_value(
-                    exp_value(final_operation, plan.exp_cell_type)
-                        - exp_value(baseline, plan.exp_cell_type),
-                ),
-                cx,
-            ))
-            .into_any_element(),
-    )
+                signed_value(exp_after - exp_before),
+            ),
+        ],
+    ))
 }
 
-fn sequences_table(rows: &[SectionRow]) -> AnyElement {
-    let mut table = Table::new([
-        "#",
-        "Section sequence",
-        "Slots",
-        "Proximity",
-        "Gain",
-        "Gain / slot",
-        "Beats baseline",
-        "New footprint options",
-    ]);
-    for (rank, row) in rows.iter().enumerate() {
-        table = table.row([
-            (rank + 1).to_string(),
-            sequence_label(&row.plot_ids),
-            row.new_usable_slots.to_string(),
-            row.proximity_slots.to_string(),
-            signed(row.objective_gain),
-            signed(row.gain_per_slot),
-            row.chance_beats_baseline
-                .map(format::chance)
-                .unwrap_or_else(|| "—".to_string()),
-            footprint_summary(row),
-        ]);
-    }
+/// The ranked sequences: as many as the plan screened, so a virtualized table
+/// whose rows were built when the plan was stored.
+fn sequences_table(table: &SequenceTable) -> AnyElement {
     Card::new()
         .header(CardHeader::new("Ranked section sequences").description(
             "Every finalist with its shared-seed comparison against the current board.",
         ))
-        .child(div().id("jelly-sections-candidates").p_3().child(table))
+        .child(
+            div()
+                .id("jelly-sections-candidates")
+                .h(px(360.0))
+                .child(DataTable::new(table)),
+        )
         .into_any_element()
 }
 
+/// One row per unpurchased section: at most the board's 40.
 fn individual_sections(rows: &[SectionRow]) -> AnyElement {
-    let mut table = Table::new([
-        "Section",
-        "Slots",
-        "Proximity",
-        "Proxy gain",
-        "Simulated gain",
-        "Beats baseline",
-        "New footprint options",
-    ]);
-    for row in rows {
-        table = table.row([
-            row.plot_id
-                .map(|plot| (plot + 1).to_string())
-                .unwrap_or_else(|| "—".to_string()),
-            row.new_usable_slots.to_string(),
-            row.proximity_slots.to_string(),
-            signed(row.proxy_gain),
-            if row.operation.is_some() {
-                signed(row.objective_gain)
-            } else {
-                "—".to_string()
-            },
-            row.chance_beats_baseline
-                .map(format::chance)
-                .unwrap_or_else(|| "—".to_string()),
-            footprint_summary(row),
-        ]);
-    }
+    let dash = || "—".to_string();
+    let table = text_table(
+        &[
+            ("Section", true),
+            ("Slots", true),
+            ("Proximity", true),
+            ("Proxy gain", true),
+            ("Simulated gain", true),
+            ("Beats baseline", true),
+            ("New footprint options", false),
+        ],
+        rows.iter().map(|row| {
+            vec![
+                row.plot_id.map_or_else(dash, |plot| (plot + 1).to_string()),
+                row.new_usable_slots.to_string(),
+                row.proximity_slots.to_string(),
+                signed(row.proxy_gain),
+                if row.operation.is_some() {
+                    signed(row.objective_gain)
+                } else {
+                    dash()
+                },
+                row.chance_beats_baseline.map_or_else(dash, format::chance),
+                footprint_summary(row),
+            ]
+        }),
+    );
     Card::new()
         .header(CardHeader::new("Every individual section").description(
             "Each unpurchased section's completed board, ranked by the plan's objective.",
         ))
-        .child(div().id("jelly-sections-individual").p_3().child(table))
+        .child(div().id("jelly-sections-individual").child(table))
         .into_any_element()
 }
 
@@ -660,7 +536,7 @@ fn exp_value(estimate: &Estimate, cell_type: Option<usize>) -> f64 {
     }
 }
 
-fn sequence_label(plot_ids: &[usize]) -> String {
+pub(crate) fn sequence_label(plot_ids: &[usize]) -> String {
     if plot_ids.is_empty() {
         return "None".to_string();
     }
@@ -671,7 +547,7 @@ fn sequence_label(plot_ids: &[usize]) -> String {
         .join(" → ")
 }
 
-fn footprint_summary(row: &SectionRow) -> String {
+pub(crate) fn footprint_summary(row: &SectionRow) -> String {
     let places: Vec<String> = row
         .newly_legal_footprint_placements
         .iter()
@@ -685,7 +561,7 @@ fn footprint_summary(row: &SectionRow) -> String {
     }
 }
 
-fn signed(value: f64) -> String {
+pub(crate) fn signed(value: f64) -> String {
     if !value.is_finite() {
         return "—".to_string();
     }
@@ -701,7 +577,7 @@ fn signed(value: f64) -> String {
     }
 }
 
-fn signed_value(value: f64) -> String {
+pub(crate) fn signed_value(value: f64) -> String {
     if !value.is_finite() {
         return "—".to_string();
     }

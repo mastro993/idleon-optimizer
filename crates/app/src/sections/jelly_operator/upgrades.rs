@@ -5,30 +5,30 @@
 //! gain per level and next price. A slot the Research level has not revealed
 //! yet says so instead of printing a price the game hides, and the doubler card
 //! names every upgrade Menagerie's Upgrade Doubler covers.
+//!
+//! The game lists a fixed 40 slots, read once per import; each row wraps its
+//! description and carries tags, so it stays a plain kit `Table`.
 
-use super::estimate::stat;
+use super::parts::{INDEX_WIDTH, cell, number_cell, stat, strips};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, KpiCard, Tone};
-use ely_gpui_component::feedback::Callout;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_jelly::Jelly;
+use gpui::{AnyElement, IntoElement, ParentElement, Styled, div};
+use gpui_kit::component::Sizable as _;
+use gpui_kit::component::table::{Table, TableBody, TableHead, TableHeader, TableRow};
+use gpui_kit::component::tag::Tag;
+use idleon_jelly::{Jelly, UpgradeRow};
 use idleon_ui::format;
+use idleon_ui::widgets::{Callout, Caption, Card, CardHeader, PANEL_GAP, Tone};
 
 /// The Upgrades pane.
-pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
-    let rows = jelly.upgrade_rows();
+pub(crate) fn pane(state: &AppState, jelly: &Jelly) -> AnyElement {
+    let rows = &state.jelly_state.save.upgrades;
     let affordable = rows.iter().filter(|row| row.status.can_buy).count();
     let gated = rows.iter().filter(|row| !row.status.level_visible).count();
-    let doubled: Vec<String> = rows
+    let doubled: Vec<&str> = rows
         .iter()
         .filter(|row| row.doubled)
-        .map(|row| row.name.clone())
+        .map(|row| row.name.as_str())
         .collect();
     let next = rows.iter().find(|row| row.status.below_max);
     let gate = rows
@@ -36,48 +36,42 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
         .filter(|row| !row.status.level_visible)
         .map(|row| row.status.required_research_level)
         .fold(f64::INFINITY, f64::min);
-    let muted = cx.theme().colors.fg_muted;
 
-    let mut body = div().id("jelly-upgrades").flex().flex_col().gap_3().child(
-        div()
-            .id("jelly-upgrades-kpis")
-            .flex()
-            .flex_wrap()
-            .gap_3()
-            .child(
-                KpiCard::new(stat(
+    let mut body = div()
+        .id("jelly-upgrades")
+        .flex()
+        .flex_col()
+        .gap(PANEL_GAP)
+        .child(strips(
+            "jelly-upgrades-kpis",
+            vec![
+                stat(
                     "jelly-upgrade-affordable",
                     "Affordable now",
                     affordable as f64,
-                ))
+                )
                 .caption(format!("of {} purchase slots", rows.len())),
-            )
-            .child(
-                KpiCard::new(stat("jelly-upgrade-gated", "Hidden slots", gated as f64)).caption(
+                stat("jelly-upgrade-gated", "Hidden slots", gated as f64).caption(
                     if gate.is_finite() {
                         format!("Research Lv {} reveals the rest", format::number(gate))
                     } else {
                         "Every slot is revealed".to_string()
                     },
                 ),
-            )
-            .child(
-                KpiCard::new(stat(
+                stat(
                     "jelly-upgrade-doubled",
                     "Doubled upgrades",
                     doubled.len() as f64,
-                ))
+                )
                 .caption("Menagerie Upgrade Doubler"),
-            )
-            .child(
-                KpiCard::new(stat(
+                stat(
                     "jelly-upgrade-divisor",
                     "Cost divisor",
                     1.0 + jelly.upgrade_quantity(34) / 100.0,
-                ))
+                )
                 .caption("Lower Cholesterol (upgrade 34)"),
-            ),
-    );
+            ],
+        ));
     if let Some(next) = next {
         body = body.child(
             Card::new()
@@ -85,13 +79,13 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
                     CardHeader::new(format!("Next slot: #{} {}", next.order + 1, next.name))
                         .description(next.description.clone()),
                 )
-                .child(div().p_3().child(Caption::new(format!(
+                .child(Caption::new(format!(
                     "{} · current {} · {} · {} saved",
                     next.per_level,
                     next.effect,
                     cost_text(next.cost),
                     format::value(jelly.progress.bloodcells)
-                )))),
+                ))),
         );
     }
     if !doubled.is_empty() {
@@ -104,93 +98,20 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
                 .child(
                     div()
                         .id("jelly-upgrade-doublers")
-                        .p_3()
-                        .child(Caption::new(doubled.join(" · ")).text_color(muted)),
+                        .child(Caption::new(doubled.join(" · "))),
                 ),
         );
     }
     if gated > 0 {
-        body = body.child(
-            div().id("jelly-upgrade-gate").child(
-                Callout::new(Severity::Info)
-                    .title(format!("{gated} slots are not revealed yet"))
-                    .child(Caption::new(format!(
-                        "The purchase order reveals the next one at Research Lv {}. Their prices \
-                         and effects read from the save anyway, so a plan can see what is coming.",
-                        format::number(gate)
-                    ))),
-            ),
-        );
-    }
-
-    let mut table = Table::new([
-        "#",
-        "Upgrade and game description",
-        "Level",
-        "Current effect",
-        "Gain / level",
-        "Next cost",
-    ]);
-    for row in &rows {
-        let mut name = div()
-            .id(format!("jelly-upgrade-row-{}", row.order))
-            .flex()
-            .flex_col()
-            .gap_0p5()
-            .child(row.name.clone());
-        if row.doubled {
-            name = name.child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap_2()
-                    .child(Badge::new("2x Doubled").tone(Tone::Info))
-                    .child(Caption::new("Upgrade Doubler").text_color(muted)),
-            );
-        }
-        if !row.status.level_visible {
-            name = name.child(
+        body = body.child(div().id("jelly-upgrade-gate").child(
+            Callout::new(Tone::Info, format!("{gated} slots are not revealed yet")).child(
                 Caption::new(format!(
-                    "Hidden until Research Lv {}",
-                    format::number(row.status.required_research_level)
-                ))
-                .text_color(muted),
-            );
-        }
-        name = name.child(Caption::new(row.description.clone()).text_color(muted));
-        if !row.note.is_empty() {
-            name = name.child(Caption::new(row.note.clone()).text_color(muted));
-        }
-        table = table.row([
-            div().child(format!("{}", row.order + 1)).into_any_element(),
-            name.into_any_element(),
-            div()
-                .child(if row.max_level > 998.0 {
-                    format::number(row.level)
-                } else {
-                    format!(
-                        "{} / {}",
-                        format::number(row.level),
-                        format::number(row.max_level)
-                    )
-                })
-                .into_any_element(),
-            div().child(row.effect.clone()).into_any_element(),
-            div().child(row.per_level.clone()).into_any_element(),
-            div()
-                .flex()
-                .flex_col()
-                .gap_0p5()
-                .child(cost_text(row.cost))
-                .child(div().flex().items_center().child(if row.status.can_buy {
-                    Badge::new("Affordable").tone(Tone::Success)
-                } else if row.status.below_max {
-                    Badge::new("Saving").tone(Tone::Neutral)
-                } else {
-                    Badge::new("Maxed").tone(Tone::Neutral)
-                }))
-                .into_any_element(),
-        ]);
+                    "The purchase order reveals the next one at Research Lv {}. Their prices \
+                         and effects read from the save anyway, so a plan can see what is coming.",
+                    format::number(gate)
+                )),
+            ),
+        ));
     }
     body.child(
         Card::new()
@@ -198,9 +119,90 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
                 "Every purchase slot in the game's own order; the price curve is the slot's, \
                  not the upgrade's",
             ))
-            .child(div().id("jelly-upgrades-table").p_3().child(table)),
+            .child(div().id("jelly-upgrades-table").child(table(rows))),
     )
     .into_any_element()
+}
+
+fn table(rows: &[UpgradeRow]) -> Table {
+    let tag = |label: &'static str, tone: Tone| {
+        Tag::new()
+            .with_variant(tone.into())
+            .outline()
+            .small()
+            .child(label)
+    };
+    Table::new()
+        .child(
+            TableHeader::new().child(
+                TableRow::new()
+                    .child(TableHead::new().w(INDEX_WIDTH).text_right().child("#"))
+                    .child(TableHead::new().child("Upgrade and game description"))
+                    .child(TableHead::new().text_right().child("Level"))
+                    .child(TableHead::new().child("Current effect"))
+                    .child(TableHead::new().child("Gain / level"))
+                    .child(TableHead::new().text_right().child("Next cost")),
+            ),
+        )
+        .child(TableBody::new().children(rows.iter().map(|row| {
+            let name = div()
+                .id(format!("jelly-upgrade-row-{}", row.order))
+                .flex()
+                .flex_col()
+                .gap_0p5()
+                .child(row.name.clone())
+                .when(row.doubled, |name| {
+                    name.child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .child(tag("2x Doubled", Tone::Info))
+                            .child(Caption::new("Upgrade Doubler")),
+                    )
+                })
+                .when(!row.status.level_visible, |name| {
+                    name.child(Caption::new(format!(
+                        "Hidden until Research Lv {}",
+                        format::number(row.status.required_research_level)
+                    )))
+                })
+                .child(Caption::new(row.description.clone()))
+                .when(!row.note.is_empty(), |name| {
+                    name.child(Caption::new(row.note.clone()))
+                });
+            let level = if row.max_level > 998.0 {
+                format::number(row.level)
+            } else {
+                format!(
+                    "{} / {}",
+                    format::number(row.level),
+                    format::number(row.max_level)
+                )
+            };
+            let status = if row.status.can_buy {
+                tag("Affordable", Tone::Success)
+            } else if row.status.below_max {
+                tag("Saving", Tone::Neutral)
+            } else {
+                tag("Maxed", Tone::Neutral)
+            };
+            TableRow::new()
+                .child(number_cell(format!("{}", row.order + 1)).w(INDEX_WIDTH))
+                .child(cell(name))
+                .child(number_cell(level))
+                .child(cell(row.effect.clone()))
+                .child(cell(row.per_level.clone()))
+                .child(number_cell(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .items_end()
+                        .gap_0p5()
+                        .child(cost_text(row.cost))
+                        .child(status),
+                ))
+        })))
 }
 
 /// A price, or a dash when the order names a slot the game has not filled in.

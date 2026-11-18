@@ -11,13 +11,18 @@ use idleon_jelly::operation::{RevivePolicy, simulate as simulate_jelly_operation
 use idleon_jelly::optimizer::Optimization as JellyOptimization;
 use idleon_jelly::planner::{Objective, Plan as JellyPlan, Quality, Strategy};
 use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
-use idleon_ui::runner::TaskState;
+use idleon_ui::runner::{TaskRunner, TaskState};
+use std::rc::Rc;
 
 impl AppState {
     /// What the shared Jelly estimate runner shows against the current inputs.
-    pub(crate) fn jelly_task(&self, cx: &App) -> TaskState<JellyEstimate> {
+    pub(crate) fn jelly_task(&self, cx: &App) -> TaskState<Rc<JellyEstimate>> {
         let inputs = self.jelly_state.inputs(self.jelly.as_ref());
-        self.jelly_run.read(cx).state(&inputs)
+        shown(
+            self.jelly_run.read(cx),
+            &inputs,
+            &self.jelly_state.results.estimate,
+        )
     }
 
     /// Switch the Jelly Operator tab.
@@ -134,9 +139,13 @@ impl AppState {
     }
 
     /// What the shared Jelly simulator runner shows against the sandbox.
-    pub(crate) fn jelly_sim_task(&self, cx: &App) -> TaskState<JellyTrial> {
+    pub(crate) fn jelly_sim_task(&self, cx: &App) -> TaskState<Rc<JellyTrial>> {
         let inputs = self.jelly_state.simulator.inputs(self.jelly.as_ref());
-        self.jelly_sim_run.read(cx).state(&inputs)
+        shown(
+            self.jelly_sim_run.read(cx),
+            &inputs,
+            &self.jelly_state.results.trial,
+        )
     }
 
     /// Apply one sandbox edit, publish its message, and let the runner notice
@@ -268,12 +277,16 @@ impl AppState {
 
     /// What the shared Jelly section plan runner shows against the controls and
     /// the board on screen.
-    pub(crate) fn jelly_plan_task(&self, cx: &App) -> TaskState<JellyPlan> {
+    pub(crate) fn jelly_plan_task(&self, cx: &App) -> TaskState<Rc<JellyPlan>> {
         let inputs = self
             .jelly_state
             .planner
             .inputs(self.jelly.as_ref(), &self.jelly_state.layout);
-        self.jelly_plan_run.read(cx).state(&inputs)
+        shown(
+            self.jelly_plan_run.read(cx),
+            &inputs,
+            &self.jelly_state.results.plan,
+        )
     }
 
     /// Apply one planner control edit.
@@ -361,12 +374,16 @@ impl AppState {
 
     /// What the shared Jelly optimizer runner shows against the controls and
     /// the board on screen.
-    pub(crate) fn jelly_optimize_task(&self, cx: &App) -> TaskState<JellyOptimization> {
+    pub(crate) fn jelly_optimize_task(&self, cx: &App) -> TaskState<Rc<JellyOptimization>> {
         let inputs = self
             .jelly_state
             .optimizer
             .inputs(self.jelly.as_ref(), &self.jelly_state.layout);
-        self.jelly_optimize_run.read(cx).state(&inputs)
+        shown(
+            self.jelly_optimize_run.read(cx),
+            &inputs,
+            &self.jelly_state.results.optimization,
+        )
     }
 
     /// Apply one optimizer control edit.
@@ -429,5 +446,22 @@ impl AppState {
         );
         self.set_status(self.jelly_state.optimizer_message.clone(), cx);
         cx.notify();
+    }
+}
+
+/// What a section renders about one run, with the result the section kept when
+/// the run stored it instead of a fresh copy of the runner's. The runner still
+/// decides whether there is a result: one it dropped is not shown.
+fn shown<R: 'static, I: PartialEq + 'static>(
+    runner: &TaskRunner<R, I>,
+    inputs: &I,
+    kept: &Option<Rc<R>>,
+) -> TaskState<Rc<R>> {
+    TaskState {
+        running: runner.running(),
+        cancelled: runner.cancelled(),
+        progress: runner.progress().cloned(),
+        result: runner.result().and(kept.clone()),
+        stale: runner.is_stale(inputs),
     }
 }
