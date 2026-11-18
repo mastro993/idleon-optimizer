@@ -324,8 +324,9 @@ crates/<domain>                     one crate per calculator, no GPUI, testable 
 crates/import                       save -> every calculator's state (`import`), text `pipeline`
 crates/project                      project document format and migration
 crates/ui                           GPUI building blocks: TaskRunner, run chrome, formula tree,
-                                    number formats, and the display composites GPUI Kit lacks
-                                    (`widgets`, see docs/ui-kit/display.md)
+                                    number formats, the display composites GPUI Kit lacks
+                                    (`widgets`, see docs/ui-kit/display.md) and the kit table's
+                                    `RowsDelegate` (docs/ui-kit/data.md)
 crates/app                          GPUI binary (Ely and GPUI Kit during the migration)
   data/theme.json                   the GPUI Kit theme
   sections/                         the registry and one module per section

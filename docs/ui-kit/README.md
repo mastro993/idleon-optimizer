@@ -51,3 +51,4 @@ Sections read colors, radii and fonts from `cx.theme()` (the kit's `ActiveTheme`
 | [`forms.md`](forms.md) | Buttons and form controls: the Ely → kit mapping and the state-ownership pattern |
 | [`performance.md`](performance.md) | Frame-time harness, the Ely baseline and the budget |
 | [`display.md`](display.md) | Layout, typography, display and feedback: each Ely item's kit or `idleon_ui` replacement |
+| [`data.md`](data.md) | Tables (`Table` or virtualized `DataTable`), scrolling and charts |
