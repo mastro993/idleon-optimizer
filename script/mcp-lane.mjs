@@ -25,6 +25,12 @@ export const hasFlag = (name, args = argv) => args.includes(name);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/// The bridge listens on `<endpoint dir>/mcp-<16 hex>.sock`, and a Unix socket
+/// path must fit `sun_path` (104 bytes on macOS, NUL included). A long `TMPDIR`
+/// (a sandbox or scratch directory) would overflow it, so fall back to `/tmp`.
+const SOCKET_TAIL = '/idleon-lane-XXXXXX/mcp-0000000000000000.sock'.length;
+const endpointRoot = () => (tmpdir().length + SOCKET_TAIL < 104 ? tmpdir() : '/tmp');
+
 /// macOS stops drawing an occluded window, and the bridge waits for frames, so
 /// bring this instance forward before driving it.
 export const activate = (pid) => {
@@ -46,6 +52,7 @@ export class McpLane {
     appId = DEFAULT_APP_ID,
     attach = false,
     keep = false,
+    importFile = null,
     section = null,
     stateDir = null,
     serverBin = 'gpui-mcp',
@@ -53,23 +60,26 @@ export class McpLane {
     let endpointDir = null;
     let laneStateDir = null;
     let appProcess = null;
+    let spawnedAt = null;
     if (!attach) {
       if (!existsSync(appBin)) {
         throw new Error(`no app binary at ${appBin}; run cargo build -p idleon-optimizer first`);
       }
-      endpointDir = mkdtempSync(join(tmpdir(), 'idleon-lane-'));
+      endpointDir = mkdtempSync(join(endpointRoot(), 'idleon-lane-'));
       // A private session directory keeps one lane's restored section or save
       // out of the next lane's tree, and keeps harness runs out of the user's
       // real app-data file.
       laneStateDir = stateDir ?? mkdtempSync(join(tmpdir(), 'idleon-state-'));
       const appArgs = ['--endpoint-dir', endpointDir, '--state-dir', laneStateDir];
       if (section) appArgs.push('--section', section);
+      if (importFile) appArgs.push('--import', importFile);
+      spawnedAt = performance.now();
       appProcess = spawn(appBin, appArgs, { stdio: 'ignore' });
       const deadline = Date.now() + 30000;
       let published = false;
       while (Date.now() < deadline && !published) {
         published = readdirSync(endpointDir).some((name) => name.endsWith('.json'));
-        if (!published) await sleep(200);
+        if (!published) await sleep(20);
       }
       if (!published) {
         appProcess.kill();
@@ -85,6 +95,7 @@ export class McpLane {
       await lane.#initialize();
       lane.app = await lane.#discover();
       lane.pid = appProcess?.pid ?? lane.app.pid;
+      lane.spawnedAt = spawnedAt;
       activate(lane.pid);
       return lane;
     } catch (error) {
@@ -102,6 +113,7 @@ export class McpLane {
     this.keep = keep;
     this.app = null;
     this.pid = null;
+    this.spawnedAt = null;
     this.nextId = 1;
     this.buffer = '';
     this.pending = new Map();
