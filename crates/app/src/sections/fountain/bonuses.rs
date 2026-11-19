@@ -4,7 +4,6 @@
 use super::overview::{num, pct, time};
 use super::table::{number, table, tag, text};
 use crate::state::AppState;
-use crate::ui::layout::figure;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Styled, div, px};
 use gpui_kit::component::progress::Progress;
@@ -12,7 +11,7 @@ use gpui_kit::component::table::TableRow;
 use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use idleon_fountain as fountain;
 use idleon_fountain::{CoinStack, CrossBonus, Fountain};
-use idleon_ui::widgets::{Callout, Caption, Card, CardHeader, TEXT_KPI, Tone};
+use idleon_ui::widgets::{Callout, Caption, Card, CardHeader, KpiStrip, Statistic, TEXT_KPI, Tone};
 
 /// The cross-system bonuses the save cannot supply, named instead of reading zero.
 pub(crate) fn missing(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
@@ -106,24 +105,18 @@ pub(crate) fn lucky_and_ducks(
         let active = fill / fountain.active_speed();
         let fraction = (progress / fill).clamp(0.0, 1.0);
         let remaining = (fill - progress).max(0.0);
-        card =
-            card.child(
-                v_flex()
-                    .id("fountain-ducks")
-                    .gap_3()
-                    .child(
-                        div()
-                            .flex()
-                            .flex_wrap()
-                            .gap_3()
-                            .child(figure(
-                                "fountain-kpi-ducks",
-                                "Ducks",
-                                num(count),
-                                format!("Currency multi: {:.2}×", fountain.duck_multi()),
-                                cx,
-                            ))
-                            .child(figure(
+        card = card.child(
+            v_flex()
+                .id("fountain-ducks")
+                .gap_3()
+                .child(
+                    KpiStrip::new()
+                        .child(
+                            Statistic::new("fountain-kpi-ducks", "Ducks", num(count))
+                                .caption(format!("Currency multi: {:.2}×", fountain.duck_multi())),
+                        )
+                        .child(
+                            Statistic::new(
                                 "fountain-kpi-duck-chance",
                                 "Next Duck Chance",
                                 if chance > 0.0 {
@@ -131,42 +124,43 @@ pub(crate) fn lucky_and_ducks(
                                 } else {
                                     "-".to_owned()
                                 },
-                                format!("{percent}% per duck bar fill"),
-                                cx,
-                            ))
-                            .child(figure(
-                                "fountain-kpi-duck-bar",
-                                "Duck Bar",
-                                pct(fraction),
-                                format!(
+                            )
+                            .caption(format!("{percent}% per duck bar fill")),
+                        )
+                        .child(
+                            Statistic::new("fountain-kpi-duck-bar", "Duck Bar", pct(fraction))
+                                .caption(format!(
                                     "{} active · {} AFK",
                                     time(remaining / fountain.active_speed()),
                                     time(remaining)
-                                ),
-                                cx,
-                            ))
-                            .child(figure(
-                                "fountain-kpi-duck-fill",
-                                "Bar Fill Time",
-                                time(active),
-                                format!(
+                                )),
+                        )
+                        .child(
+                            Statistic::new("fountain-kpi-duck-fill", "Bar Fill Time", time(active))
+                                .caption(format!(
                                     "AFK: {} · {:.2}× active",
                                     time(fill),
                                     fountain.active_speed()
-                                ),
-                                cx,
-                            )),
-                    )
-                    .child(div().w_full().max_w(px(400.0)).child(
+                                )),
+                        ),
+                )
+                .child(
+                    div().w_full().max_w(px(400.0)).child(
                         Progress::new("fountain-duck-progress").value(fraction as f32 * 100.0),
-                    )),
-            );
+                    ),
+                ),
+        );
     }
     Some(card.into_any_element())
 }
 
 /// The coin stacks lying on the fountain floor.
-pub(crate) fn stacks(fountain: &Fountain, stacks: &[CoinStack]) -> Option<AnyElement> {
+pub(crate) fn stacks(
+    fountain: &Fountain,
+    stacks: &[CoinStack],
+    cx: &mut Context<AppState>,
+) -> Option<AnyElement> {
+    let mono = cx.theme().mono_font_family.clone();
     if stacks.is_empty() {
         return None;
     }
@@ -203,6 +197,7 @@ pub(crate) fn stacks(fountain: &Fountain, stacks: &[CoinStack]) -> Option<AnyEle
                 .child(Caption::new(format!("#{}", stack.slot + 1)))
                 .child(
                     div()
+                        .font_family(mono.clone())
                         .text_size(TEXT_KPI)
                         .font_weight(FontWeight::SEMIBOLD)
                         .child(num(stack.count() as f64)),
@@ -210,6 +205,7 @@ pub(crate) fn stacks(fountain: &Fountain, stacks: &[CoinStack]) -> Option<AnyEle
                 .child(Caption::new(types))
                 .child(
                     div()
+                        .font_family(mono.clone())
                         .font_weight(FontWeight::SEMIBOLD)
                         .child(num(fountain.stack_redeem_value(stack))),
                 ),
@@ -245,6 +241,7 @@ pub(crate) fn cross_system(bonuses: &[CrossBonus], cx: &mut Context<AppState>) -
                 .child(Caption::new(bonus.label))
                 .child(
                     div()
+                        .font_family(cx.theme().mono_font_family.clone())
                         .text_size(TEXT_KPI)
                         .font_weight(FontWeight::SEMIBOLD)
                         .child(value),

@@ -8,13 +8,11 @@ use crate::sections::research::Tab;
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, App, Context, ElementId, Global, IntoElement, ParentElement, Pixels, Role,
-    SharedString, Styled, Window, div, px,
+    AnyElement, App, Context, ElementId, Global, IntoElement, ParentElement, Pixels, SharedString,
+    Styled, Window, div, px,
 };
-use gpui_kit::component::ActiveTheme as _;
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::tab::{Tab as KitTab, TabBar};
-use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_KPI};
 use std::rc::Rc;
 
 /// The smallest window the layout is designed for.
@@ -166,43 +164,6 @@ fn split_pane_inner(
             stacked.overflow_y_scrollbar().id(id).into_any_element()
         }
     }
-}
-
-/// A headline figure: its label, its value and a one-line explanation, all in
-/// one card.
-pub(crate) fn figure(
-    id: &'static str,
-    label: &'static str,
-    value: impl Into<SharedString>,
-    caption: impl Into<SharedString>,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().muted_foreground;
-    let value = value.into();
-    div()
-        .id(id)
-        .role(Role::Label)
-        .aria_label(format!("{label}: {value}"))
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_w(px(190.0))
-        .child(
-            Card::new().header(CardHeader::new(label)).child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .child(
-                        div()
-                            .text_size(TEXT_KPI)
-                            .font_weight(gpui::FontWeight::SEMIBOLD)
-                            .child(value),
-                    )
-                    .child(Caption::new(caption.into()).text_color(muted)),
-            ),
-        )
-        .into_any_element()
 }
 
 /// A kit underline tab strip, each tab sized to its label, that scrolls
