@@ -14,7 +14,7 @@ use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_ui::widgets::TEXT_CAPTION;
 
 /// The header's height, which the shell lays its cached view out at.
-pub(crate) const HEIGHT: Pixels = px(48.0);
+pub(crate) const HEIGHT: Pixels = px(44.0);
 
 /// The header for every place. Its left padding leaves room for the macOS
 /// traffic lights in the transparent title bar.

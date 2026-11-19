@@ -10,9 +10,8 @@ near-black graphite ground, one violet accent, flat panels split by hairlines, a
 for every number. The app is a wall of numbers the player compares, so density and alignment come
 first.
 
-Tokens live in [`theme.json`](theme.json), a gpui-kit 0.10.0 theme set with the two modes.
-#360 copies it over `crates/app/data/theme.json`, which #339 loads (see
-[Loading the theme](#loading-the-theme)), and applies the rest of this design.
+Tokens live in [`crates/app/data/theme.json`](../../crates/app/data/theme.json), a gpui-kit 0.10.0 theme set with the two
+modes, which the app loads (see [Loading the theme](#loading-the-theme)).
 
 | | Dark | Light |
 |---|---|---|
@@ -82,8 +81,7 @@ reads the same color everywhere. `chart.grid` is the border color.
 
 Not kit keys: the app keeps one color per world next to its `Group` enum (`world_color` in
 `crates/app/src/ui/theme.rs`), and `WorldBadge` draws it as a small kit `Tag`. A badge is the world
-color as text, the same color at 14% as fill, and at 30% as a 1 px outline. The app still draws its
-current hues; #360 swaps in the values below.
+color as text, the same color at 14% as fill, and at 30% as a 1 px outline, in the active mode.
 
 | Group | Dark | Light |
 |---|---|---|
@@ -103,8 +101,8 @@ current hues; #360 swaps in the values below.
 - **Numbers:** JetBrains Mono (SIL Open Font License 1.1, free to bundle and redistribute) for every
   value, id, count, stepper value and KPI figure. It is fixed-width, so digits line up down a column
   without a tabular-figures feature. The theme names it in `mono_font.family`; the kit uses a named
-  family as-is, so #360 must embed the font files with the kit's `add_fonts` before applying the
-  theme, or the mono text falls back to the system font.
+  family as-is, so the app bundles Regular, Medium and SemiBold in `crates/app/fonts/` (license
+  beside them) and registers them with `add_fonts` before applying the theme.
 
 | Role | Size / weight | Face | Color |
 |---|---|---|---|
@@ -239,10 +237,11 @@ ambers fall under 4.5:1 on white.
 
 ## The theme file
 
-[`theme.json`](theme.json) is a kit `ThemeSet` named `Idleon Console` with two themes,
+[`theme.json`](../../crates/app/data/theme.json) is a kit `ThemeSet` named `Idleon Console` with two themes,
 `Idleon Console Dark` and `Idleon Console Light`. Every key is a `ThemeConfig` /
 `ThemeConfigColors` key from `crates/component/src/theme/schema.rs` in gpui-kit 0.10.0, and the
-file validates against the `.theme-schema.json` published with the `v0.10.0` tag.
+file validates against the `.theme-schema.json` published with the `v0.10.0` tag. Its `font.size`
+is 16, not the 13 of the type scale below, while Ely remains (see [the README](README.md#theme)).
 
 Left to the kit's fallbacks on purpose:
 
@@ -255,8 +254,9 @@ Left to the kit's fallbacks on purpose:
 
 ### Loading the theme
 
-Since #339, `ui::theme::install` embeds `crates/app/data/theme.json` with `include_str!`, adds it
-with `ThemeRegistry::global_mut(cx).load_themes_from_str(..)` and applies its dark config with
-`Theme::apply_config`; that file holds today's palette until #360 copies this one over it and
-applies the light config too. Mode switching (follow the system, or a setting) is #360's call. Embed
-JetBrains Mono with `add_fonts` before the theme is applied.
+`ui::theme::install` registers JetBrains Mono with `add_fonts`, embeds
+`crates/app/data/theme.json` with `include_str!`, adds it with
+`ThemeRegistry::global_mut(cx).load_themes_from_str(..)`, sets the kit theme's `dark_theme` and
+`light_theme` to its two configs and shows the system's current mode. The app follows the system:
+`follow_system` observes the window's appearance and switches the kit (`Theme::change`) and Ely
+together. There is no in-app mode setting.

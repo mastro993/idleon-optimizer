@@ -57,6 +57,7 @@ jobs:
               - 'Cargo.lock'
               - 'rust-toolchain*'
               - 'crates/**/data/**'
+              - 'crates/**/fonts/**'
               - 'fixtures/**'
               - '.github/workflows/**'
               - 'docs/roadmap.json'

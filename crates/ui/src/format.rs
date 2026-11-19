@@ -421,9 +421,18 @@ mod tests {
 
     #[test]
     fn both_hex_shorthands_expand() {
-        assert_eq!(hex("#f44"), rgb(0xff_44_44).into());
-        assert_eq!(hex("#4488ff"), rgb(0x44_88_ff).into());
-        assert_eq!(hex("nonsense"), rgb(0x88_88_88).into());
+        let color = |r: u8, g: u8, b: u8| {
+            let channel = |c: u8| f32::from(c) / 255.0;
+            Hsla::from(gpui::Rgba {
+                r: channel(r),
+                g: channel(g),
+                b: channel(b),
+                a: 1.0,
+            })
+        };
+        assert_eq!(hex("#f44"), color(0xff, 0x44, 0x44));
+        assert_eq!(hex("#4488ff"), color(0x44, 0x88, 0xff));
+        assert_eq!(hex("nonsense"), color(0x88, 0x88, 0x88));
     }
 
     #[test]

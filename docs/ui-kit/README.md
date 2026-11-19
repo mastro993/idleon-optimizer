@@ -25,17 +25,25 @@ A screen not migrated yet keeps drawing with Ely. A migrated file imports nothin
 
 ## Theme
 
-The kit theme lives in [`crates/app/data/theme.json`](../../crates/app/data/theme.json), a kit
-theme set embedded with `include_str!` and applied in dark mode at startup. Until #360 it carries
-the same colors as Ely's palette (`palette()` in `crates/app/src/ui/theme.rs`), so both libraries
-draw one palette; `the_kit_theme_draws_ely_s_palette` fails when the two drift, and
-`kit_components_paint_the_app_colors` renders a kit `Button` and `Label` and checks the painted
-colors. #360 swaps in the Console design from [`theme.json`](theme.json) next to this page.
+The kit theme lives in [`crates/app/data/theme.json`](../../crates/app/data/theme.json), the Console design's theme set
+([`design.md`](design.md)) in a dark and a light mode, embedded with `include_str!`. The app
+follows the system's appearance: `ui::theme::install` applies the current mode at startup and
+`follow_system` switches both libraries when the appearance changes. Ely's palette for each mode
+is derived from the same kit tokens (`palette()` in `crates/app/src/ui/theme.rs`), so both
+libraries draw one palette; `ely_draws_the_kit_tokens_in_both_modes` fails when the mapping drifts,
+`every_text_color_reads_on_every_surface` checks the AA contrast of every text color on every
+surface in both modes, and
+`kit_components_paint_the_console_colors_and_both_libraries_switch_mode` renders a kit `Button`
+and `Label`, checks the painted colors and switches mode.
+
+The theme names JetBrains Mono as `mono_font.family`. The app bundles it in `crates/app/fonts/`
+(Regular, Medium and SemiBold, with its SIL Open Font License next to it) and registers it with
+`add_fonts` before the theme is applied.
 
 The kit's `Root` sets the window's rem to the theme's `font.size` on every frame, and Ely sizes
 everything in rems of 16 px. So `font.size` stays 16 while any Ely screen remains; a smaller value
-shrinks the whole app (the same test checks the rem). The Console theme's 13 px body text has to
-come another way until Ely is gone. The `Root` also sets the window's font family from
+shrinks the whole app (the same test checks the rem). The Console theme's 13 px body text comes
+from the `idleon_ui` type scale in pixels until Ely is gone; #361 can then set `font.size` to 13. The `Root` also sets the window's font family from
 `font.family`, so the theme leaves it unset: the kit then uses the system UI font, which the app's
 plain text already draws in.
 
@@ -47,7 +55,6 @@ Sections read colors, radii and fonts from `cx.theme()` (the kit's `ActiveTheme`
 | Page | What it covers |
 |---|---|
 | [`design.md`](design.md) | The Console visual direction: tokens, type, density, patterns |
-| [`theme.json`](theme.json) | The Console theme set, dark and light |
 | [`forms.md`](forms.md) | Buttons and form controls: the Ely → kit mapping and the state-ownership pattern |
 | [`performance.md`](performance.md) | Frame-time harness, the Ely baseline and the budget |
 | [`display.md`](display.md) | Layout, typography, display and feedback: each Ely item's kit or `idleon_ui` replacement |

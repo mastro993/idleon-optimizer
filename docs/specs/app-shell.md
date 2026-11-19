@@ -67,7 +67,7 @@ Flows:
 - **Open a section.** Click its sidebar item: the section opens in the state it was left in, the
   item turns active and its finished or failed dot clears. Clicking Home shows the grid. The header
   carries no place title (owner's call after the S1 review): the active item names the place.
-- **Fold the sidebar.** Click the toggle (`IconName::PanelLeft`) at the header's left: the sidebar animates from 240 px
+- **Fold the sidebar.** Click the toggle (`IconName::PanelLeft`) at the header's left: the sidebar animates from 228 px
   (icon and title, group headings) to the 56 px rail (icons only, title in a tooltip, short group
   headings) and back. The choice is written to the session file and restored at launch; the
   default is expanded.
@@ -101,14 +101,14 @@ game sprites.
 
 | Element | Renders with |
 |---|---|
-| Header bar | `ui/header.rs`; keeps the 84 px traffic-light inset and 48 px height. The kit's `TitleBar` is not used: the transparent macOS title bar already puts the traffic lights inside the header |
+| Header bar | `ui/header.rs`; keeps the 84 px traffic-light inset; 44 px high (the Console mocks). The kit's `TitleBar` is not used: the transparent macOS title bar already puts the traffic lights inside the header |
 | Page frame | `section::page` (`ui/section.rs`): the Console page gutter, 20 px left and right, 16 px top and bottom |
 | Sidebar toggle | kit `Button` (`IconName::PanelLeft`, ghost, small) |
 | Back, forward, history list | kit ghost small `Button`s (`ArrowLeft`, `ArrowRight`, `ListClock`); the list is a kit `DropdownMenu` of `PopupMenuItem`s, the current place checked |
 | Save status, Export, Import | the existing `save_actions` (`ui/layout.rs`) |
-| Sidebar column and fold animation | an app column in `ui/sidebar.rs` (240 / 56 px, `sidebar` ground, `sidebar_border` edge); its width eases over 200 ms with the kit's `transition`. The kit `Sidebar` folds to a fixed 48 px and scrolls a private list (ADR 0005) |
+| Sidebar column and fold animation | an app column in `ui/sidebar.rs` (228 / 56 px, `sidebar` ground, `sidebar_border` edge); its width eases over 200 ms with the kit's `transition`. The kit `Sidebar` folds to a fixed 48 px and scrolls a private list (ADR 0005) |
 | Group heading | an app label, 11 px medium in `muted_foreground`, with no fold chevron (headings do not fold, A4); in the rail, a short form at the same left edge. The items sit under it in `nav-group-<group>` |
-| Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0005): 28 px rows, the kit `radius`, `sidebar_accent` on hover and while active (no accent bar), the kit focus ring; a 20 px manifest image; a kit `Tooltip` when folded. One left-aligned layout in both states (the rail hides the label without removing it), so only the width animates and the icons never move. The kit's `SidebarMenuItem` takes an SVG icon only and re-lays out when collapsed |
+| Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0005): 26 px rows, the kit `radius`, `sidebar_accent` on hover and while active (no accent bar), the kit focus ring; a 16 px manifest image; a kit `Tooltip` when folded. One left-aligned layout in both states (the rail hides the label without removing it), so only the width animates and the icons never move. The kit's `SidebarMenuItem` takes an SVG icon only and re-lays out when collapsed |
 | Running mark | a ring drawn in the app at D5's strokes (14 px expanded, 12 px rail), `primary` on `input`; the kit's `ProgressCircle` derives its stroke from its width (ADR 0005) |
 | Finished / failed mark | an 8 px disc in `Tone::Accent` / `Tone::Danger` |
 | Rail corner disc | a circle in the row's current background (`sidebar`, or `sidebar_accent` when active or hovered) |
@@ -116,11 +116,12 @@ game sprites.
 ### Tokens
 
 All existing, from the kit theme (`crates/app/data/theme.json`): `background`, `border`,
-`foreground`, `muted_foreground` (group headings, save status), `sidebar` (the column's ground and
+`foreground`, `muted_foreground` (save status), `table_head_foreground` (the uppercase group
+headings), `sidebar` (the column's ground and
 the rail disc), `sidebar_border`, `sidebar_foreground` (items), `sidebar_accent` and
 `sidebar_accent_foreground` (hovered and active item), `input` (ring track), `primary` (ring arc,
-finished dot), `danger` (failed dot), `ring` (focus), `radius`. The sidebar's 240 / 56 px widths and
-28 px rows are constants in `ui/sidebar.rs`. No new tokens.
+finished dot), `danger` (failed dot), `ring` (focus), `radius`. The sidebar's 228 / 56 px widths,
+26 px rows and 16 px sprites are constants in `ui/sidebar.rs`. No new tokens.
 
 ### Copy
 
