@@ -13,7 +13,7 @@ Implement Bravery, Justice and Wisdom calculators, permanent rewards, reward cha
 ## UI
 
 - Bravery tab
-- Justice tab with response advisor
+- Justice tab with response advisor; a typed worksheet stat or deal value applies on Enter or when its field loses focus, so each edit is one undo step
 - Wisdom tab
 - Bonus sources
 - Permanent and charge summaries

@@ -5,26 +5,28 @@
 //! records the case they actually received and the outcome that happened; the
 //! tab never predicts random visitors and never changes the save.
 
+use super::bravery::labelled;
+use super::table::{Col, table, text};
 use super::{
-    MilestoneFirst, bonuses_card, clean_text, empty_card, error_line, metric_card, milestones_card,
-    notes_card, unavailable_card,
+    Metric, MilestoneFirst, bonuses_card, clean_text, empty_card, error_line, metrics,
+    milestones_card, notes_card, scroll_pane, unavailable_card,
 };
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::forms::{Checkbox, Choice, NumberInput, Select};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
+use crate::ui::number_field;
 use gpui::Focusable as _;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div, px};
-use gpui_kit::component::Sizable as _;
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
+use gpui_kit::component::button::Button;
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use idleon_monument::JusticeSnapshot;
-use idleon_monument::justice::{self, Response, State};
 pub(crate) use idleon_monument::justice::{Action, Effect};
+use idleon_monument::justice::{Response, State};
 use idleon_ui::format;
-use idleon_ui::widgets::search_input;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, TEXT_CAPTION, TEXT_MONO, search_input, show_number,
+};
 
 /// One of the worksheet's six stats, in worksheet order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -99,12 +101,12 @@ impl Field {
 
 /// The Justice pane.
 pub(crate) fn pane(
-    state: &mut AppState,
-    snapshot: Option<&JusticeSnapshot>,
+    state: &AppState,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let body = match snapshot {
-        Some(snapshot) if snapshot.available => loaded(state, snapshot, cx),
+    let body = match &state.monument_controls.derived.justice {
+        Some(snapshot) if snapshot.available => loaded(state, snapshot, window, cx),
         Some(snapshot) => unavailable_card("Justice", &snapshot.notes, cx),
         None => empty_card(
             "Justice",
@@ -112,150 +114,120 @@ pub(crate) fn pane(
             cx,
         ),
     };
-    div()
-        .id("monument-pane-justice")
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_h_0()
-        .child(
-            ScrollArea::new("monument-justice-scroll")
-                .vertical()
-                .flex_1()
-                .min_h_0()
-                .child(
-                    div()
-                        .id("monument-justice-body")
-                        .flex()
-                        .flex_col()
-                        .gap_3()
-                        .child(body),
-                ),
-        )
-        .into_any_element()
+    scroll_pane(
+        "monument-pane-justice",
+        "monument-justice-scroll",
+        v_flex().id("monument-justice-body").gap_3().child(body),
+    )
 }
 
 fn loaded(
-    state: &mut AppState,
+    state: &AppState,
     snapshot: &JusticeSnapshot,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let stats = &snapshot.stats;
-    let cards = div()
-        .id("monument-justice-stats")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(metric_card(
-            "monument-justice-hours",
-            "Saved training",
-            format!("{} hours", format::value(stats.hours)),
-            "Paying Respect; the story start reads it".into(),
-            cx,
-        ))
-        .child(metric_card(
-            "monument-justice-milestones",
-            "Unlocked milestones",
-            format!("{} / 8", stats.milestones),
-            "Each adds coins, health, popularity or dismissals".into(),
-            cx,
-        ))
-        .child(metric_card(
-            "monument-justice-opal",
-            "Next opal offer chance",
-            format::percent(stats.opal_chance),
-            "Uses saved opals; Justice study raises it".into(),
-            cx,
-        ))
-        .child(metric_card(
-            "monument-justice-start",
-            "Fresh-story start",
-            format!(
-                "{} coins · {} health · {} popularity · {} dismissals",
-                format::value(stats.coins as f64),
-                format::value(stats.health as f64),
-                format::value(stats.popularity as f64),
-                format::value(stats.dismissals as f64)
+    let cards = metrics(
+        "monument-justice-stats",
+        vec![
+            Metric::new(
+                "monument-justice-hours",
+                "Saved training",
+                format!("{} hours", format::value(stats.hours)),
+                "Paying Respect; the story start reads it",
             ),
-            "A normal story; practice mode has no Justice".into(),
-            cx,
-        ));
-    let mut column = div().flex().flex_col().gap_3().child(cards);
+            Metric::new(
+                "monument-justice-milestones",
+                "Unlocked milestones",
+                format!("{} / 8", stats.milestones),
+                "Each adds coins, health, popularity or dismissals",
+            ),
+            Metric::new(
+                "monument-justice-opal",
+                "Next opal offer chance",
+                format::percent(stats.opal_chance),
+                "Uses saved opals; Justice study raises it",
+            ),
+            Metric::new(
+                "monument-justice-start",
+                "Fresh-story start",
+                format!("{} coins", format::value(stats.coins as f64)),
+                format!(
+                    "{} health · {} popularity · {} dismissals. A normal story; practice mode has no Justice",
+                    format::value(stats.health as f64),
+                    format::value(stats.popularity as f64),
+                    format::value(stats.dismissals as f64)
+                ),
+            ),
+        ],
+    );
+    let mut column = v_flex().gap_3().child(cards);
     if !snapshot.notes.is_empty() {
         column = column.child(notes_card("monument-justice-notes", &snapshot.notes, cx));
     }
     column
-        .child(worksheet_card(state, cx))
-        .child(effects_card(state, cx))
-        .child(advisor_card(state, cx))
-        .child(delayed_card(state))
+        .child(worksheet_card(state, window, cx))
+        .child(effects_card(state, window, cx))
+        .child(advisor_card(state, window, cx))
+        .child(delayed_card(state, cx))
         .child(milestones_card(
             &snapshot.milestones,
             MilestoneFirst::Coins(stats.coins as f64),
+            cx,
         ))
-        .child(bonuses_card(&snapshot.bonuses))
+        .child(bonuses_card(&snapshot.bonuses, cx))
         .into_any_element()
 }
 
 /// The six stats and the worksheet's reset, undo and next-case buttons.
-fn worksheet_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+fn worksheet_card(state: &AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     let worksheet = &state.monument.worksheet;
     let can_undo = worksheet.can_undo();
     let awaiting = worksheet.awaiting && worksheet.state.health > 0;
-    let entity = cx.entity();
-    let mut fields = div()
-        .id("monument-justice-fields")
-        .flex()
-        .flex_wrap()
-        .gap_3();
-    for field in Field::ALL {
-        let entity = entity.clone();
-        let value = field.value(&state.monument.worksheet.state);
-        let range = if field == Field::Popularity {
-            (-1.0e9, 1.0e9)
-        } else if field == Field::Round {
-            (1.0, 1.0e9)
-        } else {
-            (0.0, 1.0e9)
-        };
-        fields = fields.child(
-            div()
-                .flex()
-                .flex_col()
-                .gap_1()
-                .child(Caption::new(field.label()))
-                .child(
-                    NumberInput::new(format!("monument-justice-{}", field.id()), value)
-                        .range(range.0, range.1)
-                        .precision(0)
-                        .label(field.label())
-                        .on_commit(move |value, _window, cx| {
-                            entity.update(cx, |state, cx| {
-                                state.set_monument_justice_field(field, value, cx);
-                            });
-                        }),
-                ),
-        );
+    let inputs = &state.monument_controls.fields;
+    for (field, input) in Field::ALL.into_iter().zip(inputs) {
+        show_number(input, field.value(&worksheet.state), 0, window, cx);
     }
+    // Two rows of three that never wrap (`docs/ui-kit/display.md`).
+    let fields = v_flex()
+        .id("monument-justice-fields")
+        .gap_3()
+        .children(Field::ALL.chunks(3).map(|row| {
+            h_flex().gap_3().children(row.iter().map(|field| {
+                let index = Field::ALL
+                    .iter()
+                    .position(|each| each == field)
+                    .unwrap_or(0);
+                labelled(
+                    field.label(),
+                    number_field(
+                        format!("monument-justice-{}", field.id()),
+                        &inputs[index],
+                        field.label(),
+                    )
+                    .w(px(160.0)),
+                )
+            }))
+        }));
 
     let reset = cx.entity();
     let undo = cx.entity();
     let next = cx.entity();
-    let mut buttons = div()
-        .flex()
-        .flex_wrap()
-        .items_center()
+    let mut buttons = h_flex()
         .gap_2()
         .child(
-            Button::new("monument-justice-reset", "Fresh story from save")
-                .size(ControlSize::Sm)
+            Button::new("monument-justice-reset")
+                .label("Fresh story from save")
+                .small()
                 .on_click(move |_event, _window, cx| {
                     reset.update(cx, |state, cx| state.reset_monument_justice(cx));
                 }),
         )
         .child(
-            Button::new("monument-justice-undo", "Undo worksheet step")
-                .size(ControlSize::Sm)
+            Button::new("monument-justice-undo")
+                .label("Undo worksheet step")
+                .small()
                 .disabled(!can_undo)
                 .on_click(move |_event, _window, cx| {
                     undo.update(cx, |state, cx| state.undo_monument_justice(cx));
@@ -263,8 +235,9 @@ fn worksheet_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElemen
         );
     if awaiting {
         buttons = buttons.child(
-            Button::new("monument-justice-next", "Open selected next case")
-                .size(ControlSize::Sm)
+            Button::new("monument-justice-next")
+                .label("Open selected next case")
+                .small()
                 .on_click(move |_event, _window, cx| {
                     next.update(cx, |state, cx| state.open_monument_justice(cx));
                 }),
@@ -276,71 +249,58 @@ fn worksheet_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElemen
             "Use the values after this visitor's arrival effects. Nothing here changes your save.",
         ))
         .child(
-            div()
+            v_flex()
                 .id("monument-justice-controls")
-                .flex()
-                .flex_col()
                 .gap_3()
                 .child(buttons)
                 .child(fields)
                 .child(Caption::new(
-                    "Recording a response, opening the next case and every stat edit are each one undoable step.",
+                    "Recording a response, opening the next case and every stat edit are each one undoable step. A typed stat applies on Enter or when the field loses focus.",
                 )),
         )
         .into_any_element()
 }
 
-/// The deals, promises and investments the worksheet carries.
-fn effects_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let mut rows = div()
-        .id("monument-justice-effects")
-        .flex()
-        .flex_wrap()
-        .gap_3();
-    for effect in Effect::ALL {
-        let entity = cx.entity();
-        let active = state.monument.worksheet.state.effects.get(&effect).copied();
-        let checked = active.is_some();
-        let mut row = div()
-            .w(px(240.0))
-            .flex()
-            .flex_col()
-            .gap_1()
-            .child(
-                div().flex().items_center().justify_between().gap_2().child(
-                    Checkbox::new(format!("monument-justice-effect-{}", effect.key()), checked)
+/// The deals, promises and investments the worksheet carries, four to a row.
+fn effects_card(state: &AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
+    let effects = &state.monument.worksheet.state.effects;
+    let inputs = &state.monument_controls.effects;
+    let mut rows = v_flex().id("monument-justice-effects").gap_3();
+    for (chunk, row_inputs) in Effect::ALL.chunks(4).zip(inputs.chunks(4)) {
+        let mut row = h_flex().items_start().gap_3();
+        for (effect, input) in chunk.iter().copied().zip(row_inputs) {
+            let entity = cx.entity();
+            let active = effects.get(&effect).copied();
+            let mut cell = v_flex()
+                .w(px(240.0))
+                .gap_1()
+                .child(
+                    Checkbox::new(format!("monument-justice-effect-{}", effect.key()))
                         .label(effect.name())
-                        .on_change(move |on, _window, cx| {
+                        .checked(active.is_some())
+                        .on_click(move |on, _window, cx| {
+                            let on = *on;
                             entity.update(cx, |state, cx| {
                                 state.toggle_monument_justice_effect(effect, on, cx);
                             });
                         }),
-                ),
-            )
-            .child(
-                div()
-                    .text_size(px(11.0))
-                    .text_color(cx.theme().colors.fg_muted)
-                    .child(effect.help()),
-            );
-        if let Some(value) = active
-            && !effect.flag()
-        {
-            let entity = cx.entity();
-            row = row.child(
-                NumberInput::new(
-                    format!("monument-justice-effect-value-{}", effect.key()),
-                    value as f64,
                 )
-                .range(0.0, 1.0e9)
-                .precision(0)
-                .label(effect.name())
-                .on_commit(move |value, _window, cx| {
-                    entity.update(cx, |state, cx| {
-                        state.set_monument_justice_effect(effect, value, cx);
-                    });
-                }),
-            );
+                .child(Caption::new(effect.help()).text_color(muted));
+            if let Some(value) = active
+                && !effect.flag()
+            {
+                show_number(input, value as f64, 0, window, cx);
+                cell = cell.child(
+                    number_field(
+                        format!("monument-justice-effect-value-{}", effect.key()),
+                        input,
+                        effect.name(),
+                    )
+                    .w(px(160.0)),
+                );
+            }
+            row = row.child(cell);
         }
         rows = rows.child(row);
     }
@@ -353,167 +313,103 @@ fn effects_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement 
 }
 
 /// The search, the observed case, the three responses and the heuristic.
-fn advisor_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
-    let query = state.monument_search.read(cx).value().trim().to_lowercase();
+fn advisor_card(state: &AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let search_focus = state.monument_search.focus_handle(cx);
     let worksheet = &state.monument.worksheet;
-    let case_id = worksheet.case_id;
-    let state_now = worksheet.state.clone();
+    let derived = &state.monument_controls.derived;
+    let select = &state.monument_controls.case;
+    select.show(derived.cases.clone(), Some(&worksheet.case_id), window, cx);
 
-    // The search matches the visitor and the request wording, keeps the
-    // selected case in the list, and de-duplicates rows with the same wording.
-    let mut visible: Vec<usize> = Vec::new();
-    for case in justice::cases() {
-        let haystack = format!("{} {}", case.name, case.text).to_lowercase();
-        if query.is_empty() || haystack.contains(&query) {
-            let duplicate = visible.iter().any(|id| {
-                justice::cases()
-                    .get(*id)
-                    .is_some_and(|kept| kept.visitor == case.visitor && kept.text == case.text)
-            });
-            if !duplicate {
-                visible.push(case.id);
-            }
-        }
-    }
-    if !visible.contains(&case_id) {
-        visible.insert(0, case_id);
-    }
-    let mut choices = Vec::with_capacity(visible.len());
-    for id in &visible {
-        let row =
-            justice::case_text(&state_now, *id).unwrap_or_else(|_| justice::cases()[*id].clone());
-        choices.push(Choice::new(
-            id.to_string(),
-            format!("{} - {}", row.name, clean_text(&row.text)),
-        ));
-    }
-    let matching = visible.len();
-    let searching = !query.is_empty();
-    let count_label = if searching {
-        format!("{matching} matching cases")
-    } else {
-        format!("{} cases", justice::cases().len())
-    };
-    let case_focus = entity.clone();
-    let select = Select::new("monument-justice-case", choices)
-        .selected(case_id.to_string())
-        .on_change(move |value, _window, cx| {
-            if let Ok(id) = value.as_ref().parse::<usize>() {
-                case_focus.update(cx, |state, cx| state.select_monument_justice_case(id, cx));
-            }
-        });
-
-    let mut body = div()
-        .id("monument-justice-advisor")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .items_end()
-                .gap_3()
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Find case"))
-                        .child(
-                            div()
-                                .id("monument-justice-search")
-                                .role(Role::Search)
-                                .aria_label("Find a Justice case")
-                                .w(px(320.0))
-                                .on_click(move |_event, window, cx| {
-                                    window.focus(&search_focus, cx);
-                                })
-                                .child(
-                                    search_input(&state.monument_search)
-                                        .aria_label("Find a Justice case")
-                                        .small(),
-                                ),
-                        ),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Observed case"))
-                        .child(select),
-                )
-                .child(
-                    div()
-                        .id("monument-justice-match-count")
-                        .role(Role::Label)
-                        .aria_label(count_label.clone())
-                        .text_size(px(12.0))
-                        .text_color(cx.theme().colors.fg_muted)
-                        .child(count_label),
+    let mut body = v_flex().id("monument-justice-advisor").gap_3().child(
+        h_flex()
+            .items_end()
+            .gap_3()
+            .child(labelled(
+                "Find case",
+                div()
+                    .id("monument-justice-search")
+                    .role(Role::Search)
+                    .aria_label("Find a Justice case")
+                    .w(px(320.0))
+                    .on_click(move |_event, window, cx| {
+                        window.focus(&search_focus, cx);
+                    })
+                    .child(
+                        search_input(&state.monument_search)
+                            .aria_label("Find a Justice case")
+                            .small(),
+                    ),
+            ))
+            .child(labelled(
+                "Observed case",
+                div().flex_none().w(px(420.0)).child(
+                    Select::new(select.state())
+                        .id("monument-justice-case")
+                        .accessibility_label("Observed case")
+                        .small(),
                 ),
-        );
+            ))
+            .child(
+                div()
+                    .id("monument-justice-match-count")
+                    .role(Role::Label)
+                    .aria_label(derived.case_count.clone())
+                    .text_size(TEXT_MONO)
+                    .text_color(muted)
+                    .child(derived.case_count.clone()),
+            ),
+    );
 
-    match justice::responses(&state_now, case_id) {
-        Ok(report) => {
+    let notice = (!state.monument.notice.is_empty()).then(|| notice_line(state, cx));
+    match &derived.report {
+        Some(Ok(report)) => {
             body = body.child(
                 div()
                     .id("monument-justice-request")
                     .role(Role::Label)
                     .aria_label(format!("{}: {}", report.row.name, report.row.text))
-                    .child(div().child(format!(
+                    .child(format!(
                         "{}: {}",
                         report.row.name,
                         clean_text(&report.row.text)
-                    ))),
+                    )),
             );
-            if !state.monument.notice.is_empty() {
-                body = body.child(notice_line(state, cx));
-            }
-            let mut responses = div()
+            body = body.children(notice);
+            let responses = h_flex()
                 .id("monument-justice-responses")
-                .flex()
-                .flex_wrap()
-                .gap_3();
-            for response in &report.responses {
-                responses =
-                    responses.child(response_card(&state_now, response, report.recommended, cx));
-            }
+                .items_start()
+                .gap_3()
+                .children(report.responses.iter().map(|response| {
+                    response_card(&worksheet.state, response, report.recommended, cx)
+                }));
+            let heuristic = format!(
+                "{}{}",
+                report.heuristic,
+                if report.ambiguous {
+                    " Grumblo uses identical wording for hidden gifts. These outcomes use their equally likely native case variants; record only the actual result."
+                } else {
+                    ""
+                }
+            );
             body = body.child(responses).child(
                 div()
                     .id("monument-justice-heuristic")
                     .role(Role::Label)
-                    .aria_label(format!(
-                        "{}{}",
-                        report.heuristic,
-                        if report.ambiguous {
-                            " Grumblo uses identical wording for hidden gifts. These outcomes use their equally likely native case variants; record only the actual result."
-                        } else {
-                            ""
-                        }
-                    ))
-                    .text_size(px(12.0))
-                    .text_color(cx.theme().colors.fg_muted)
-                    .child(format!(
-                        "{}{}",
-                        report.heuristic,
-                        if report.ambiguous {
-                            " Grumblo uses identical wording for hidden gifts. These outcomes use their equally likely native case variants; record only the actual result."
-                        } else {
-                            ""
-                        }
-                    )),
+                    .aria_label(heuristic.clone())
+                    .text_size(TEXT_MONO)
+                    .text_color(muted)
+                    .child(heuristic),
             );
         }
-        Err(error) => {
-            if !state.monument.notice.is_empty() {
-                body = body.child(notice_line(state, cx));
-            }
-            body = body.child(error_line("monument-justice-error", error.to_string(), cx));
+        Some(Err(error)) => {
+            body = body.children(notice).child(error_line(
+                "monument-justice-error",
+                error.to_string(),
+                cx,
+            ));
         }
+        None => {}
     }
     Card::new()
         .header(CardHeader::new("Response advisor").description(
@@ -525,12 +421,12 @@ fn advisor_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement 
 
 /// What the last step did, under the search.
 fn notice_line(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     div()
         .id("monument-justice-notice")
         .role(Role::Label)
         .aria_label(state.monument.notice.clone())
-        .text_size(px(12.0))
+        .text_size(TEXT_MONO)
         .text_color(muted)
         .child(state.monument.notice.clone())
         .into_any_element()
@@ -542,25 +438,27 @@ fn response_card(
     recommended: Option<Action>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
+    let theme = cx.theme();
+    let (border, accent, danger, muted) = (
+        theme.border,
+        theme.primary,
+        theme.danger,
+        theme.muted_foreground,
+    );
+    let radius = theme.radius;
     let suggested = recommended == Some(response.action);
-    let mut card = div()
+    let mut card = v_flex()
         .id(format!(
             "monument-justice-response-{}",
             response.action.id()
         ))
-        .flex()
-        .flex_col()
         .flex_1()
         .min_w(px(260.0))
         .gap_1()
         .p_2()
-        .rounded(px(6.0))
+        .rounded(radius)
         .border_1()
-        .border_color(if suggested {
-            cx.theme().colors.accent
-        } else {
-            cx.theme().colors.border
-        })
+        .border_color(if suggested { accent } else { border })
         .child(
             div()
                 .font_weight(gpui::FontWeight::SEMIBOLD)
@@ -572,8 +470,8 @@ fn response_card(
                 .id("monument-justice-recommended")
                 .role(Role::Label)
                 .aria_label("Suggested: the survival-first heuristic picks this response")
-                .text_size(px(11.0))
-                .text_color(cx.theme().colors.accent)
+                .text_size(TEXT_CAPTION)
+                .text_color(accent)
                 .child("Suggested — survival first, then the heuristically best state"),
         );
     }
@@ -584,11 +482,15 @@ fn response_card(
                     .id(format!("monument-justice-blocked-{}", response.action.id()))
                     .role(Role::Label)
                     .aria_label(format!("{}: {reason}", response.action.label()))
-                    .text_color(cx.theme().colors.danger)
+                    .text_color(danger)
                     .child(reason.clone()),
             );
         }
         None => {
+            let survival = format!(
+                "Survive this response: {}",
+                format::percent(response.survival)
+            );
             card = card.child(
                 div()
                     .id(format!(
@@ -596,18 +498,12 @@ fn response_card(
                         response.action.id()
                     ))
                     .role(Role::Label)
-                    .aria_label(format!(
-                        "Survive this response: {}",
-                        format::percent(response.survival)
-                    ))
-                    .text_size(px(12.0))
-                    .text_color(cx.theme().colors.fg_muted)
-                    .child(format!(
-                        "Survive this response: {}",
-                        format::percent(response.survival)
-                    )),
+                    .aria_label(survival.clone())
+                    .text_size(TEXT_MONO)
+                    .text_color(muted)
+                    .child(survival),
             );
-            let mut outcomes = div().flex().flex_col().gap_2();
+            let mut outcomes = v_flex().gap_2();
             for (index, outcome) in response.outcomes.iter().enumerate() {
                 let entity = cx.entity();
                 let action = response.action;
@@ -626,58 +522,52 @@ fn response_card(
                         )
                     })
                     .collect();
-                let mut outcome_card = div()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .pt_2()
-                    .border_t_1()
-                    .border_color(cx.theme().colors.border)
-                    .child(
-                        div()
-                            .text_size(px(12.0))
-                            .font_weight(gpui::FontWeight::SEMIBOLD)
-                            .child(format!(
-                                "{} - {}",
-                                outcome.label,
-                                format::percent(outcome.probability)
-                            )),
-                    )
-                    .child(div().text_size(px(12.0)).child(changes.join(" / ")));
-                if outcome.state.health <= 0 {
-                    outcome_card = outcome_card.child(
-                        div()
-                            .text_size(px(12.0))
-                            .text_color(cx.theme().colors.danger)
-                            .child(
-                                "Story ends; existing retirement chests remain available to open.",
-                            ),
-                    );
-                }
-                outcome_card = outcome_card.child(
-                    div()
-                        .text_size(px(12.0))
-                        .text_color(cx.theme().colors.fg_muted)
-                        .child(effect_changes(current, &outcome.state)),
-                );
                 let label = if response.outcomes.len() > 1 {
                     format!("Record {} - {}", action.label(), outcome.label)
                 } else {
                     format!("Record {}", action.label())
                 };
-                outcome_card = outcome_card.child(
-                    Button::new(
-                        format!("monument-justice-record-{}-{index}", action.id()),
-                        label,
-                    )
-                    .size(ControlSize::Sm)
-                    .on_click(move |_event, _window, cx| {
-                        entity.update(cx, |state, cx| {
-                            state.record_monument_justice(action, index, cx);
-                        });
-                    }),
+                outcomes = outcomes.child(
+                    v_flex()
+                        .gap_1()
+                        .pt_2()
+                        .border_t_1()
+                        .border_color(border)
+                        .text_size(TEXT_MONO)
+                        .child(div().font_weight(gpui::FontWeight::SEMIBOLD).child(format!(
+                            "{} - {}",
+                            outcome.label,
+                            format::percent(outcome.probability)
+                        )))
+                        .child(div().child(changes.join(" / ")))
+                        .when(outcome.state.health <= 0, |card| {
+                            card.child(div().text_color(danger).child(
+                                "Story ends; existing retirement chests remain available to open.",
+                            ))
+                        })
+                        .child(
+                            div()
+                                .text_color(muted)
+                                .child(effect_changes(current, &outcome.state)),
+                        )
+                        .child(
+                            h_flex().child(
+                                Button::new(format!(
+                                    "monument-justice-record-{}-{index}",
+                                    action.id()
+                                ))
+                                .label(label)
+                                .small()
+                                .on_click(
+                                    move |_event, _window, cx| {
+                                        entity.update(cx, |state, cx| {
+                                            state.record_monument_justice(action, index, cx);
+                                        });
+                                    },
+                                ),
+                            ),
+                        ),
                 );
-                outcomes = outcomes.child(outcome_card);
             }
             card = card.child(outcomes);
         }
@@ -703,8 +593,8 @@ fn effect_changes(current: &State, next: &State) -> String {
 }
 
 /// The effects pending right now, and what settles them.
-fn delayed_card(state: &mut AppState) -> AnyElement {
-    let effects = justice::delayed_effects(&state.monument.worksheet.state);
+fn delayed_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let effects = &state.monument_controls.derived.delayed;
     let body = if effects.is_empty() {
         div()
             .id("monument-justice-delayed")
@@ -714,21 +604,23 @@ fn delayed_card(state: &mut AppState) -> AnyElement {
             .into_any_element()
     } else {
         let names: Vec<&str> = effects.iter().map(|effect| effect.name).collect();
-        let mut table = Table::new(["Effect", "Value", "When / consequence"]);
-        for effect in &effects {
-            table = table.row([
-                div().min_w_0().child(effect.name).into_any_element(),
-                div()
-                    .child(format::value(effect.value as f64))
-                    .into_any_element(),
-                div().child(effect.help).into_any_element(),
-            ]);
-        }
+        let cols = [
+            Col::Text("Effect"),
+            Col::Number("Value"),
+            Col::Text("When / consequence"),
+        ];
+        let cells = effects.iter().map(|effect| {
+            vec![
+                text(effect.name),
+                text(format::value(effect.value as f64)),
+                text(effect.help),
+            ]
+        });
         div()
             .id("monument-justice-delayed")
             .role(Role::Label)
             .aria_label(format!("{} active: {}", names.len(), names.join(", ")))
-            .child(table)
+            .child(table("monument-delayed", &cols, cells, cx))
             .into_any_element()
     };
     Card::new()

@@ -2,29 +2,31 @@
 //! the training sources every monument shares.
 
 mod actions;
+mod controls;
+mod table;
 
 pub(crate) mod bravery;
 pub(crate) mod justice;
 pub(crate) mod sources;
 pub(crate) mod wisdom;
 
+pub(crate) use controls::Controls;
+
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, FontWeight, IntoElement, ParentElement, Role, SharedString, Styled,
-    Window, div, px,
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 };
-use idleon_monument::{BonusRow, Milestone, Snapshot};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, v_flex};
+use idleon_monument::{BonusRow, Milestone};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Statistic};
+use table::{Col, table, text};
 
 /// The monument tab strip.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -56,10 +58,6 @@ impl Tab {
             Tab::Wisdom => "Wisdom",
             Tab::Sources => "Sources",
         }
-    }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
@@ -103,7 +101,7 @@ impl Default for State {
 /// The section: tab strip, training summary and the active pane.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     if let Some(save) = state.save.as_ref() {
@@ -112,8 +110,11 @@ pub(crate) fn view(
             state.monument.character = count - 1;
         }
     }
-    let snapshot = state.monument_snapshot();
-    let summary = snapshot
+    state.sync_monument(cx);
+    let summary = state
+        .monument_controls
+        .derived
+        .snapshot
         .as_ref()
         .filter(|snapshot| snapshot.available)
         .map(|snapshot| {
@@ -124,7 +125,7 @@ pub(crate) fn view(
             )
         })
         .unwrap_or_else(|| "Import a save to calculate".into());
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let mut header = div()
         .id("monument-header")
         .flex()
@@ -133,7 +134,7 @@ pub(crate) fn view(
         .gap_3()
         .child(tab_bar(state, cx))
         .child(div().flex_1());
-    if let Some(select) = character_select(state, cx) {
+    if let Some(select) = character_select(state, window, cx) {
         header = header.child(select);
     }
     let header = header.child(
@@ -152,67 +153,89 @@ pub(crate) fn view(
         .min_h_0()
         .gap_3()
         .child(header)
-        .child(pane(state, cx, snapshot.as_ref()))
+        .child(pane(state, window, cx))
         .into_any_element()
 }
 
 /// The character the Summoning access and Charge read, as a page-level
 /// selector.
-fn character_select(state: &AppState, cx: &mut Context<AppState>) -> Option<AnyElement> {
-    let save = state.save.as_ref()?;
-    let count = save.character_count();
-    if count == 0 {
+fn character_select(
+    state: &AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> Option<AnyElement> {
+    let controls = &state.monument_controls;
+    let characters = &controls.derived.characters;
+    if characters.is_empty() {
         return None;
     }
-    let characters: Vec<Choice> = (0..count)
-        .map(|index| Choice::new(index.to_string(), save.character_name(index)))
-        .collect();
-    let entity = cx.entity();
+    controls.character.show(
+        characters.clone(),
+        Some(&state.monument.character),
+        window,
+        cx,
+    );
     Some(
-        Select::new("monument-character", characters)
-            .label("Character")
-            .selected(state.monument.character.to_string())
-            .size(ControlSize::Sm)
-            .on_change(move |value, _window, cx| {
-                if let Ok(index) = value.parse::<usize>() {
-                    entity.update(cx, |state, cx| state.set_monument_character(index, cx));
-                }
-            })
+        div()
+            .flex_none()
+            .w(px(180.0))
+            .child(
+                Select::new(controls.character.state())
+                    .id("monument-character")
+                    .accessibility_label("Character")
+                    .small(),
+            )
             .into_any_element(),
     )
 }
 
 fn tab_bar(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
     let entity = cx.entity();
-    let mut tabs =
-        TabBar::new("monument-tabs").selected(SharedString::from(state.monument.tab.id()));
-    for tab in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
-    }
-    tabs.on_select(move |id, _window, cx| {
-        if let Some(tab) = Tab::from_id(id.as_ref()) {
-            entity.update(cx, |state, cx| state.set_monument_tab(tab, cx));
-        }
-    })
+    let selected = Tab::ALL
+        .iter()
+        .position(|tab| *tab == state.monument.tab)
+        .unwrap_or_default();
+    let tabs = Tab::ALL.map(|tab| (tab.id().into(), tab.label().into()));
+    crate::ui::layout::tab_bar(
+        "monument-tabs",
+        tabs,
+        selected,
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| state.set_monument_tab(Tab::ALL[index], cx));
+        },
+    )
 }
 
-fn pane(
-    state: &mut AppState,
-    cx: &mut Context<AppState>,
-    snapshot: Option<&Snapshot>,
-) -> AnyElement {
+fn pane(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     match state.monument.tab {
-        Tab::Bravery => bravery::pane(state, snapshot, cx),
-        Tab::Justice => {
-            let justice = state.monument_justice();
-            justice::pane(state, justice.as_ref(), cx)
-        }
-        Tab::Wisdom => {
-            let wisdom = state.monument_wisdom();
-            wisdom::pane(state, wisdom.as_ref(), cx)
-        }
+        Tab::Bravery => bravery::pane(state, window, cx),
+        Tab::Justice => justice::pane(state, window, cx),
+        Tab::Wisdom => wisdom::pane(state, cx),
         Tab::Sources => sources::pane(state, cx),
     }
+}
+
+/// A tab's scrolling body under `pane_id`, its scroll area named `scroll_id`.
+pub(crate) fn scroll_pane(
+    pane_id: &'static str,
+    scroll_id: &'static str,
+    body: impl IntoElement,
+) -> AnyElement {
+    div()
+        .id(pane_id)
+        .flex()
+        .flex_col()
+        .flex_1()
+        .min_h_0()
+        .child(
+            div()
+                .flex_1()
+                .min_h_0()
+                .child(body)
+                .overflow_y_scrollbar()
+                .id(scroll_id),
+        )
+        .into_any_element()
 }
 
 /// The card an empty tab shows before a save is imported.
@@ -222,18 +245,32 @@ pub(crate) fn empty_card(
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let entity = cx.entity();
+    let muted = cx.theme().muted_foreground;
     Card::new()
         .header(CardHeader::new(title))
         .child(
-            EmptyState::new("monument-load", IconName::Upload, "Load a save")
-                .body(detail)
-                .action(
-                    Button::new("monument-import", "Import save")
-                        .icon(IconName::Upload)
-                        .on_click(move |_event, window, cx| {
-                            entity.update(cx, |state, cx| state.open_import(window, cx));
-                        }),
-                ),
+            div().id("monument-load").child(
+                Empty::new()
+                    .header(
+                        EmptyHeader::new()
+                            .media(
+                                EmptyMedia::new()
+                                    .child(Icon::new(IconName::Upload).text_color(muted)),
+                            )
+                            .title(EmptyTitle::new().child("Load a save"))
+                            .description(EmptyDescription::new().child(detail)),
+                    )
+                    .content(
+                        EmptyContent::new().child(
+                            Button::new("monument-import")
+                                .label("Import save")
+                                .icon(IconName::Upload)
+                                .on_click(move |_event, window, cx| {
+                                    entity.update(cx, |state, cx| state.open_import(window, cx));
+                                }),
+                        ),
+                    ),
+            ),
         )
         .into_any_element()
 }
@@ -244,27 +281,18 @@ pub(crate) fn unavailable_card(
     notes: &[String],
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mut card = Card::new()
+    let muted = cx.theme().muted_foreground;
+    Card::new()
         .header(CardHeader::new(title).description("The save has no Monument rows."))
         .child(Caption::new(
             "This save is missing Monument charge, training or reward data.",
-        ));
-    if !notes.is_empty() {
-        card = card.child(
-            div()
-                .flex()
-                .flex_col()
-                .gap_1()
-                .children(notes.iter().map(|note| {
-                    div()
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(note.clone())
-                })),
-        );
-    }
-    card.into_any_element()
+        ))
+        .children(
+            notes
+                .iter()
+                .map(|note| Caption::new(note.clone()).text_color(muted)),
+        )
+        .into_any_element()
 }
 
 /// One rejected input, under the card that read it.
@@ -273,7 +301,7 @@ pub(crate) fn error_line(
     message: String,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let danger = cx.theme().colors.danger;
+    let danger = cx.theme().danger;
     div()
         .id(id)
         .role(Role::Alert)
@@ -288,23 +316,20 @@ pub(crate) fn notes_card(
     notes: &[String],
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     Card::new()
         .header(CardHeader::new("Partial save").description("Some sources cannot be read"))
         .child(
-            div()
+            v_flex()
                 .id(id)
                 .role(Role::Label)
                 .aria_label(notes.join(" "))
-                .flex()
-                .flex_col()
                 .gap_1()
-                .children(notes.iter().map(|note| {
-                    div()
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(note.clone())
-                })),
+                .children(
+                    notes
+                        .iter()
+                        .map(|note| Caption::new(note.clone()).text_color(muted)),
+                ),
         )
         .into_any_element()
 }
@@ -319,32 +344,29 @@ pub(crate) enum MilestoneFirst {
 }
 
 /// One monument's eight Paying Respect milestones.
-pub(crate) fn milestones_card(rows: &[Milestone], first: MilestoneFirst) -> AnyElement {
-    let mut table = Table::new([
-        "Milestone",
-        "Training hours required",
-        "Saved status",
-        "One-character ETA",
-    ]);
-    for (index, row) in rows.iter().enumerate() {
-        table = table.row(milestone_row(index, row, first));
-    }
+pub(crate) fn milestones_card(
+    rows: &[Milestone],
+    first: MilestoneFirst,
+    cx: &gpui::App,
+) -> AnyElement {
+    let cols = [
+        Col::Text("Milestone"),
+        Col::Number("Training hours required"),
+        Col::Text("Saved status"),
+        Col::Text("One-character ETA"),
+    ];
+    let cells = rows.iter().enumerate().map(|(index, row)| {
+        vec![
+            text(milestone_text(index, row, first)),
+            text(format::value(row.hours)),
+            text(milestone_status(row)),
+            text(milestone_eta(row)),
+        ]
+    });
     Card::new()
         .header(CardHeader::new("Paying Respect milestones"))
-        .child(table)
+        .child(table("monument-milestone", &cols, cells, cx))
         .into_any_element()
-}
-
-fn milestone_row(index: usize, row: &Milestone, first: MilestoneFirst) -> [AnyElement; 4] {
-    [
-        div()
-            .min_w_0()
-            .child(milestone_text(index, row, first))
-            .into_any_element(),
-        div().child(format::value(row.hours)).into_any_element(),
-        div().child(milestone_status(row)).into_any_element(),
-        div().child(milestone_eta(row)).into_any_element(),
-    ]
 }
 
 /// The row's text, with the first row's placeholder filled in.
@@ -381,32 +403,26 @@ pub(crate) fn milestone_eta(row: &Milestone) -> String {
 }
 
 /// A monument's ten permanent reward levels and their effects.
-pub(crate) fn bonuses_card(rows: &[BonusRow]) -> AnyElement {
-    let mut table = Table::new([
-        "Reward",
-        "Saved level",
-        "Current effect",
-        "Effect at +1 level",
-    ]);
-    for row in rows {
-        table = table.row(bonus_row(row));
-    }
+pub(crate) fn bonuses_card(rows: &[BonusRow], cx: &gpui::App) -> AnyElement {
+    let cols = [
+        Col::Text("Reward"),
+        Col::Number("Saved level"),
+        Col::Text("Current effect"),
+        Col::Text("Effect at +1 level"),
+    ];
+    let cells = rows.iter().map(|row| {
+        let label = clean_text(&row.text);
+        vec![
+            text(bonus_label(&label)),
+            text(format::value(row.level)),
+            text(effect_text(&label, row.value)),
+            text(effect_text(&label, row.next)),
+        ]
+    });
     Card::new()
         .header(CardHeader::new("Permanent reward levels & total effects"))
-        .child(table)
+        .child(table("monument-bonus", &cols, cells, cx))
         .into_any_element()
-}
-
-fn bonus_row(row: &BonusRow) -> [AnyElement; 4] {
-    let text = clean_text(&row.text);
-    [
-        div().min_w_0().child(bonus_label(&text)).into_any_element(),
-        div().child(format::value(row.level)).into_any_element(),
-        div()
-            .child(effect_text(&text, row.value))
-            .into_any_element(),
-        div().child(effect_text(&text, row.next)).into_any_element(),
-    ]
 }
 
 fn bonus_label(text: &str) -> String {
@@ -426,39 +442,58 @@ fn effect_text(text: &str, value: f64) -> String {
         .replace('}', &format::value(1.0 + value / 100.0))
 }
 
-/// A metric card with a formatted value.
-pub(crate) fn metric_card(
-    id: &'static str,
-    title: &str,
-    value: String,
-    sub: String,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let accent = cx.theme().colors.accent;
-    div()
-        .flex_1()
-        .min_w(px(180.0))
-        .child(
-            Card::new().header(CardHeader::new(title)).child(
+/// One figure in a strip: the element id the harness reads, its title, the
+/// formatted value and the line under it.
+pub(crate) struct Metric {
+    pub(crate) id: &'static str,
+    pub(crate) title: String,
+    pub(crate) value: String,
+    pub(crate) sub: String,
+}
+
+impl Metric {
+    pub(crate) fn new(
+        id: &'static str,
+        title: impl Into<String>,
+        value: impl Into<String>,
+        sub: impl Into<String>,
+    ) -> Self {
+        Self {
+            id,
+            title: title.into(),
+            value: value.into(),
+            sub: sub.into(),
+        }
+    }
+}
+
+/// Figures in strips of at most four under `id`, one strip per line so a
+/// strip never wraps, and the lines as even as they can be (six figures are
+/// two strips of three). Each figure keeps its id and reads
+/// `title: value. sub`.
+pub(crate) fn metrics(id: &'static str, metrics: Vec<Metric>) -> AnyElement {
+    let lines = metrics.len().div_ceil(4).max(1);
+    let per_line = metrics.len().div_ceil(lines).max(1);
+    let mut strips = v_flex().id(id).gap(PANEL_GAP);
+    let mut metrics = metrics.into_iter().peekable();
+    while metrics.peek().is_some() {
+        strips = strips.child(
+            KpiStrip::new().children(metrics.by_ref().take(per_line).map(|metric| {
                 div()
-                    .id(id)
+                    .id(metric.id)
                     .role(Role::Label)
-                    .aria_label(format!("{title}: {value}. {sub}"))
-                    .flex()
-                    .flex_col()
-                    .gap_1()
+                    .aria_label(format!(
+                        "{}: {}. {}",
+                        metric.title, metric.value, metric.sub
+                    ))
                     .child(
-                        div()
-                            .text_size(px(22.0))
-                            .font_weight(FontWeight::BOLD)
-                            .text_color(accent)
-                            .child(value),
+                        Statistic::new(format!("{}-figure", metric.id), metric.title, metric.value)
+                            .caption(metric.sub),
                     )
-                    .child(Caption::new(sub).text_color(muted)),
-            ),
-        )
-        .into_any_element()
+            })),
+        );
+    }
+    strips.into_any_element()
 }
 
 /// Underscores and pipes read as spaces.

@@ -39,7 +39,7 @@ use crate::sections::killroy::{
 };
 use crate::sections::ladle::State as LadleSectionState;
 use crate::sections::ladle::planner::{LadleDonation, LadlePlanRequest};
-use crate::sections::monument::State as MonumentState;
+use crate::sections::monument::{Controls as MonumentControls, State as MonumentState};
 use crate::sections::opal::State as OpalState;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::prisma::{RunInputs as PrismaRunInputs, State as PrismaState};
@@ -58,7 +58,9 @@ use crate::sections::spelunking::RunInputs as SpelunkRunInputs;
 use crate::sections::spelunking::State as SpelunkingState;
 use crate::sections::stats_all::State as StatsAllState;
 use crate::sections::statue::State as StatueState;
-use crate::sections::worship_td::{OptimizeRunInputs, PlanRunInputs, State as WorshipState};
+use crate::sections::worship_td::{
+    Controls as WorshipControls, OptimizeRunInputs, PlanRunInputs, State as WorshipState,
+};
 use crate::sections::{self, Section};
 use crate::session::{self, Session, SidebarFold};
 use crate::ui;
@@ -267,6 +269,8 @@ pub(crate) struct AppState {
     pub(crate) monument: MonumentState,
     /// The imported save, narrowed to the Monument rows.
     pub(crate) monument_save: Option<monument::Save>,
+    /// The monument section's kit controls and cached engine results.
+    pub(crate) monument_controls: MonumentControls,
     /// The Cglunko state the last imported save carried.
     pub(crate) cglunko: Cglunko,
     /// The Cglunko tab the section was left on.
@@ -416,6 +420,8 @@ pub(crate) struct AppState {
     pub(crate) worship: WorshipState,
     /// The tower trial levels and account values the live run reads.
     pub(crate) worship_inputs: WorshipInputs,
+    /// The Worship TD section's kit controls and open-slot cache.
+    pub(crate) worship_controls: WorshipControls,
     /// The dashboard search field.
     pub(crate) search: Entity<InputState>,
     /// The Justice case search field.
@@ -1313,6 +1319,7 @@ impl AppState {
             fishing: FishingState::default(),
             monument: MonumentState::default(),
             monument_save: None,
+            monument_controls: MonumentControls::new(window, cx),
             cog: CogState::default(),
             cglunko: Cglunko::default(),
             cglunko_tab: CglunkoTab::default(),
@@ -1376,6 +1383,7 @@ impl AppState {
             coral_controls,
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),
+            worship_controls: WorshipControls::new(window, cx),
             search,
             monument_search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),

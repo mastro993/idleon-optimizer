@@ -5,73 +5,61 @@
 //! timing the game leaves to animation frames, a check the game makes on
 //! screen, or an account bonus this build does not decode yet.
 
+use super::table::{Col, table, text, text_id};
 use crate::state::AppState;
-use ely_gpui_component::feedback::Callout;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::{ActiveTheme as _, v_flex};
+use idleon_ui::widgets::{Callout, Caption, Card, CardHeader, Tone};
 use idleon_worship as worship;
 
 /// The Model pane.
 pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     state.worship_ensure_plan();
-    let issues = state.worship.plan_issues.clone();
-    let muted = cx.theme().colors.fg_muted;
+    let issues = &state.worship.plan_issues;
+    let muted = cx.theme().muted_foreground;
     let inputs = &state.worship_inputs;
 
-    let mut assumptions = div()
-        .id("worship-assumptions")
-        .flex()
-        .flex_col()
-        .gap_1()
-        .p_3();
-    for (index, assumption) in worship::ASSUMPTIONS.iter().enumerate() {
-        assumptions = assumptions.child(
-            div()
-                .id(("worship-assumption", index))
-                .child(Callout::new(Severity::Info).title(*assumption)),
-        );
-    }
+    let assumptions = v_flex().id("worship-assumptions").gap_1().children(
+        worship::ASSUMPTIONS
+            .iter()
+            .enumerate()
+            .map(|(index, assumption)| {
+                div()
+                    .id(("worship-assumption", index))
+                    .child(Callout::new(Tone::Info, *assumption))
+            }),
+    );
 
-    let mut missing = div()
-        .id("worship-missing-data")
-        .flex()
-        .flex_col()
-        .gap_1()
-        .p_3();
+    let mut missing = v_flex().id("worship-missing-data").gap_1();
     let mut warned = false;
     if !state.save_loaded {
         warned = true;
-        missing =
-            missing
-                .child(Callout::new(Severity::Warning).title(
-                    "No save is loaded; tower levels and best waves are at their defaults.",
-                ));
+        missing = missing.child(Callout::new(
+            Tone::Warning,
+            "No save is loaded; tower levels and best waves are at their defaults.",
+        ));
     }
     if state.save_partial {
         warned = true;
-        missing = missing.child(
-            Callout::new(Severity::Warning)
-                .title("The last import left fields out; the import dialog listed every warning."),
-        );
+        missing = missing.child(Callout::new(
+            Tone::Warning,
+            "The last import left fields out; the import dialog listed every warning.",
+        ));
     }
     for (index, issue) in issues.iter().enumerate() {
         warned = true;
         missing = missing.child(
             div()
                 .id(("worship-missing-warning", index))
-                .child(Callout::new(Severity::Warning).title(issue.message.clone())),
+                .child(Callout::new(Tone::Warning, issue.message.clone())),
         );
     }
     if !warned {
-        missing = missing.child(Callout::new(Severity::Success).title("No missing input."));
+        missing = missing.child(Callout::new(Tone::Success, "No missing input."));
     }
 
-    let mut table = Table::new(["Input", "Value", "Where it comes from"]);
     let rows = [
         (
             "Tower trial levels".to_string(),
@@ -129,23 +117,25 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
             "Meals and Meritocracy stay neutral",
         ),
     ];
-    for (index, (label, value, source)) in rows.into_iter().enumerate() {
-        table = table.row([
-            div()
-                .id(("worship-input", index))
-                .child(label)
-                .into_any_element(),
-            div().child(value).into_any_element(),
-            div()
-                .child(Caption::new(source).text_color(muted))
-                .into_any_element(),
-        ]);
-    }
+    let cols = [
+        Col::Text("Input"),
+        Col::Number("Value"),
+        Col::Text("Where it comes from"),
+    ];
+    let cells = rows
+        .into_iter()
+        .enumerate()
+        .map(|(index, (label, value, source))| {
+            vec![
+                text_id(("worship-input", index), label),
+                text(value),
+                Caption::new(source).text_color(muted).into_any_element(),
+            ]
+        });
+    let table = table("worship-input", &cols, cells, cx);
 
-    let body = div()
+    let body = v_flex()
         .id("worship-model-body")
-        .flex()
-        .flex_col()
         .gap_3()
         .p_3()
         .child(
@@ -167,13 +157,14 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 .header(CardHeader::new("Simulator inputs").description(
                     "The exact values this run reads; the import dialog names any field the save left out.",
                 ))
-                .child(div().p_3().child(div().min_w_0().child(table))),
+                .child(div().min_w_0().child(table)),
         );
 
-    ScrollArea::new("worship-model-scroll")
-        .vertical()
+    div()
         .flex_1()
         .min_h_0()
         .child(body)
+        .overflow_y_scrollbar()
+        .id("worship-model-scroll")
         .into_any_element()
 }

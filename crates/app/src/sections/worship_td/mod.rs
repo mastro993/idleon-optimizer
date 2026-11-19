@@ -11,28 +11,27 @@
 
 mod actions;
 
+mod controls;
 mod map;
 mod model;
 mod optimizer;
 mod plan;
 mod state;
+mod table;
 
+pub(crate) use controls::Controls;
 pub(crate) use state::{OptimizeConfig, OptimizeRunInputs, PlanRunInputs, PlanSource, State};
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::Badge;
-use ely_gpui_component::data_display::Tone;
-use ely_gpui_component::forms::{Choice, Select, Slider};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
-};
-use idleon_worship as worship;
+use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::slider::Slider;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
+use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP, TEXT_BODY, Tone};
+use idleon_worship::{self as worship, RunView};
 
 /// The section's four panes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -69,10 +68,6 @@ impl Tab {
             Tab::Optimizer => "Optimizer",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// The section's view.
@@ -85,7 +80,6 @@ pub(crate) fn view(
     state.worship_ensure_plan();
     state.worship_pump(cx);
     state.worship_replay_pump(cx);
-    let muted = cx.theme().colors.fg_muted;
     let tab = state.worship.tab;
     div()
         .id("worship-section")
@@ -94,31 +88,33 @@ pub(crate) fn view(
         .size_full()
         .min_h_0()
         .gap_3()
-        .child(header(state, muted))
+        .child(header(state, cx))
         .child(tabs(state, cx))
         .child(match tab {
             Tab::Simulator => simulator(state, window, cx),
             Tab::Plan => plan::pane(state, cx),
             Tab::Model => model::pane(state, cx),
-            Tab::Optimizer => optimizer::pane(state, cx),
+            Tab::Optimizer => optimizer::pane(state, window, cx),
         })
         .into_any_element()
 }
 
 fn tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
     let entity = cx.entity();
-    let mut tabs = TabBar::new("worship-tabs").selected(SharedString::from(state.worship.tab.id()));
-    for tab in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
-    }
-    tabs.on_select(move |id, _window, cx| {
-        if let Some(tab) = Tab::from_id(id.as_ref()) {
-            entity.update(cx, |state, cx| state.worship_set_tab(tab, cx));
-        }
+    let selected = Tab::ALL
+        .iter()
+        .position(|tab| *tab == state.worship.tab)
+        .unwrap_or_default();
+    let tabs = Tab::ALL.map(|tab| (tab.id().into(), tab.label().into()));
+    crate::ui::layout::tab_bar("worship-tabs", tabs, selected, move |index, _window, cx| {
+        entity.update(cx, |state, cx| state.worship_set_tab(Tab::ALL[index], cx));
     })
 }
 
 fn simulator(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    // One view per frame: the map, the HUD and the sidebar all read it, and a
+    // replay rebuilds it from its recorded frame.
+    let view = state.worship.display_view();
     div()
         .id("worship-simulator-pane")
         .flex()
@@ -126,7 +122,7 @@ fn simulator(state: &mut AppState, window: &mut Window, cx: &mut Context<AppStat
         .flex_1()
         .min_h_0()
         .gap_3()
-        .child(controls(state, cx))
+        .child(controls(state, window, cx))
         .child(
             div()
                 .id("worship-body")
@@ -134,13 +130,14 @@ fn simulator(state: &mut AppState, window: &mut Window, cx: &mut Context<AppStat
                 .flex_1()
                 .min_h_0()
                 .gap_3()
-                .child(map::map(state, window, cx))
-                .child(sidebar(state, cx)),
+                .child(map::map(state, &view, window, cx))
+                .child(sidebar(state, &view, window, cx)),
         )
         .into_any_element()
 }
 
-fn header(state: &AppState, muted: gpui::Hsla) -> AnyElement {
+fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let trial = worship::trial(state.worship.trial);
     let name = trial
         .map(|trial| trial.mob_def.name.clone())
@@ -162,7 +159,13 @@ fn header(state: &AppState, muted: gpui::Hsla) -> AnyElement {
         .flex_none()
         .items_center()
         .gap_3()
-        .child(Badge::new("Worship TD").tone(Tone::Accent))
+        .child(
+            Tag::new()
+                .with_variant(Tone::Accent.into())
+                .outline()
+                .small()
+                .child("Worship TD"),
+        )
         .child(
             Caption::new(
                 "A seeded 100 ms run; tower placement, ranges and points follow the game.",
@@ -180,58 +183,59 @@ fn header(state: &AppState, muted: gpui::Hsla) -> AnyElement {
         .into_any_element()
 }
 
-fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+/// A small speed or toggle button, primary while it is the current pick.
+fn pick_button(id: impl Into<gpui::ElementId>, label: String, picked: bool) -> Button {
+    let button = Button::new(id).label(label).small();
+    if picked {
+        button.primary()
+    } else {
+        button.secondary()
+    }
+}
+
+fn controls(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    let muted = cx.theme().colors.fg_muted;
-    let trials: Vec<Choice> = worship::data()
-        .trials
-        .iter()
-        .map(|trial| {
-            Choice::new(
-                trial.trial.to_string(),
-                format!("{} · map {}", trial.mob_def.name, trial.map),
-            )
-            .note(format!(
-                "{} charge · requires {} efficiency",
-                trial.charge, trial.eff_req
-            ))
-        })
-        .collect();
-    let trial_entity = entity.clone();
-    let trial_select = Select::new("worship-trial", trials)
-        .label("Trial")
-        .selected(state.worship.trial.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(trial) = value.parse::<usize>() {
-                trial_entity.update(cx, |state, cx| state.worship_set_trial(trial, cx));
-            }
-        });
+    let muted = cx.theme().muted_foreground;
+    state.worship_controls.trial.show(
+        controls::trial_choices(),
+        Some(&state.worship.trial),
+        window,
+        cx,
+    );
+    let trial_select = div().flex_none().w(px(200.0)).child(
+        Select::new(state.worship_controls.trial.state())
+            .id("worship-trial")
+            .accessibility_label("Trial")
+            .small(),
+    );
 
     let replaying = state.worship.replaying();
     let done = state.worship.run.as_ref().is_some_and(|run| run.done());
     let has_replay = state.worship.replay.is_some();
-    let mut run_controls = div()
-        .id("worship-run-controls")
-        .flex()
-        .items_center()
-        .flex_wrap()
-        .gap_1();
+    let mut run_controls = h_flex().id("worship-run-controls").gap_1();
     if replaying {
         let live = entity.clone();
         let restart = entity.clone();
         run_controls = run_controls
-            .child(Badge::new("Replay").tone(Tone::Info))
             .child(
-                Button::new("worship-live-view", "Live view")
-                    .size(ControlSize::Sm)
+                Tag::new()
+                    .with_variant(Tone::Info.into())
+                    .outline()
+                    .small()
+                    .child("Replay"),
+            )
+            .child(
+                Button::new("worship-live-view")
+                    .label("Live view")
+                    .small()
                     .on_click(move |_event, _window, cx| {
                         live.update(cx, |state, cx| state.worship_replay_close(cx));
                     }),
             )
             .child(
-                Button::new("worship-restart", "Restart")
-                    .size(ControlSize::Sm)
+                Button::new("worship-restart")
+                    .label("Restart")
+                    .small()
                     .on_click(move |_event, _window, cx| {
                         restart.update(cx, |state, cx| state.worship_restart(cx));
                     }),
@@ -243,33 +247,24 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         let skip = entity.clone();
         let restart = entity.clone();
         let speed = state.worship.speed;
-        let speeds: Vec<AnyElement> = [0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
-            .into_iter()
-            .map(|value| {
-                let picked = entity.clone();
-                Button::new(
-                    ("worship-speed", (value * 10.0) as u32),
-                    format!("{value}×"),
-                )
-                .variant(if (speed - value).abs() < f64::EPSILON {
-                    ButtonVariant::Primary
-                } else {
-                    ButtonVariant::Subtle
-                })
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    picked.update(cx, |state, cx| state.worship_set_speed(value, cx));
-                })
-                .into_any_element()
+        let speeds = [0.5, 1.0, 2.0, 5.0, 10.0, 30.0].map(|value| {
+            let picked = entity.clone();
+            pick_button(
+                ("worship-speed", (value * 10.0) as u32),
+                format!("{value}×"),
+                (speed - value).abs() < f64::EPSILON,
+            )
+            .on_click(move |_event, _window, cx| {
+                picked.update(cx, |state, cx| state.worship_set_speed(value, cx));
             })
-            .collect();
+        });
         let ranges = entity.clone();
-        let ranges_on = state.worship.ranges;
         run_controls = run_controls
             .child(
-                Button::new("worship-play", if playing { "Pause" } else { "Play" })
-                    .variant(ButtonVariant::Primary)
-                    .size(ControlSize::Sm)
+                Button::new("worship-play")
+                    .label(if playing { "Pause" } else { "Play" })
+                    .primary()
+                    .small()
                     .disabled(done)
                     .on_click(move |_event, _window, cx| {
                         play.update(cx, |state, cx| {
@@ -279,53 +274,51 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                     }),
             )
             .child(
-                Button::new("worship-step", "Step")
-                    .size(ControlSize::Sm)
+                Button::new("worship-step")
+                    .label("Step")
+                    .small()
                     .disabled(done)
                     .on_click(move |_event, _window, cx| {
                         step.update(cx, |state, cx| state.worship_step(cx));
                     }),
             )
             .child(
-                Button::new("worship-skip", "Next wave")
-                    .size(ControlSize::Sm)
+                Button::new("worship-skip")
+                    .label("Next wave")
+                    .small()
                     .disabled(done)
                     .on_click(move |_event, _window, cx| {
                         skip.update(cx, |state, cx| state.worship_skip(cx));
                     }),
             )
             .child(
-                Button::new("worship-restart", "Restart")
-                    .size(ControlSize::Sm)
+                Button::new("worship-restart")
+                    .label("Restart")
+                    .small()
                     .on_click(move |_event, _window, cx| {
                         restart.update(cx, |state, cx| state.worship_restart(cx));
                     }),
             )
-            .child(div().w(px(8.0)));
-        for button in speeds {
-            run_controls = run_controls.child(button);
-        }
-        run_controls = run_controls.child(div().w(px(8.0))).child(
-            Button::new("worship-ranges", "Ranges")
-                .variant(if ranges_on {
-                    ButtonVariant::Primary
-                } else {
-                    ButtonVariant::Subtle
-                })
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    ranges.update(cx, |state, cx| {
-                        state.worship.ranges = !state.worship.ranges;
-                        cx.notify();
-                    });
-                }),
-        );
+            .child(div().w(px(8.0)))
+            .children(speeds)
+            .child(div().w(px(8.0)))
+            .child(
+                pick_button("worship-ranges", "Ranges".into(), state.worship.ranges).on_click(
+                    move |_event, _window, cx| {
+                        ranges.update(cx, |state, cx| {
+                            state.worship.ranges = !state.worship.ranges;
+                            cx.notify();
+                        });
+                    },
+                ),
+            );
         if has_replay {
             let open = entity.clone();
             run_controls = run_controls.child(
-                Button::new("worship-open-replay", "Replay")
-                    .variant(ButtonVariant::Subtle)
-                    .size(ControlSize::Sm)
+                Button::new("worship-open-replay")
+                    .label("Replay")
+                    .secondary()
+                    .small()
                     .on_click(move |_event, _window, cx| {
                         open.update(cx, |state, cx| state.worship_replay_open(cx));
                     }),
@@ -341,36 +334,30 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .as_ref()
         .map(|view| view.towers.len())
         .unwrap_or(0);
-    let palette: Vec<AnyElement> = worship::data()
+    let mut palette = worship::data()
         .towers
         .iter()
         .enumerate()
         .map(|(index, def)| {
-            let selected = index == tower;
             let unlocked = levels[index] >= 1;
             let cost = worship::new_tower_cost(index, placed) as u32;
             let picked = entity.clone();
-            Button::new(
+            pick_button(
                 ("worship-tower", index),
                 if unlocked {
                     format!("{} · {cost}", def.name)
                 } else {
                     format!("{} · locked", def.name)
                 },
+                index == tower,
             )
-            .variant(if selected {
-                ButtonVariant::Primary
-            } else {
-                ButtonVariant::Subtle
-            })
-            .size(ControlSize::Sm)
             .disabled(!unlocked)
             .on_click(move |_event, _window, cx| {
                 picked.update(cx, |state, cx| state.worship_set_tower(index, cx));
             })
-            .into_any_element()
         })
-        .collect();
+        .collect::<Vec<_>>()
+        .into_iter();
 
     let selected = state.worship.selected.and_then(|id| {
         state
@@ -389,42 +376,40 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             "Pick a tower, then a slot on the map. A standing tower can be upgraded or sold."
         }))
         .child(
-            div()
+            h_flex()
                 .id("worship-controls-row")
-                .flex()
-                .flex_wrap()
-                .items_end()
                 .gap_3()
-                .p_3()
-                .child(div().w(px(200.0)).child(trial_select))
+                .child(trial_select)
                 .child(run_controls),
         );
     if replaying {
         card =
-            card.child(div().id("worship-palette").px_3().pb_3().child(
+            card.child(div().id("worship-palette").child(
                 Caption::new("Replay loaded · restart to build another run").text_color(muted),
             ));
     } else {
+        let unlocked = levels.iter().filter(|level| **level >= 1).count();
+        // Two lines that never wrap: a wrapping row keeps one line's height
+        // and draws its second line over what follows (`docs/ui-kit/display.md`).
+        let first: Vec<Button> = palette.by_ref().take(5).collect();
         card = card.child(
-            div()
+            v_flex()
                 .id("worship-palette")
-                .flex()
-                .flex_wrap()
                 .gap_1()
-                .px_3()
-                .pb_3()
                 .child(
-                    Caption::new(if levels.iter().any(|level| *level >= 1) {
-                        format!(
-                            "Tower palette · {} types unlocked",
-                            levels.iter().filter(|level| **level >= 1).count()
+                    h_flex()
+                        .gap_1()
+                        .child(
+                            Caption::new(if unlocked > 0 {
+                                format!("Tower palette · {unlocked} types unlocked")
+                            } else {
+                                "Import a save to unlock tower types".to_string()
+                            })
+                            .text_color(muted),
                         )
-                    } else {
-                        "Import a save to unlock tower types".to_string()
-                    })
-                    .text_color(muted),
+                        .children(first),
                 )
-                .children(palette),
+                .child(h_flex().gap_1().children(palette)),
         );
     }
     if let Some(tower) = selected.filter(|_| !replaying) {
@@ -445,13 +430,9 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             .map(|run| run.refund(tower.id))
             .unwrap_or(0.0);
         card = card.child(
-            div()
+            h_flex()
                 .id("worship-selected")
-                .flex()
-                .items_center()
                 .gap_2()
-                .px_3()
-                .pb_3()
                 .child(
                     Caption::new(format!(
                         "{} · level {} · platform {} · x {:.0} · {}",
@@ -468,24 +449,24 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                     .text_color(muted),
                 )
                 .child(div().flex_1())
+                .child(Button::new("worship-upgrade").label(cost).small().on_click(
+                    move |_event, _window, cx| {
+                        upgrade.update(cx, |state, cx| state.worship_upgrade(cx));
+                    },
+                ))
                 .child(
-                    Button::new("worship-upgrade", cost)
-                        .size(ControlSize::Sm)
-                        .on_click(move |_event, _window, cx| {
-                            upgrade.update(cx, |state, cx| state.worship_upgrade(cx));
-                        }),
-                )
-                .child(
-                    Button::new("worship-sell", format!("Sell · {refund:.0}"))
-                        .size(ControlSize::Sm)
+                    Button::new("worship-sell")
+                        .label(format!("Sell · {refund:.0}"))
+                        .small()
                         .on_click(move |_event, _window, cx| {
                             sell.update(cx, |state, cx| state.worship_sell(cx));
                         }),
                 )
                 .child(
-                    Button::new("worship-deselect", "Clear")
-                        .variant(ButtonVariant::Subtle)
-                        .size(ControlSize::Sm)
+                    Button::new("worship-deselect")
+                        .label("Clear")
+                        .secondary()
+                        .small()
                         .on_click(move |_event, _window, cx| {
                             clear.update(cx, |state, cx| state.worship_select(None, cx));
                         }),
@@ -498,16 +479,13 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .id("worship-message")
                 .role(gpui::Role::Label)
                 .aria_label(message.clone())
-                .px_3()
-                .pb_3()
-                .child(Caption::new(message.clone()).text_color(cx.theme().colors.danger)),
+                .child(Caption::new(message.clone()).text_color(cx.theme().danger)),
         );
     }
     card.into_any_element()
 }
 
-fn hud(state: &AppState, muted: gpui::Hsla) -> AnyElement {
-    let view = state.worship.display_view();
+fn hud(state: &AppState, view: &RunView, muted: Hsla) -> AnyElement {
     let best = state
         .worship_inputs
         .best_waves
@@ -534,76 +512,46 @@ fn hud(state: &AppState, muted: gpui::Hsla) -> AnyElement {
         view.totem,
         total,
     );
-    div()
+    let value = |id, label, value| hud_value(id, label, value, muted);
+    // Two rows of four that never wrap (`docs/ui-kit/display.md`).
+    v_flex()
         .id("worship-hud")
         .role(gpui::Role::Label)
         .aria_label(summary)
-        .flex()
-        .flex_wrap()
-        .items_center()
-        .gap_4()
+        .gap_2()
         .px_3()
         .py_2()
-        .child(hud_value(
-            "worship-time",
-            "Time",
-            format_time(view.t),
-            muted,
-        ))
-        .child(hud_value(
-            "worship-wave",
-            "Wave",
-            format!("{}", view.wave),
-            muted,
-        ))
-        .child(hud_value(
-            "worship-countdown",
-            "Next wave",
-            countdown,
-            muted,
-        ))
-        .child(hud_value(
-            "worship-alive",
-            "Alive",
-            format!("{}", view.mobs.len()),
-            muted,
-        ))
-        .child(hud_value(
-            "worship-points",
-            "Points",
-            format!("{:.0}", view.pts),
-            muted,
-        ))
-        .child(hud_value(
-            "worship-totem",
-            "Totem",
-            format!("{:.0}", view.totem),
-            muted,
-        ))
-        .child(hud_value(
-            "worship-towers",
-            "Towers",
-            format!("{total}"),
-            muted,
-        ))
-        .child(hud_value("worship-best", "Best", format!("{best}"), muted))
-        .when_some(view.end_reason, |row, reason| {
-            row.child(hud_value(
-                "worship-ended",
-                "Ended",
-                reason.label().to_string(),
-                muted,
-            ))
+        .child(
+            h_flex()
+                .gap_4()
+                .child(value("worship-time", "Time", format_time(view.t)))
+                .child(value("worship-wave", "Wave", view.wave.to_string()))
+                .child(value("worship-countdown", "Next wave", countdown))
+                .child(value("worship-alive", "Alive", view.mobs.len().to_string())),
+        )
+        .child(
+            h_flex()
+                .gap_4()
+                .child(value(
+                    "worship-points",
+                    "Points",
+                    format!("{:.0}", view.pts),
+                ))
+                .child(value(
+                    "worship-totem",
+                    "Totem",
+                    format!("{:.0}", view.totem),
+                ))
+                .child(value("worship-towers", "Towers", total.to_string()))
+                .child(value("worship-best", "Best", best.to_string())),
+        )
+        .when_some(view.end_reason, |hud, reason| {
+            hud.child(value("worship-ended", "Ended", reason.label().to_string()))
         })
         .into_any_element()
 }
 
-fn hud_value(
-    id: &'static str,
-    label: &'static str,
-    value: String,
-    muted: gpui::Hsla,
-) -> AnyElement {
+fn hud_value(id: &'static str, label: &'static str, value: String, muted: Hsla) -> AnyElement {
     div()
         .id(id)
         .role(gpui::Role::Label)
@@ -612,19 +560,17 @@ fn hud_value(
         .items_center()
         .gap_1()
         .child(Caption::new(label).text_color(muted))
-        .child(div().text_size(px(13.0)).child(value))
+        .child(div().text_size(TEXT_BODY).child(value))
         .into_any_element()
 }
 
-fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let view = state.worship.display_view();
-    let mut column = div()
-        .flex()
-        .flex_col()
-        .w(px(320.0))
-        .gap_3()
-        .child(hud(state, muted));
+fn sidebar(
+    state: &mut AppState,
+    view: &RunView,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let done = state.worship.run.as_ref().is_some_and(|run| run.done());
     let body = if done {
         let result = state
@@ -633,7 +579,24 @@ fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             .as_mut()
             .map(|run| run.result())
             .expect("a done run exists");
-        div()
+        let totals = [
+            ("Ended", result.end_reason.label().to_string()),
+            ("Time", format_time(result.time_sec)),
+            ("Waves", result.highest_wave.to_string()),
+            ("Best", result.best_wave.to_string()),
+            ("Kills", result.kills.to_string()),
+            ("EXP", format!("{:.0}", result.exp)),
+            ("Leaks", result.leaks.to_string()),
+            ("Spent", format!("{:.0}", result.spent)),
+            (
+                "Totem",
+                format!(
+                    "{:.0} / {:.0}",
+                    result.totem_left, state.worship_inputs.totem_hp
+                ),
+            ),
+        ];
+        kv_grid(&totals, muted)
             .id("worship-result")
             .role(gpui::Role::Label)
             .aria_label(format!(
@@ -645,28 +608,16 @@ fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 result.exp,
                 result.leaks
             ))
-            .flex()
-            .flex_wrap()
-            .gap_3()
-            .p_3()
-            .child(kv("Ended", result.end_reason.label().to_string(), muted))
-            .child(kv("Time", format_time(result.time_sec), muted))
-            .child(kv("Waves", result.highest_wave.to_string(), muted))
-            .child(kv("Best", result.best_wave.to_string(), muted))
-            .child(kv("Kills", result.kills.to_string(), muted))
-            .child(kv("EXP", format!("{:.0}", result.exp), muted))
-            .child(kv("Leaks", result.leaks.to_string(), muted))
-            .child(kv("Spent", format!("{:.0}", result.spent), muted))
-            .child(kv(
-                "Totem",
-                format!(
-                    "{:.0} / {:.0}",
-                    result.totem_left, state.worship_inputs.totem_hp
-                ),
-                muted,
-            ))
     } else {
-        div()
+        let totals = [
+            ("Time", format_time(view.t)),
+            ("Wave", view.wave.to_string()),
+            ("Alive", view.mobs.len().to_string()),
+            ("Towers", view.towers.len().to_string()),
+            ("Points", format!("{:.0}", view.pts)),
+            ("Totem", format!("{:.0}", view.totem)),
+        ];
+        kv_grid(&totals, muted)
             .id("worship-result")
             .role(gpui::Role::Label)
             .aria_label(format!(
@@ -676,42 +627,30 @@ fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 view.towers.len(),
                 view.pts
             ))
-            .flex()
-            .flex_wrap()
-            .gap_3()
-            .p_3()
-            .child(kv("Time", format_time(view.t), muted))
-            .child(kv("Wave", view.wave.to_string(), muted))
-            .child(kv("Alive", view.mobs.len().to_string(), muted))
-            .child(kv("Towers", view.towers.len().to_string(), muted))
-            .child(kv("Points", format!("{:.0}", view.pts), muted))
-            .child(kv("Totem", format!("{:.0}", view.totem), muted))
     };
-    column = column.child(
-        Card::new()
-            .header(CardHeader::new(if done {
-                "Run totals"
-            } else {
-                "Run so far"
-            }))
-            .child(body),
-    );
+    let mut column = v_flex()
+        .w(px(320.0))
+        .gap_3()
+        .child(hud(state, view, muted))
+        .child(
+            Card::new()
+                .header(CardHeader::new(if done {
+                    "Run totals"
+                } else {
+                    "Run so far"
+                }))
+                .child(body),
+        );
     if state.worship.replay.is_some() {
-        column = column.child(replay_card(state, cx));
+        column = column.child(replay_card(state, window, cx));
     }
     column = column.child(
-        div()
-            .id("worship-notes")
-            .flex()
-            .flex_col()
-            .gap_1()
-            .px_1()
-            .child(
-                Caption::new(
-                    "The Plan tab runs a build plan through this engine; the Model tab lists every assumption and missing input. A finished run opens its replay in the sidebar.",
-                )
-                .text_color(muted),
-            ),
+        div().id("worship-notes").px_1().child(
+            Caption::new(
+                "The Plan tab runs a build plan through this engine; the Model tab lists every assumption and missing input. A finished run opens its replay in the sidebar.",
+            )
+            .text_color(muted),
+        ),
     );
     div()
         .id("worship-sidebar")
@@ -725,12 +664,16 @@ fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-fn replay_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+fn replay_card(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let Some(replay) = state.worship.replay.as_ref() else {
         return div().into_any_element();
     };
     let entity = cx.entity();
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let len = replay.len();
     let last = len.saturating_sub(1);
     let index = state.worship.replay_index();
@@ -741,105 +684,86 @@ fn replay_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let speed = state.worship.replay_speed;
     let position = format!("frame {index}/{last} · {} · wave {wave}", format_time(time));
     let play = entity.clone();
-    let mut card = Card::new()
+    let speeds = [1.0, 2.0, 5.0, 10.0, 30.0].map(|value| {
+        let picked = entity.clone();
+        pick_button(
+            ("worship-replay-speed", (value * 10.0) as u32),
+            format!("{value}×"),
+            (speed - value).abs() < f64::EPSILON,
+        )
+        .on_click(move |_event, _window, cx| {
+            picked.update(cx, |state, cx| state.worship_replay_set_speed(value, cx));
+        })
+    });
+    let scrubber = (last > 0).then(|| state.worship_scrubber(last, index, window, cx));
+    Card::new()
         .header(
             CardHeader::new("Replay").description(format!(
                 "Recorded every {interval:.1} s of game time · {len} frames · speeds are game seconds per second."
             )),
         )
         .child(
-            div()
+            v_flex()
                 .id("worship-replay")
                 .role(gpui::Role::Label)
                 .aria_label(format!(
                     "Replay frame {index} of {last} at {} · wave {wave}",
                     format_time(time)
                 ))
-                .flex()
-                .flex_col()
                 .gap_2()
-                .p_3()
                 .child(
-                    div()
-                        .flex()
-                        .items_center()
+                    h_flex()
                         .gap_2()
                         .child(
-                            Button::new(
-                                "worship-replay-play",
-                                if playing { "Pause" } else { "Play" },
-                            )
-                            .variant(ButtonVariant::Primary)
-                            .size(ControlSize::Sm)
-                            .disabled(len < 2)
-                            .on_click(move |_event, _window, cx| {
-                                play.update(cx, |state, cx| {
-                                    let next = !state.worship.replay_playing;
-                                    state.worship_replay_set_playing(next, cx);
-                                });
-                            }),
+                            Button::new("worship-replay-play")
+                                .label(if playing { "Pause" } else { "Play" })
+                                .primary()
+                                .small()
+                                .disabled(len < 2)
+                                .on_click(move |_event, _window, cx| {
+                                    play.update(cx, |state, cx| {
+                                        let next = !state.worship.replay_playing;
+                                        state.worship_replay_set_playing(next, cx);
+                                    });
+                                }),
                         )
                         .child(Caption::new(position).text_color(muted)),
                 )
                 .child(
-                    div()
+                    h_flex()
                         .id("worship-replay-speeds")
-                        .flex()
-                        .items_center()
                         .gap_1()
                         .child(Caption::new("Speed").text_color(muted))
-                        .children([1.0, 2.0, 5.0, 10.0, 30.0].into_iter().map(|value| {
-                            let picked = entity.clone();
-                            Button::new(
-                                ("worship-replay-speed", (value * 10.0) as u32),
-                                format!("{value}×"),
-                            )
-                            .variant(if (speed - value).abs() < f64::EPSILON {
-                                ButtonVariant::Primary
-                            } else {
-                                ButtonVariant::Subtle
-                            })
-                            .size(ControlSize::Sm)
-                            .on_click(move |_event, _window, cx| {
-                                picked.update(cx, |state, cx| {
-                                    state.worship_replay_set_speed(value, cx);
-                                });
-                            })
-                            .into_any_element()
-                        })),
+                        .children(speeds),
                 )
-                .when(last > 0, |card| {
-                    let scrub = entity.clone();
+                .when_some(scrubber, |card, scrubber| {
                     card.child(
-                        Slider::new("worship-replay-scrub", index as f64)
-                            .range(0.0, last as f64)
-                            .step(1.0)
-                            .label("Replay position")
-                            .on_change(move |value, _window, cx| {
-                                scrub.update(cx, |state, cx| state.worship_replay_seek(value, cx));
-                            }),
+                        div()
+                            .id("worship-replay-scrub")
+                            .child(Slider::new(&scrubber).accessibility_label("Replay position")),
                     )
                 }),
-        );
-    card = card.child(
-        div().px_3().pb_3().child(
+        )
+        .child(
             Caption::new(format!(
                 "Scrub through {len} recorded frames; a frame is the live field at that tick."
             ))
             .text_color(muted),
-        ),
-    );
-    card.into_any_element()
+        )
+        .into_any_element()
 }
 
-fn kv(label: &'static str, value: String, muted: gpui::Hsla) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(Caption::new(label).text_color(muted))
-        .child(div().child(value))
-        .into_any_element()
+/// Label-over-value pairs, three to a row.
+fn kv_grid(pairs: &[(&'static str, String)], muted: Hsla) -> gpui::Div {
+    v_flex().gap(PANEL_GAP).children(pairs.chunks(3).map(|row| {
+        h_flex().gap_3().children(row.iter().map(|(label, value)| {
+            v_flex()
+                .flex_1()
+                .gap_1()
+                .child(Caption::new(*label).text_color(muted))
+                .child(div().child(value.clone()))
+        }))
+    }))
 }
 
 fn format_time(seconds: f64) -> String {

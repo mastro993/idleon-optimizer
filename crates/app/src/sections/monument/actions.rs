@@ -41,9 +41,15 @@ impl AppState {
         cx.notify();
     }
 
-    /// Rethrows left; `None` means the saved maximum.
+    /// Rethrows left, at most the saved maximum; `None` means that maximum.
     pub(crate) fn set_monument_rerolls(&mut self, value: f64, cx: &mut Context<Self>) {
-        self.monument.rerolls = Some(value.round().max(0.0) as u32);
+        let max = self
+            .monument_controls
+            .derived
+            .snapshot
+            .as_ref()
+            .map_or(u32::MAX, |snapshot| snapshot.stats.max_rerolls);
+        self.monument.rerolls = Some((value.round().max(0.0) as u32).min(max));
         cx.notify();
     }
 
@@ -63,35 +69,6 @@ impl AppState {
     pub(crate) fn clear_monument_hp(&mut self, cx: &mut Context<Self>) {
         self.monument.remaining_hp = None;
         cx.notify();
-    }
-
-    /// The Bravery snapshot for the imported save, if any.
-    pub(crate) fn monument_snapshot(&self) -> Option<monument::Snapshot> {
-        self.monument_save
-            .as_ref()
-            .map(|save| monument::snapshot(save, self.monument.character))
-    }
-
-    /// The permanent rewards, next-run charge and training summary, if a save
-    /// with the Monument rows is loaded.
-    pub(crate) fn monument_summary(&self) -> Option<monument::Summary> {
-        self.monument_save
-            .as_ref()
-            .map(|save| monument::summary(save, self.monument.character))
-    }
-
-    /// The Wisdom snapshot for the imported save, if any.
-    pub(crate) fn monument_wisdom(&self) -> Option<monument::WisdomSnapshot> {
-        self.monument_save
-            .as_ref()
-            .map(|save| monument::wisdom_snapshot(save, self.monument.character))
-    }
-
-    /// The Justice snapshot for the imported save, if any.
-    pub(crate) fn monument_justice(&self) -> Option<monument::JusticeSnapshot> {
-        self.monument_save
-            .as_ref()
-            .map(|save| monument::justice_snapshot(save, self.monument.character))
     }
 
     /// Write one Justice stat, clamped like its input, as one undoable step.
@@ -217,19 +194,5 @@ impl AppState {
         self.monument.notice =
             "Fresh-story stats loaded. Select the first visitor you actually received.".into();
         cx.notify();
-    }
-
-    /// The sword odds for the current inputs.
-    pub(crate) fn monument_odds(&self) -> Option<Result<monument::Odds, monument::Error>> {
-        let save = self.monument_save.as_ref()?;
-        Some(monument::bravery_odds(
-            save,
-            self.monument.wave.saturating_sub(1),
-            monument::Runtime {
-                rerolls: self.monument.rerolls,
-                boosts: self.monument.boosts,
-            },
-            self.monument.remaining_hp,
-        ))
     }
 }

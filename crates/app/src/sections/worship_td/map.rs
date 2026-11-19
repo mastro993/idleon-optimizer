@@ -2,22 +2,54 @@
 
 use crate::assets::{Artwork, Manifest};
 use crate::state::AppState;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::theme::Palette;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Hsla, IntoElement, Pixels, Point, Styled, Window, canvas, div, img, point,
-    px,
+    AnyElement, App, Context, Hsla, IntoElement, Pixels, Point, Styled, Window, canvas, div, img,
+    point, px,
 };
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::tooltip::Tooltip;
+use idleon_ui::widgets::Caption;
 use idleon_worship::{self as worship, EffectKind, RunView, TowerView};
 
 /// One point of a shape in scene coordinates.
 type ScenePoint = (f64, f64);
 
+/// The theme colors the scene draws with, read once per frame.
+#[derive(Clone, Copy)]
+struct Colors {
+    background: Hsla,
+    foreground: Hsla,
+    muted: Hsla,
+    border: Hsla,
+    accent: Hsla,
+    info: Hsla,
+    success: Hsla,
+    warning: Hsla,
+    danger: Hsla,
+}
+
+impl Colors {
+    fn new(cx: &App) -> Self {
+        let theme = cx.theme();
+        Self {
+            background: theme.background,
+            foreground: theme.foreground,
+            muted: theme.muted_foreground,
+            border: theme.border,
+            accent: theme.primary,
+            info: theme.info,
+            success: theme.success,
+            warning: theme.warning,
+            danger: theme.danger,
+        }
+    }
+}
+
 /// The map pane: the whole trial scene, scaled to the window.
 pub(crate) fn map(
     state: &mut AppState,
+    view: &RunView,
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
@@ -27,13 +59,16 @@ pub(crate) fn map(
     let scale = scale_for(window, trial, cx);
     let width = trial.scene.w as f32 * scale;
     let height = trial.scene.h as f32 * scale;
-    let view = state.worship.display_view();
     let replaying = state.worship.replaying();
-    let slots = if replaying { Vec::new() } else { slots(state) };
+    let slots = if replaying {
+        std::rc::Rc::from([])
+    } else {
+        state.worship_slots()
+    };
     let selected = state.worship.selected;
     let ranges = state.worship.ranges;
     let manifest = state.assets.clone();
-    let colors = cx.theme().colors.clone();
+    let colors = Colors::new(cx);
     let entity = cx.entity();
 
     let mut board = div()
@@ -53,7 +88,7 @@ pub(crate) fn map(
         .h(px(height))
         .rounded(px(10.0))
         .overflow_hidden()
-        .bg(colors.bg)
+        .bg(colors.background)
         .border_1()
         .border_color(colors.border);
 
@@ -97,10 +132,10 @@ pub(crate) fn map(
         );
     }
 
-    board = board.child(overlay(&view, trial, scale, ranges, selected, &colors));
+    board = board.child(overlay(view, trial, scale, ranges, selected, colors));
 
     for mob in &view.mobs {
-        board = board.child(mob_marker(mob, trial, scale, view.tick, &manifest, &colors));
+        board = board.child(mob_marker(mob, trial, scale, view.tick, &manifest, colors));
     }
     for tower in &view.towers {
         board = board.child(tower_marker(
@@ -109,15 +144,16 @@ pub(crate) fn map(
             scale,
             selected == Some(tower.id),
             (!replaying).then(|| entity.clone()),
-            &colors,
+            colors,
         ));
     }
-    for (node, x) in slots {
+    for &(node, x) in slots.iter() {
         let y = worship::geometry(trial)
             .and_then(|geom| geom.nodes.get(node))
             .map(|node| node.y)
             .unwrap_or(0.0);
         let picked = entity.clone();
+        let tip = format!("Place a tower here (platform {node}, x {x:.0})");
         board = board.child(
             div()
                 .id(format!("worship-slot-{node}-{}", x as i64))
@@ -129,12 +165,10 @@ pub(crate) fn map(
                 .size(px(16.0))
                 .rounded_full()
                 .border_1()
-                .border_color(colors.fg_muted.opacity(0.35))
+                .border_color(colors.muted.opacity(0.35))
                 .bg(colors.accent.opacity(0.10))
                 .cursor_pointer()
-                .tooltip(ely_gpui_component::primitives::Tooltip::text(format!(
-                    "Place a tower here (platform {node}, x {x:.0})"
-                )))
+                .tooltip(move |window, cx| Tooltip::new(tip.clone()).build(window, cx))
                 .on_click(move |_event, _window, cx| {
                     picked.update(cx, |state, cx| state.worship_place(node, x, cx));
                 }),
@@ -164,7 +198,7 @@ pub(crate) fn map(
                     "dots are open slots".to_string()
                 }
             ))
-            .text_color(colors.fg_muted),
+            .text_color(colors.muted),
         )
         .into_any_element()
 }
@@ -176,21 +210,6 @@ fn scale_for(window: &Window, trial: &worship::Trial, cx: &gpui::App) -> f32 {
     (available_w / trial.scene.w as f32)
         .min(available_h / trial.scene.h as f32)
         .clamp(0.18, 1.0)
-}
-
-fn slots(state: &AppState) -> Vec<(usize, f64)> {
-    let Some(run) = state.worship.run.as_ref() else {
-        return Vec::new();
-    };
-    let trial = run.trial();
-    let mut out = Vec::new();
-    for spot in worship::legal_slots(trial, 62.0) {
-        if run.snapped(spot.node, spot.x) == Some(spot.x) {
-            out.push((spot.node, spot.x));
-        }
-    }
-    out.truncate(120);
-    out
 }
 
 fn artwork(manifest: &Manifest, reference: &str) -> Option<std::path::PathBuf> {
@@ -206,7 +225,7 @@ fn mob_marker(
     scale: f32,
     tick: u64,
     manifest: &Manifest,
-    colors: &Palette,
+    colors: Colors,
 ) -> AnyElement {
     let w = (trial.mob_def.frame_w * mob.size * f64::from(scale)).clamp(10.0, 96.0) as f32;
     let h = (trial.mob_def.frame_h * mob.size * f64::from(scale)).clamp(10.0, 112.0) as f32;
@@ -287,7 +306,7 @@ fn mob_marker(
                 .top_0()
                 .right_0()
                 .text_size(px(9.0))
-                .text_color(colors.bg)
+                .text_color(colors.background)
                 .child(format!("{}", mob.mods)),
         );
     }
@@ -300,7 +319,7 @@ fn tower_marker(
     scale: f32,
     selected: bool,
     entity: Option<gpui::Entity<AppState>>,
-    colors: &Palette,
+    colors: Colors,
 ) -> AnyElement {
     let size = 44.0 * scale * 1.15;
     let icon = artwork(
@@ -335,9 +354,9 @@ fn tower_marker(
                 .bottom_0()
                 .px(px(3.0))
                 .rounded(px(4.0))
-                .bg(colors.bg.opacity(0.75))
+                .bg(colors.background.opacity(0.75))
                 .text_size(px(10.0))
-                .text_color(colors.fg)
+                .text_color(colors.foreground)
                 .child(format!("{}", tower.level)),
         );
     if let Some(entity) = entity {
@@ -360,7 +379,7 @@ fn overlay(
     scale: f32,
     ranges: bool,
     selected: Option<u64>,
-    colors: &Palette,
+    colors: Colors,
 ) -> AnyElement {
     let path: Vec<(f64, f64, f64, f64)> = trial
         .path
