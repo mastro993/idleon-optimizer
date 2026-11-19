@@ -4,7 +4,6 @@ use super::bonuses;
 use super::controls::{Overview, cached};
 use super::table::{number, table, tag, text};
 use crate::state::AppState;
-use crate::ui::layout::figure;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Styled, div};
 use gpui_kit::component::table::TableRow;
@@ -36,24 +35,24 @@ pub(crate) fn overview(state: &mut AppState, cx: &mut Context<AppState>) -> AnyE
         pane = pane.child(bonuses::missing(fountain, cx));
     }
     pane = pane
-        .child(summary(fountain, cx))
-        .child(fill_summary(fountain, cx))
+        .child(summary(fountain))
+        .child(fill_summary(fountain))
         .child(income(fountain, &lists.income, cx));
     if let Some(lucky) = bonuses::lucky_and_ducks(fountain, cx) {
         pane = pane.child(lucky);
     }
-    if let Some(stacks) = bonuses::stacks(fountain, &lists.stacks) {
+    if let Some(stacks) = bonuses::stacks(fountain, &lists.stacks, cx) {
         pane = pane.child(stacks);
     }
-    pane.child(fill_times(fountain, cx))
+    pane.child(fill_times(fountain))
         .child(bonuses::cross_system(&lists.cross, cx))
         .child(bonuses::formula(state))
         .child(level_plan(&lists.levels, cx))
         .into_any_element()
 }
 
-/// The first card row: the fountain itself and what it holds.
-fn summary(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
+/// The first strip: the fountain itself and what it holds.
+fn summary(fountain: &Fountain) -> AnyElement {
     let level = fountain.level();
     let currency = fountain::level_currency(level);
     let cost = Fountain::opal_cost(level);
@@ -64,137 +63,71 @@ fn summary(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
     };
     div()
         .id("fountain-summary")
-        .flex()
-        .flex_col()
-        .gap_2()
         .child(
-            div()
-                .id("fountain-summary-row")
-                .flex()
-                .flex_wrap()
-                .gap_3()
-                .child(figure(
-                    "fountain-kpi-level",
-                    "Fountain Level",
-                    num(level),
-                    format!("Next: {} {}", num(cost), fountain::currency_label(currency)),
-                    cx,
-                ))
-                .child(figure(
-                    "fountain-kpi-waters",
-                    "Waters Unlocked",
-                    format!("{} / {}", fountain.waters_owned(), fountain::WATERS),
-                    "Blue, Yellow and Green",
-                    cx,
-                ))
-                .child(figure(
-                    "fountain-kpi-coins",
-                    "Max Coins",
-                    num(fountain.max_coins()),
-                    format!(
-                        "{} spaces × {} stack",
-                        fountain.spaces(),
-                        num(fountain.max_stack())
+            div().id("fountain-summary-row").child(
+                KpiStrip::new()
+                    .child(
+                        Statistic::new("fountain-kpi-level", "Fountain Level", num(level)).caption(
+                            format!("Next: {} {}", num(cost), fountain::currency_label(currency)),
+                        ),
+                    )
+                    .child(
+                        Statistic::new(
+                            "fountain-kpi-waters",
+                            "Waters Unlocked",
+                            format!("{} / {}", fountain.waters_owned(), fountain::WATERS),
+                        )
+                        .caption("Blue, Yellow and Green"),
+                    )
+                    .child(
+                        Statistic::new(
+                            "fountain-kpi-coins",
+                            "Max Coins",
+                            num(fountain.max_coins()),
+                        )
+                        .caption(format!(
+                            "{} spaces × {} stack",
+                            fountain.spaces(),
+                            num(fountain.max_stack())
+                        )),
+                    )
+                    .child(
+                        Statistic::new("fountain-kpi-marble", "Marble", num(fountain.marble()))
+                            .caption(marble),
                     ),
-                    cx,
-                ))
-                .child(figure(
-                    "fountain-kpi-marble",
-                    "Marble",
-                    num(fountain.marble()),
-                    marble,
-                    cx,
-                )),
+            ),
         )
         .into_any_element()
 }
 
-/// The second card row: the fill rates and the multipliers behind them.
-fn fill_summary(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
+/// The fill strips: the fill rates and the multipliers behind them, then the
+/// royal stack estimates.
+fn fill_summary(fountain: &Fountain) -> AnyElement {
     let active = fountain.active_speed();
     let display = fountain.active_speed_display();
-    let coin_fill = time(fountain.active_fill_time());
-    let coin_caption = format!(
+    let coin_fill = Statistic::new(
+        "fountain-kpi-fill",
+        "Coin Fill",
+        time(fountain.active_fill_time()),
+    )
+    .caption(format!(
         "AFK {}. {active:.2}× active ({display:.2}× + AFK)",
         time(fountain.bar_fill_time())
-    );
+    ));
     let marble = if fountain.marble_bar_unlocked() {
-        figure(
+        Statistic::new(
             "fountain-kpi-marble-fill",
             "Marble Fill",
             time(Fountain::marble_bar_fill_time() / active),
-            format!(
-                "AFK {} · {} /fill",
-                time(Fountain::marble_bar_fill_time()),
-                num(fountain.marble_per_fill())
-            ),
-            cx,
         )
+        .caption(format!(
+            "AFK {} · {} /fill",
+            time(Fountain::marble_bar_fill_time()),
+            num(fountain.marble_per_fill())
+        ))
     } else {
-        figure(
-            "fountain-kpi-marble-fill",
-            "Marble Fill",
-            "Locked".to_owned(),
-            "Buy Marble Filling",
-            cx,
-        )
-    };
-    let royal = fountain.royal_chance();
-    let royal_card = if royal > 0.0 {
-        figure(
-            "fountain-kpi-royal",
-            "Royal Chance",
-            odds(royal),
-            format!("{} per fill", pct(royal)),
-            cx,
-        )
-    } else {
-        figure(
-            "fountain-kpi-royal",
-            "Royal Chance",
-            "Locked".to_owned(),
-            "Buy Royal Stacks",
-            cx,
-        )
-    };
-    let stacks_per_hr = fountain.optimal_stacks_per_hr();
-    let (royal_stack, fills) = if royal > 0.0 && stacks_per_hr > 0.0 {
-        (
-            figure(
-                "fountain-kpi-royal-stack",
-                "Est. Royal Stack",
-                time(3600.0 / stacks_per_hr),
-                format!(
-                    "Avg {:.1} fills",
-                    (3600.0 / fountain.active_fill_time()) / stacks_per_hr
-                ),
-                cx,
-            ),
-            figure(
-                "fountain-kpi-flush",
-                "Est. Board Flush",
-                time(fountain.flush_time()),
-                format!("{} stacks at estimated throughput", fountain.spaces()),
-                cx,
-            ),
-        )
-    } else {
-        (
-            figure(
-                "fountain-kpi-royal-stack",
-                "Est. Royal Stack",
-                "Locked".to_owned(),
-                "Buy Royal Stacks",
-                cx,
-            ),
-            figure(
-                "fountain-kpi-flush",
-                "Est. Board Flush",
-                "Locked".to_owned(),
-                "Buy Royal Stacks",
-                cx,
-            ),
-        )
+        Statistic::new("fountain-kpi-marble-fill", "Marble Fill", "Locked")
+            .caption("Buy Marble Filling")
     };
     let redeem = fountain.redeem_by_currency();
     let redeem_caption = (0..fountain::CURRENCIES)
@@ -208,40 +141,77 @@ fn fill_summary(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
         })
         .collect::<Vec<String>>()
         .join(" · ");
-    div()
+    let royal = fountain.royal_chance();
+    let royal_chance = if royal > 0.0 {
+        Statistic::new("fountain-kpi-royal", "Royal Chance", odds(royal))
+            .caption(format!("{} per fill", pct(royal)))
+    } else {
+        Statistic::new("fountain-kpi-royal", "Royal Chance", "Locked").caption("Buy Royal Stacks")
+    };
+    let stacks_per_hr = fountain.optimal_stacks_per_hr();
+    let (royal_stack, flush) = if royal > 0.0 && stacks_per_hr > 0.0 {
+        (
+            Statistic::new(
+                "fountain-kpi-royal-stack",
+                "Est. Royal Stack",
+                time(3600.0 / stacks_per_hr),
+            )
+            .caption(format!(
+                "Avg {:.1} fills",
+                (3600.0 / fountain.active_fill_time()) / stacks_per_hr
+            )),
+            Statistic::new(
+                "fountain-kpi-flush",
+                "Est. Board Flush",
+                time(fountain.flush_time()),
+            )
+            .caption(format!(
+                "{} stacks at estimated throughput",
+                fountain.spaces()
+            )),
+        )
+    } else {
+        (
+            Statistic::new("fountain-kpi-royal-stack", "Est. Royal Stack", "Locked")
+                .caption("Buy Royal Stacks"),
+            Statistic::new("fountain-kpi-flush", "Est. Board Flush", "Locked")
+                .caption("Buy Royal Stacks"),
+        )
+    };
+    v_flex()
         .id("fountain-fill-row")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(figure(
-            "fountain-kpi-fill",
-            "Coin Fill",
-            coin_fill,
-            coin_caption,
-            cx,
-        ))
-        .child(marble)
-        .child(figure(
-            "fountain-kpi-multi",
-            "Total Multi",
-            format!("{}×", num(fountain.currency_all_multi())),
-            "Currency value multiplier",
-            cx,
-        ))
-        .child(royal_card)
-        .child(royal_stack)
-        .child(fills)
-        .child(figure(
-            "fountain-kpi-redeem",
-            "Redeem Value",
-            num(fountain.total_redeem_value()),
-            if redeem_caption.is_empty() {
-                "No coins on ground".to_owned()
-            } else {
-                redeem_caption
-            },
-            cx,
-        ))
+        .gap(PANEL_GAP)
+        .child(
+            KpiStrip::new()
+                .child(coin_fill)
+                .child(marble)
+                .child(
+                    Statistic::new(
+                        "fountain-kpi-multi",
+                        "Total Multi",
+                        format!("{}×", num(fountain.currency_all_multi())),
+                    )
+                    .caption("Currency value multiplier"),
+                )
+                .child(
+                    Statistic::new(
+                        "fountain-kpi-redeem",
+                        "Redeem Value",
+                        num(fountain.total_redeem_value()),
+                    )
+                    .caption(if redeem_caption.is_empty() {
+                        "No coins on ground".to_owned()
+                    } else {
+                        redeem_caption
+                    }),
+                ),
+        )
+        .child(
+            KpiStrip::new()
+                .child(royal_chance)
+                .child(royal_stack)
+                .child(flush),
+        )
         .into_any_element()
 }
 
@@ -341,56 +311,60 @@ fn income(fountain: &Fountain, income: &Income, cx: &mut Context<AppState>) -> A
 }
 
 /// The stack fill times, active and AFK.
-fn fill_times(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
+fn fill_times(fountain: &Fountain) -> AnyElement {
     let stack = fountain.max_stack();
     let spaces = fountain.spaces();
     div()
         .id("fountain-fill-times")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(figure(
-            "fountain-kpi-stack-fill",
-            "Stack Fill",
-            time(fountain.stack_fill_time()),
-            format!(
-                "{} coins × {}/fill",
-                num(stack),
-                time(fountain.active_fill_time())
-            ),
-            cx,
-        ))
-        .child(figure(
-            "fountain-kpi-all-fill",
-            "All Stacks Fill",
-            time(fountain.all_stacks_fill_time()),
-            format!(
-                "{spaces} spaces × {}/stack",
-                time(fountain.stack_fill_time())
-            ),
-            cx,
-        ))
-        .child(figure(
-            "fountain-kpi-afk-stack-fill",
-            "AFK Stack Fill",
-            time(fountain.afk_stack_fill_time()),
-            format!(
-                "{} coins × {}/fill",
-                num(stack),
-                time(fountain.bar_fill_time())
-            ),
-            cx,
-        ))
-        .child(figure(
-            "fountain-kpi-afk-all-fill",
-            "AFK All Fill",
-            time(fountain.afk_all_stacks_fill_time()),
-            format!(
-                "{spaces} spaces × {}/stack",
-                time(fountain.afk_stack_fill_time())
-            ),
-            cx,
-        ))
+        .child(
+            KpiStrip::new()
+                .child(
+                    Statistic::new(
+                        "fountain-kpi-stack-fill",
+                        "Stack Fill",
+                        time(fountain.stack_fill_time()),
+                    )
+                    .caption(format!(
+                        "{} coins × {}/fill",
+                        num(stack),
+                        time(fountain.active_fill_time())
+                    )),
+                )
+                .child(
+                    Statistic::new(
+                        "fountain-kpi-all-fill",
+                        "All Stacks Fill",
+                        time(fountain.all_stacks_fill_time()),
+                    )
+                    .caption(format!(
+                        "{spaces} spaces × {}/stack",
+                        time(fountain.stack_fill_time())
+                    )),
+                )
+                .child(
+                    Statistic::new(
+                        "fountain-kpi-afk-stack-fill",
+                        "AFK Stack Fill",
+                        time(fountain.afk_stack_fill_time()),
+                    )
+                    .caption(format!(
+                        "{} coins × {}/fill",
+                        num(stack),
+                        time(fountain.bar_fill_time())
+                    )),
+                )
+                .child(
+                    Statistic::new(
+                        "fountain-kpi-afk-all-fill",
+                        "AFK All Fill",
+                        time(fountain.afk_all_stacks_fill_time()),
+                    )
+                    .caption(format!(
+                        "{spaces} spaces × {}/stack",
+                        time(fountain.afk_stack_fill_time())
+                    )),
+                ),
+        )
         .into_any_element()
 }
 
@@ -454,14 +428,19 @@ pub(super) fn num(value: f64) -> String {
     fountain::short_number(value)
 }
 
-/// A duration: hours, minutes, seconds and milliseconds.
+/// A duration: hours, minutes and seconds. Milliseconds show only under a
+/// minute, where they still tell two short times apart.
 pub(super) fn time(seconds: f64) -> String {
     if !seconds.is_finite() || seconds <= 0.0 {
         return "0s".into();
     }
-    let whole = seconds as u64;
+    let total = (seconds * 1000.0).round() as u64;
+    let (whole, millis) = if total < 60_000 {
+        (total / 1000, total % 1000)
+    } else {
+        ((total + 500) / 1000, 0)
+    };
     let (hours, minutes, secs) = (whole / 3600, whole % 3600 / 60, whole % 60);
-    let millis = (seconds.fract() * 1000.0).round() as u64;
     let mut parts = Vec::new();
     if hours > 0 {
         parts.push(format!("{hours}h"));

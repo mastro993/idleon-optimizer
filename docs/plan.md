@@ -570,7 +570,7 @@ Details: [`docs/sections/drop-rate.md`](sections/drop-rate.md).
 
 The Damage Breakdown's context and summary shell is built (part of DMG-01): the character and map
 selectors, their save defaults, the map list (every named map in index order, with the dungeon and
-current markers), the summary cards and mastery bar, the dungeon, missing-pipeline and
+current markers), the summary strip and mastery bar, the dungeon, missing-pipeline and
 missing-metadata states, project/session persistence, and the layer arithmetic of the final
 combine. The damage layers and mastery (DMG-02) are the `Damage Layers` tabs and the
 `Mastery Breakdown` card: DDL0, DDL1 and DDL2 carry the descriptor's own title, value, `note`

@@ -1,9 +1,9 @@
-//! The Damage Breakdown section: the two context selectors, the four summary
-//! cards, the damage layers and the mastery breakdown.
+//! The Damage Breakdown section: the two context selectors, the summary strip,
+//! the damage layers and the mastery breakdown.
 //!
-//! The page holds the character and map selects, the "Character Sheet Range"
-//! card, the minimum and maximum cards with their exact values, the mastery
-//! card with its bar, the `Damage Layers` block whose three cards carry a
+//! The page holds the character and map selects, the summary strip (the
+//! "Character Sheet Range", the minimum and maximum with their exact values,
+//! and the mastery ratio with its bar), the `Damage Layers` block whose three cards carry a
 //! value, the descriptor's note and its pre-softcap value, and the `Mastery
 //! Breakdown` tree. The three layers come from the shared stat pipeline, which
 //! this build does not decode, so the layer cards show a dash and the page's
@@ -14,7 +14,6 @@
 mod actions;
 
 use crate::state::AppState;
-use crate::ui::layout::figure;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, Subscription,
@@ -27,7 +26,7 @@ use gpui_kit::component::progress::Progress;
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::select::{Select, SelectEvent};
 use gpui_kit::component::skeleton::Skeleton;
-use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _};
+use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, v_flex};
 use idleon_common::ValueFormat;
 use idleon_common::formula::FormulaNode;
 use idleon_damage::{self as damage, Context as DamageContext, LayerId, MapRow, Summary};
@@ -37,8 +36,8 @@ use idleon_stats::{self as stats, Snapshot};
 use idleon_ui::format;
 use idleon_ui::formula::FormulaTree;
 use idleon_ui::widgets::{
-    Callout, Caption, Card, CardHeader, Choice, ChoiceSelect, PANEL_GAP, TEXT_CAPTION, TEXT_KPI,
-    Tone,
+    Callout, Caption, Card, CardHeader, Choice, ChoiceSelect, KpiStrip, PANEL_GAP, Statistic,
+    TEXT_CAPTION, TEXT_KPI, Tone,
 };
 use std::sync::Arc;
 
@@ -284,8 +283,8 @@ pub(crate) fn view(
             .flex()
             .flex_col()
             .gap(PANEL_GAP)
-            .child(summary_card(summary, muted, cx))
-            .child(layers_card(summary, damage.layer, muted, entity))
+            .child(summary_card(summary, muted))
+            .child(layers_card(summary, damage.layer, muted, entity, cx))
             .child(formula_breakdown(
                 summary,
                 damage.layer,
@@ -386,6 +385,7 @@ fn layers_card(
     selected: LayerId,
     muted: Hsla,
     entity: Entity<AppState>,
+    cx: &App,
 ) -> AnyElement {
     let tabs = ToggleGroup::new("damage-layer-tabs")
         .segmented()
@@ -446,6 +446,7 @@ fn layers_card(
                         .id("damage-layer-value")
                         .role(Role::Label)
                         .aria_label(value.clone())
+                        .font_family(cx.theme().mono_font_family.clone())
                         .text_size(TEXT_KPI)
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child(value),
@@ -547,9 +548,9 @@ fn empty_summary(muted: Hsla) -> AnyElement {
         .into_any_element()
 }
 
-/// The four summary cards. While the layers cannot be resolved they show a
-/// dash and the reason, never a made-up zero.
-fn summary_card(summary: &Summary, muted: Hsla, cx: &mut Context<AppState>) -> AnyElement {
+/// The four summary figures in one strip. While the layers cannot be resolved
+/// they show a dash and the reason, never a made-up zero.
+fn summary_card(summary: &Summary, muted: Hsla) -> AnyElement {
     let game = summary
         .game_range()
         .map(|(min, max)| format::damage_range(min, max))
@@ -594,21 +595,15 @@ fn summary_card(summary: &Summary, muted: Hsla, cx: &mut Context<AppState>) -> A
     let mastery_fill = summary.mastery_fill() as f32;
 
     let mut body = div().flex().flex_col().gap(PANEL_GAP).child(
-        div()
-            .id("damage-summary")
-            .flex()
-            .flex_wrap()
-            .gap(PANEL_GAP)
-            .child(figure(
-                "damage-game",
-                "Character Sheet Range",
-                game,
-                game_sub,
-                cx,
-            ))
-            .child(figure("damage-min", "Minimum Damage", min, exact_min, cx))
-            .child(figure("damage-max", "Maximum Damage", max, exact_max, cx))
-            .child(mastery_card(mastery, mastery_sub, mastery_fill, muted)),
+        div().id("damage-summary").child(
+            KpiStrip::new()
+                .child(
+                    Statistic::new("damage-game", "Character Sheet Range", game).caption(game_sub),
+                )
+                .child(Statistic::new("damage-min", "Minimum Damage", min).caption(exact_min))
+                .child(Statistic::new("damage-max", "Maximum Damage", max).caption(exact_max))
+                .child(mastery_cell(mastery, mastery_sub, mastery_fill)),
+        ),
     );
     if !summary.available {
         body = body.child(
@@ -634,41 +629,24 @@ fn summary_card(summary: &Summary, muted: Hsla, cx: &mut Context<AppState>) -> A
     body.into_any_element()
 }
 
-/// The mastery card: the ratio, its note and the bar, filled to `percent`.
-fn mastery_card(value: String, note: &'static str, percent: f32, muted: Hsla) -> AnyElement {
-    let ratio = value.clone();
-    div()
+/// The mastery cell: the ratio, its note and the bar, filled to `percent`.
+fn mastery_cell(value: String, note: &'static str, percent: f32) -> AnyElement {
+    let label = format!("Mastery: {value}");
+    let bar = format!("Mastery bar: {value}");
+    v_flex()
         .id("damage-mastery-card")
         .role(Role::Label)
-        .aria_label(format!("Mastery: {value}"))
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_w(px(190.0))
+        .aria_label(label)
+        .gap_2()
+        .child(Statistic::new("damage-mastery", "Mastery", value).caption(note))
+        // The shared bar draws no label of its own, so the cell names the
+        // ratio it fills to.
         .child(
-            Card::new().header(CardHeader::new("Mastery")).child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap_2()
-                    .child(
-                        div()
-                            .id("damage-mastery")
-                            .text_size(TEXT_KPI)
-                            .font_weight(gpui::FontWeight::SEMIBOLD)
-                            .child(value),
-                    )
-                    .child(Caption::new(note).text_color(muted))
-                    // The shared bar draws no label of its own, so the card names
-                    // the ratio it fills to.
-                    .child(
-                        div()
-                            .id("damage-mastery-bar")
-                            .role(Role::ProgressIndicator)
-                            .aria_label(format!("Mastery bar: {ratio}"))
-                            .child(Progress::new("damage-mastery-bar-fill").value(percent)),
-                    ),
-            ),
+            div()
+                .id("damage-mastery-bar")
+                .role(Role::ProgressIndicator)
+                .aria_label(bar)
+                .child(Progress::new("damage-mastery-bar-fill").value(percent)),
         )
         .into_any_element()
 }

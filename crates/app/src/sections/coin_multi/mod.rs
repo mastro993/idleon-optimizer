@@ -24,12 +24,13 @@ use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::select::{Select, SelectEvent};
 use gpui_kit::component::tag::Tag;
-use gpui_kit::component::{ActiveTheme as _, Sizable as _};
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_coin_multi::{self as coin_multi, Character, Evaluation};
 use idleon_import::Imported;
 use idleon_ui::formula::FormulaTree;
 use idleon_ui::widgets::{
-    Caption, Card, CardHeader, Choice, ChoiceSelect, PANEL_GAP, TEXT_CAPTION, TEXT_KPI, Tone,
+    Caption, Card, CardHeader, Choice, ChoiceSelect, KpiStrip, PANEL_GAP, Statistic, TEXT_CAPTION,
+    Tone,
 };
 
 /// The section's state: the save slice, the selected character, the damage
@@ -260,7 +261,7 @@ pub(crate) fn view(
             .header(CardHeader::new("Current Calculation").description(
                 "The saved target's HP, the damage the overkill tier compares, the tier itself and the total multiplier.",
             ))
-            .child(cards(character_row, evaluation.ok(), snapshot_missing, cx)),
+            .child(cards(character_row, evaluation.ok(), snapshot_missing)),
     );
 
     match evaluation {
@@ -347,86 +348,66 @@ fn formula_gap(message: &str, muted: Hsla) -> AnyElement {
         .into_any_element()
 }
 
-/// The six current-calculation cards.
+/// The six current-calculation figures: the saved target in one strip, the
+/// overkill inputs and the total in the next.
 fn cards(
     character: Option<&Character>,
     evaluation: Option<&Evaluation>,
     snapshot_missing: bool,
-    cx: &App,
 ) -> AnyElement {
-    let muted = cx.theme().muted_foreground;
     let overkill = evaluation.map(|evaluation| evaluation.overkill.tier);
     let partial = evaluation
         .map(|evaluation| evaluation.overkill.partial)
         .unwrap_or(false);
     let damage = evaluation.map(|evaluation| evaluation.overkill.damage);
 
-    let mut grid = div().id("coin-cards").flex().flex_wrap().gap(PANEL_GAP);
-    grid = grid.child(text_card(
+    let map = text_figure(
         "coin-map",
         "Current Map",
-        &character
-            .map(|character| character.map_name.clone())
-            .unwrap_or_default(),
-        &character
+        character.map(|character| character.map_name.clone()),
+    )
+    .caption(
+        character
             .map(|character| format!("Saved location for {}", character.name))
             .unwrap_or_default(),
-        muted,
-    ));
-    grid = grid.child(text_card(
+    );
+    let target = text_figure(
         "coin-target",
         "Saved AFK Target",
-        &character
-            .map(|character| character.target_name.clone())
-            .unwrap_or_default(),
-        &character
+        character.map(|character| character.target_name.clone()),
+    )
+    .caption(
+        character
             .map(|character| {
                 if character.target.is_empty() {
-                    "No saved AFK target".to_string()
+                    "No saved AFK target"
                 } else {
-                    "Saved AFK target".to_string()
+                    "Saved AFK target"
                 }
             })
             .unwrap_or_default(),
-        muted,
-    ));
+    );
     let hp = character
         .map(|character| character.monster_hp)
         .filter(|hp| *hp > 0.0);
-    grid = grid.child(figure_card(
-        "coin-hp",
-        "Monster HP",
-        hp,
-        &match (hp, character) {
-            (Some(_), Some(character)) => format!("Target: {}", character.target_name),
-            _ => "Monster data unavailable".to_string(),
-        },
-        muted,
-    ));
-    grid = grid.child(figure_card(
-        "coin-damage",
-        "Computed Damage",
-        damage,
-        "From the damage field above",
-        muted,
-    ));
+    let monster_hp = number_figure("coin-hp", "Monster HP", hp).caption(match (hp, character) {
+        (Some(_), Some(character)) => format!("Target: {}", character.target_name),
+        _ => "Monster data unavailable".to_string(),
+    });
+    let damage = number_figure("coin-damage", "Computed Damage", damage)
+        .caption("From the damage field above");
     let tier_text = match (overkill, partial) {
-        (Some(tier), false) => Some(format!("{tier}")),
+        (Some(tier), false) => Some(tier.to_string()),
         _ => None,
     };
-    grid = grid.child(text_card(
-        "coin-overkill",
-        "Overkill Tier",
-        &tier_text.unwrap_or_else(|| "Unavailable".into()),
-        if snapshot_missing {
+    let tier =
+        text_figure("coin-overkill", "Overkill Tier", tier_text).caption(if snapshot_missing {
             ""
         } else if partial {
             "Saved target data unavailable"
         } else {
             "Tier progression"
-        },
-        muted,
-    ));
+        });
     let total = evaluation
         .map(|evaluation| evaluation.total)
         .filter(|_| !snapshot_missing);
@@ -449,42 +430,22 @@ fn cards(
     let partial_state = evaluation
         .map(|evaluation| !evaluation.complete)
         .unwrap_or(false);
-    grid.child(
-        div()
-            .flex_1()
-            .min_w(px(190.0))
-            .child(
-                Card::new()
-                    .header(CardHeader::new("Total Coin Multiplier"))
-                    .child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .gap_1()
-                            .child(
-                                div()
-                                    .flex()
-                                    .items_center()
-                                    .gap_2()
-                                    .child(
-                                        div()
-                                            .id("coin-total")
-                                            .role(Role::Label)
-                                            .aria_label(total_text.clone())
-                                            .text_size(TEXT_KPI)
-                                            .font_family(cx.theme().mono_font_family.clone())
-                                            .child(total_text),
-                                    )
-                                    .when(partial_state, |row| {
-                                        row.child(tag("Partial", Tone::Warning))
-                                    }),
-                            )
-                            .child(Caption::new(caption).text_color(muted)),
-                    ),
-            )
-            .into_any_element(),
-    )
-    .into_any_element()
+    // The badge sits beside the figure, so the total's label stays its value.
+    let total = h_flex()
+        .items_start()
+        .justify_between()
+        .gap_2()
+        .child(Statistic::new("coin-total", "Total Coin Multiplier", total_text).caption(caption))
+        .when(partial_state, |cell| {
+            cell.child(tag("Partial", Tone::Warning))
+        });
+
+    v_flex()
+        .id("coin-cards")
+        .gap(PANEL_GAP)
+        .child(KpiStrip::new().child(map).child(target).child(monster_hp))
+        .child(KpiStrip::new().child(damage).child(tier).child(total))
+        .into_any_element()
 }
 
 /// The explanation the partial badge carries: which groups are missing and why.
@@ -543,54 +504,17 @@ fn field(label: &'static str, muted: Hsla) -> gpui::Div {
         .child(Caption::new(label).text_color(muted))
 }
 
-/// A card whose value is text, e.g. the map and target names.
-fn text_card(
-    id: &'static str,
-    title: &'static str,
-    value: &str,
-    caption: &str,
-    muted: Hsla,
-) -> AnyElement {
-    let value = if value.is_empty() {
-        "Unavailable"
-    } else {
-        value
-    };
-    div()
-        .flex_1()
-        .min_w(px(190.0))
-        .child(
-            Card::new().header(CardHeader::new(title)).child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .child(
-                        div()
-                            .id(id)
-                            .role(Role::Label)
-                            .aria_label(format!("{title}: {value}"))
-                            .child(value.to_string()),
-                    )
-                    .child(Caption::new(caption.to_string()).text_color(muted)),
-            ),
-        )
-        .into_any_element()
+/// A figure whose value is text, e.g. the map and target names.
+fn text_figure(id: &'static str, label: &'static str, value: Option<String>) -> Statistic {
+    let value = value
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "Unavailable".into());
+    Statistic::new(id, label, value)
 }
 
-/// A card whose value is a figure, shown with the shared number formatter.
-fn figure_card(
-    id: &'static str,
-    title: &'static str,
-    value: Option<f64>,
-    caption: &str,
-    muted: Hsla,
-) -> AnyElement {
-    let text = match value {
-        Some(value) => idleon_ui::format::fmt_val(value),
-        None => "Unavailable".to_string(),
-    };
-    text_card(id, title, &text, caption, muted)
+/// A figure whose value is a number, shown with the shared number formatter.
+fn number_figure(id: &'static str, label: &'static str, value: Option<f64>) -> Statistic {
+    text_figure(id, label, value.map(idleon_ui::format::fmt_val))
 }
 
 /// A small status tag.

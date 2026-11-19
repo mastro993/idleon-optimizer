@@ -157,3 +157,15 @@ fn the_marble_planner_and_simulation_requests_carry_their_controls() {
     state.adopt(Some(&fountain()));
     assert_eq!(state.sim_hours, SIM_MAX_HOURS, "a huge limit is capped");
 }
+
+#[test]
+fn a_duration_drops_its_milliseconds_from_a_minute_up() {
+    use super::overview::time;
+    assert_eq!(time(857.143), "14m 17s");
+    assert_eq!(time(3599.6), "1h");
+    assert_eq!(time(59.9996), "1m");
+    assert_eq!(time(1.25), "1s 250ms");
+    assert_eq!(time(0.143), "143ms");
+    assert_eq!(time(0.0), "0s");
+    assert_eq!(time(f64::INFINITY), "0s");
+}
