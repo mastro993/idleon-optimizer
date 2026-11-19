@@ -24,13 +24,12 @@ mod table;
 pub(crate) use controls::Controls;
 
 use crate::state::AppState;
+use crate::ui::segmented::segmented;
 use crate::ui::{formula_tree, layout};
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
 use gpui_kit::assets::IconName;
-use gpui_kit::component::button::{
-    Button, ButtonVariant, ButtonVariants as _, Toggle, ToggleGroup, ToggleVariants as _,
-};
+use gpui_kit::component::button::{Button, ButtonVariant, ButtonVariants as _};
 use gpui_kit::component::empty::{
     Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 };
@@ -350,25 +349,18 @@ fn controls(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         (Goal::Artifact, "Artifacts"),
         (Goal::Chests, "Chest rate"),
     ];
-    let goal_control = ToggleGroup::new("fleet-goal")
-        .segmented()
-        .single()
-        .outline()
-        .small()
-        .children(goals.iter().map(|(value, label)| {
-            Toggle::new(gpui::SharedString::from(format!(
-                "fleet-goal-{}",
-                value.id()
-            )))
-            .label(*label)
-            .checked(*value == goal)
-        }))
-        .on_click(move |checked, _window, cx| {
-            if let Some(ix) = checked.iter().position(|checked| *checked) {
-                let goal = goals[ix].0;
-                entity.update(cx, |state, cx| state.set_fleet_goal(goal, cx));
-            }
-        });
+    let goal_control = segmented(
+        "fleet-goal",
+        goals.iter().map(|(value, label)| {
+            (
+                *value,
+                gpui::SharedString::from(format!("fleet-goal-{}", value.id())),
+                *label,
+            )
+        }),
+        goal,
+        move |goal, _window, cx| entity.update(cx, |state, cx| state.set_fleet_goal(goal, cx)),
+    );
 
     Card::new()
         .header(CardHeader::new("Fleet controls").description(

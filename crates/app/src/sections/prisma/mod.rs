@@ -22,15 +22,14 @@ mod table;
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
+use crate::ui::segmented::{Segmented, segmented};
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, Entity, FontWeight, IntoElement, ParentElement, Pixels, Role,
     SharedString, Styled, Subscription, Window, div, px,
 };
 use gpui_kit::assets::IconName;
-use gpui_kit::component::button::{
-    Button, ButtonVariants as _, Toggle, ToggleGroup, ToggleVariants as _,
-};
+use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::empty::{
     Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 };
@@ -353,30 +352,26 @@ fn tag(label: impl Into<SharedString>, tone: Tone) -> Tag {
 }
 
 /// The cauldron switch. Segment `n` keeps the bare `segment-<n>` id, which
-/// the harness clicks; a click on the checked segment keeps it.
-fn cauldron_switch(current: Cauldron, entity: &Entity<AppState>) -> ToggleGroup {
+/// the harness clicks.
+fn cauldron_switch(current: Cauldron, entity: &Entity<AppState>) -> Segmented {
     let entity = entity.clone();
-    ToggleGroup::new("prisma-cauldron")
-        .segmented()
-        .single()
-        .outline()
-        .small()
-        .children(
-            Cauldron::ALL
-                .into_iter()
-                .enumerate()
-                .map(|(index, option)| {
-                    Toggle::new(("segment", index))
-                        .label(option.label())
-                        .checked(option == current)
-                }),
-        )
-        .on_click(move |checked, _window, cx| {
-            if let Some(index) = checked.iter().position(|checked| *checked) {
-                let next = Cauldron::ALL[index];
-                entity.update(cx, |state, cx| state.set_prisma_cauldron(next, cx));
-            }
-        })
+    segmented(
+        "prisma-cauldron",
+        Cauldron::ALL
+            .into_iter()
+            .enumerate()
+            .map(|(index, option)| {
+                (
+                    option,
+                    gpui::ElementId::from(("segment", index)),
+                    option.label(),
+                )
+            }),
+        current,
+        move |next, _window, cx| {
+            entity.update(cx, |state, cx| state.set_prisma_cauldron(next, cx));
+        },
+    )
 }
 
 /// Character, AFK hours, cauldron tabs and the run action.

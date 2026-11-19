@@ -5,9 +5,8 @@
 //! here and edit it only through `AppState`'s setters (`docs/ui-kit/forms.md`).
 
 use crate::state::AppState;
+use crate::ui::segmented::Segmented;
 use gpui::{App, AppContext as _, Context, Entity, SharedString, Subscription, Window};
-use gpui_kit::component::Sizable as _;
-use gpui_kit::component::button::{Toggle, ToggleGroup, ToggleVariants as _};
 use gpui_kit::component::input::{InputEvent, InputState};
 use gpui_kit::component::select::SelectEvent;
 use gpui_kit::component::slider::{SliderEvent, SliderState};
@@ -79,31 +78,22 @@ pub(crate) fn trial_choices() -> Vec<Choice<usize>> {
 }
 
 /// A small segmented single choice under `id`, one segment per
-/// `(value, label)` with `current` checked; segment `n` is `<id>-<n>`. A click
-/// on the checked segment keeps it: the kit clears every flag then, and
-/// `on_change` is not called.
+/// `(value, label)` with `current` checked; segment `n` is `<id>-<n>`.
 pub(super) fn segmented<V: Copy + PartialEq + 'static>(
     id: &'static str,
     segments: &[(V, &'static str)],
     current: V,
     on_change: impl Fn(V, &mut Window, &mut App) + 'static,
-) -> ToggleGroup {
-    let values: Vec<V> = segments.iter().map(|(value, _)| *value).collect();
-    ToggleGroup::new(id)
-        .segmented()
-        .single()
-        .outline()
-        .small()
-        .children(segments.iter().enumerate().map(|(ix, (value, label))| {
-            Toggle::new(SharedString::from(format!("{id}-{ix}")))
-                .label(*label)
-                .checked(*value == current)
-        }))
-        .on_click(move |checked, window, cx| {
-            if let Some(ix) = checked.iter().position(|checked| *checked) {
-                on_change(values[ix], window, cx);
-            }
-        })
+) -> Segmented {
+    crate::ui::segmented::segmented(
+        id,
+        segments
+            .iter()
+            .enumerate()
+            .map(|(ix, (value, label))| (*value, SharedString::from(format!("{id}-{ix}")), *label)),
+        current,
+        on_change,
+    )
 }
 
 /// A number field whose edits call `set`.

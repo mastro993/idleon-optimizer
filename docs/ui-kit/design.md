@@ -144,6 +144,13 @@ color as text, the same color at 14% as fill, and at 30% as a 1 px outline, in t
 - **Forms:** a panel with a fixed 112 px label column on the left and controls on the right, one
   field per 32 px line. Two or three exclusive options use a segmented control; booleans use
   switches; numbers use mono steppers sized to their content, not stretched.
+- **Segmented control:** a sunken track with a hairline border. The checked segment sits on
+  surface with a border-strong hairline and foreground text; the other segments are muted text on
+  the track. The kit's `ToggleGroup` paints the checked toggle in the hover color, so the app draws
+  every segmented choice through `ui::segmented` instead.
+- **Exclusive picks as buttons** (a speed, a tower): the pick is primary and the others are the
+  bordered kit default. A secondary button is elevated on surface without a border, too close to
+  the panel to read as a button there.
 - **Callouts:** a sunken row with a status dot, a bold status-colored title and muted body text.
 - **Home:** the card grid of [ADR 0001](../adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md) at Console density
   (sprite, name, world badge and what it answers on each card). The mock showed one table of every
@@ -168,7 +175,7 @@ graphical objects such as chart series and the focus ring. Every text pair passe
 
 ### Dark
 
-| Text | background `#0a0a0c` | surface `#111114` | elevated `#18181c` | sidebar `#070708` | hover `#1e1e23` |
+| Text | background `#0a0a0c` | surface `#111114` | elevated `#18181c` | sunken `#070708` | hover `#1e1e23` |
 |---|---:|---:|---:|---:|---:|
 | foreground `#ededf0` | 16.93 | 16.13 | 15.15 | 17.23 | 14.21 |
 | muted `#9a9aa4` | 7.10 | 6.76 | 6.35 | 7.22 | 5.95 |
@@ -202,7 +209,7 @@ subtle 4.51, accent 5.67.
 
 ### Light
 
-| Text | background `#f6f6f8` | surface `#ffffff` | elevated `#f0f0f3` | sidebar `#ececf0` | hover `#e8e8ed` |
+| Text | background `#f6f6f8` | surface `#ffffff` | elevated `#f0f0f3` | sunken `#ececf0` | hover `#e8e8ed` |
 |---|---:|---:|---:|---:|---:|
 | foreground `#18181b` | 16.41 | 17.72 | 15.58 | 15.04 | 14.51 |
 | muted `#52525b` | 7.16 | 7.73 | 6.80 | 6.56 | 6.33 |

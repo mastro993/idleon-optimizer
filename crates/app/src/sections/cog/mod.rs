@@ -19,6 +19,7 @@ mod walkthrough;
 pub(crate) use controls::Controls;
 
 use crate::state::AppState;
+use crate::ui::segmented::{Segmented, segmented};
 use controls::WEIGHTS;
 use gpui::prelude::*;
 use gpui::{
@@ -27,9 +28,7 @@ use gpui::{
 };
 use gpui_kit::assets::IconName;
 use gpui_kit::component::alert::Alert;
-use gpui_kit::component::button::{
-    Button, ButtonVariants as _, Toggle, ToggleGroup, ToggleVariants as _,
-};
+use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::empty::{
     Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
@@ -486,26 +485,22 @@ fn kpi(
 }
 
 /// The goal switch: one segment per goal. Segment `n` is
-/// `cog-goal.segment-<n>`. A click on the checked segment keeps it: the kit
-/// clears every flag then.
-fn goal_switch(current: Goal, entity: &Entity<AppState>) -> ToggleGroup {
+/// `cog-goal.segment-<n>`.
+fn goal_switch(current: Goal, entity: &Entity<AppState>) -> Segmented {
     const GOALS: [Goal; 3] = [Goal::Build, Goal::ConExp, Goal::Flaggy];
     let entity = entity.clone();
-    ToggleGroup::new("cog-goal")
-        .segmented()
-        .single()
-        .outline()
-        .small()
-        .children(GOALS.iter().enumerate().map(|(index, goal)| {
-            Toggle::new(SharedString::from(format!("cog-goal.segment-{index}")))
-                .label(goal.label())
-                .checked(*goal == current)
-        }))
-        .on_click(move |checked, _window, cx| {
-            if let Some(index) = checked.iter().position(|checked| *checked) {
-                entity.update(cx, |state, cx| state.set_cog_goal(GOALS[index], cx));
-            }
-        })
+    segmented(
+        "cog-goal",
+        GOALS.iter().enumerate().map(|(index, goal)| {
+            (
+                *goal,
+                SharedString::from(format!("cog-goal.segment-{index}")),
+                goal.label(),
+            )
+        }),
+        current,
+        move |goal, _window, cx| entity.update(cx, |state, cx| state.set_cog_goal(goal, cx)),
+    )
 }
 
 /// The objective controls: single goal or custom weights, Optimize, Perfect

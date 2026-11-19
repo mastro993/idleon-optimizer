@@ -14,13 +14,13 @@
 mod actions;
 
 use crate::state::AppState;
+use crate::ui::segmented::segmented;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, Subscription,
     Task, Window, div, px,
 };
 use gpui_kit::assets::IconName;
-use gpui_kit::component::button::{Toggle, ToggleGroup, ToggleVariants as _};
 use gpui_kit::component::empty::{Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle};
 use gpui_kit::component::progress::Progress;
 use gpui_kit::component::scroll::ScrollableElement as _;
@@ -387,26 +387,20 @@ fn layers_card(
     entity: Entity<AppState>,
     cx: &App,
 ) -> AnyElement {
-    let tabs = ToggleGroup::new("damage-layer-tabs")
-        .segmented()
-        .single()
-        .outline()
-        .small()
-        .children(LayerId::ALL.map(|id| {
-            Toggle::new(gpui::SharedString::from(format!(
-                "damage-layer-{}",
-                id.id()
-            )))
-            .label(id.id().to_uppercase())
-            .checked(id == selected)
-        }))
-        .on_click(move |checked, _window, cx| {
-            // A click on the open tab clears every flag: keep it open.
-            if let Some(ix) = checked.iter().position(|checked| *checked) {
-                let layer = LayerId::ALL[ix];
-                entity.update(cx, |state, cx| state.set_damage_layer(layer, cx));
-            }
-        });
+    let tabs = segmented(
+        "damage-layer-tabs",
+        LayerId::ALL.map(|id| {
+            (
+                id,
+                gpui::SharedString::from(format!("damage-layer-{}", id.id())),
+                id.id().to_uppercase(),
+            )
+        }),
+        selected,
+        move |layer, _window, cx| {
+            entity.update(cx, |state, cx| state.set_damage_layer(layer, cx));
+        },
+    );
     let layer = summary.layers().map(|layers| layers.get(selected));
     let value = match layer {
         Some(layer) => match selected.format() {

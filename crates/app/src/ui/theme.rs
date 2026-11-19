@@ -185,6 +185,7 @@ mod tests {
                 ("surface", kit.table),
                 ("elevated", kit.muted),
                 ("sidebar", kit.sidebar),
+                ("segmented track", kit.tab_bar_segmented),
                 ("hover", kit.accent),
             ];
             let mut texts = vec![

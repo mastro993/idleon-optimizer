@@ -7,10 +7,9 @@
 use super::table::{Col, table, text};
 use crate::sections::jar::{kpi, metric, row, stat};
 use crate::state::AppState;
+use crate::ui::segmented::segmented;
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, Entity, IntoElement, ParentElement, Styled, div, px};
-use gpui_kit::component::Sizable as _;
-use gpui_kit::component::button::{Toggle, ToggleGroup, ToggleVariants as _};
 use idleon_jar::Jar;
 use idleon_jar::{INCOME_TIERS, RUPIE_COLORS, RUPIE_NAMES, VALUE_TIERS};
 use idleon_ui::format;
@@ -104,22 +103,18 @@ fn headline(jar: &Jar, tier: u32) -> AnyElement {
 /// `jar-tier-toggle-<n>` id, which the harness clicks.
 fn tier_control(tier: u32, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    let control = ToggleGroup::new("jar-tier")
-        .segmented()
-        .single()
-        .outline()
-        .small()
-        .children((0..INCOME_TIERS).map(|index| {
-            Toggle::new(format!("jar-tier-toggle-{index}"))
-                .label(format!("T{}", index + 1))
-                .checked(index == tier)
-        }))
-        // A click on the checked segment clears every flag: keep the tier.
-        .on_click(move |checked, _window, cx| {
-            if let Some(index) = checked.iter().position(|checked| *checked) {
-                entity.update(cx, |state, cx| state.set_jar_tier(index as u32, cx));
-            }
-        });
+    let control = segmented(
+        "jar-tier",
+        (0..INCOME_TIERS).map(|index| {
+            (
+                index,
+                gpui::SharedString::from(format!("jar-tier-toggle-{index}")),
+                format!("T{}", index + 1),
+            )
+        }),
+        tier,
+        move |index, _window, cx| entity.update(cx, |state, cx| state.set_jar_tier(index, cx)),
+    );
     div()
         .id("jar-tier-row")
         .flex()
