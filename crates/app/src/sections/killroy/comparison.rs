@@ -23,7 +23,7 @@ use gpui_kit::component::tag::Tag;
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, Size, h_flex, v_flex};
 use idleon_killroy::{Plan, UpgradeChoice};
 use idleon_ui::run_chrome;
-use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone, show_number};
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone, fit_columns, show_number};
 
 /// A row tall enough for a name over its caption.
 const TWO_LINE_ROW: Size = Size::Size(px(44.0));
@@ -301,11 +301,12 @@ fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .gap_2()
         .child(Caption::new(summary))
         .child(
-            div().h(px(150.0)).child(
+            div().h(px(150.0)).child(fit_columns(
                 DataTable::new(&controls.queue)
                     .with_size(TWO_LINE_ROW)
                     .header_row_height(HEAD_ROW),
-            ),
+                &controls.queue,
+            )),
         )
         .into_any_element()
 }
@@ -367,11 +368,12 @@ pub(crate) fn results_card(
             div()
                 .id("killroy-comparison")
                 .h(height.min(px(320.0)))
-                .child(
+                .child(fit_columns(
                     DataTable::new(&controls.results)
                         .with_size(TWO_LINE_ROW)
                         .header_row_height(HEAD_ROW),
-                ),
+                    &controls.results,
+                )),
         )
         .child(
             notes("killroy-comparison-notes", cx)
@@ -428,11 +430,12 @@ pub(crate) fn buffs_card(state: &AppState, cx: &mut Context<AppState>) -> AnyEle
         div()
             .id("killroy-buffs")
             .h(px(200.0))
-            .child(
+            .child(fit_columns(
                 DataTable::new(&controls.buffs)
                     .with_size(TWO_LINE_ROW)
                     .header_row_height(HEAD_ROW),
-            )
+                &controls.buffs,
+            ))
             .into_any_element()
     };
 

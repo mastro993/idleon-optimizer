@@ -5,7 +5,7 @@
 //! without a pointer, and the drain staffing is the stream table under it.
 
 use super::overview::{figure_text, kpi, number_cell, rate_cell, tag};
-use super::table::{Col, table, text, text_id};
+use super::table::{table, text, text_id};
 use super::world_rail;
 use crate::state::AppState;
 use gpui::prelude::*;
@@ -17,7 +17,9 @@ use idleon_royal_guardian::{
     self as royal_guardian, Allocation, NodeAllocation, Rate, ResourceNode,
 };
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, Tone};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, TableColumn, Tone,
+};
 
 /// The Resources pane.
 pub(crate) fn resources(
@@ -357,12 +359,12 @@ fn staffing_table(
         .child(table(
             "royal-stream",
             &[
-                Col::Text("Outpost"),
-                Col::Number("Slot"),
-                Col::Text("Kind"),
-                Col::Number("Rate /hr"),
-                Col::Number("Drain /hr"),
-                Col::Number("Currency /hr"),
+                TableColumn::text("Outpost"),
+                TableColumn::number("Slot"),
+                TableColumn::text("Kind"),
+                TableColumn::number("Rate /hr"),
+                TableColumn::number("Drain /hr"),
+                TableColumn::number("Currency /hr"),
             ],
             rows,
             cx,
@@ -423,13 +425,13 @@ fn node_table(
     let table = table(
         "royal-node",
         &[
-            Col::Text("Node"),
-            Col::Number("Grade"),
-            Col::Number("Remaining"),
-            Col::Number("Rate /hr"),
-            Col::Number("Drain"),
-            Col::Text("Currency"),
-            Col::Text("Reset"),
+            TableColumn::text("Node"),
+            TableColumn::number("Grade"),
+            TableColumn::number("Remaining"),
+            TableColumn::number("Rate /hr"),
+            TableColumn::number("Drain"),
+            TableColumn::text("Currency"),
+            TableColumn::text("Reset"),
         ],
         rows,
         cx,
@@ -465,7 +467,7 @@ fn rate_card(rate: &Rate, cx: &mut Context<AppState>) -> AnyElement {
     });
     let factors = table(
         "royal-rate-factor",
-        &[Col::Text("Factor"), Col::Number("Value")],
+        &[TableColumn::text("Factor"), TableColumn::number("Value")],
         rows,
         cx,
     );

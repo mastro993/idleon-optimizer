@@ -1,7 +1,6 @@
 //! The Sushi tab: the knowledge totals and the tier table with each tier's
 //! perfecto odds, knowledge bonus and Ring of Glory reward.
 
-use super::columns::{self, Column};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
@@ -14,6 +13,7 @@ use idleon_sushi::Inputs;
 use idleon_sushi::data::game;
 use idleon_sushi::{fmt_num, knowledge_desc, rog_reward};
 use idleon_ui::widgets::{Caption, Card, CardHeader};
+use idleon_ui::widgets::{TableColumn, table_header};
 
 /// One tier's row, formatted.
 struct TierRow {
@@ -103,17 +103,17 @@ impl Tiers {
 }
 
 /// The tier table's columns.
-const COLUMNS: [Column; 5] = [
-    ("Tier", Some(56.0), false),
-    ("Perfecto", Some(96.0), false),
-    ("KnLv", Some(56.0), true),
-    ("Kn Bonus", None, false),
-    ("RoG Reward", None, false),
+const COLUMNS: [TableColumn; 5] = [
+    TableColumn::text("Tier").width(56.0),
+    TableColumn::text("Perfecto").width(96.0),
+    TableColumn::number("KnLv").width(56.0),
+    TableColumn::text("Kn Bonus"),
+    TableColumn::text("RoG Reward"),
 ];
 
 /// A cell of the tier table's column `index`.
 fn cell(index: usize) -> TableCell {
-    columns::cell(&COLUMNS, index)
+    COLUMNS[index].cell()
 }
 
 pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
@@ -130,13 +130,14 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     // The knowledge categories, with their per-level gain.
     let knowledge = Table::new()
         .small()
-        .child(columns::header(&[("Category", None, false)]))
+        .child(table_header(&[TableColumn::text("Category")]))
         .child(
             TableBody::new().children(tiers.knowledge.iter().enumerate().map(|(cat, line)| {
                 // A row id of its own keeps the cell's semantic id short: the
                 // kit's `table-row-N` repeats across this pane's two tables.
                 TableRow::new().id(("su-knowledge-line", cat)).child(
-                    columns::cell(&[("Category", None, false)], 0)
+                    TableColumn::text("Category")
+                        .cell()
                         .child(div().id(("su-knowledge", cat)).child(line.clone())),
                 )
             })),
@@ -182,7 +183,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 div().min_w(px(560.0)).child(
                     Table::new()
                         .small()
-                        .child(columns::header(&COLUMNS))
+                        .child(table_header(&COLUMNS))
                         .child(rows),
                 ),
             ),

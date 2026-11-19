@@ -10,7 +10,7 @@
 
 use super::controls::WorldMap;
 use super::overview::{number_cell, rate_cell, selected_outpost, tag, type_label};
-use super::table::{Col, table, text};
+use super::table::{table, text};
 use super::world_rail;
 use crate::assets::{Artwork, Manifest};
 use crate::state::AppState;
@@ -22,7 +22,7 @@ use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use idleon_royal_guardian::RoyalGuardian;
 use idleon_royal_guardian::{self as royal_guardian, Endpoint};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP, Tone};
+use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP, TableColumn, Tone};
 
 /// Resolve one game artwork reference, or `None` when the import skipped it.
 fn artwork(manifest: &Manifest, reference: &str) -> Option<std::path::PathBuf> {
@@ -417,14 +417,14 @@ fn outpost_table(
     let table = table(
         "royal-outpost",
         &[
-            Col::Text("Outpost"),
-            Col::Text("Type"),
-            Col::Number("Range"),
-            Col::Number("Units"),
-            Col::Text("Links"),
-            Col::Number("Supports"),
-            Col::Number("Collection /hr"),
-            Col::Text("State"),
+            TableColumn::text("Outpost"),
+            TableColumn::text("Type"),
+            TableColumn::number("Range"),
+            TableColumn::number("Units"),
+            TableColumn::text("Links"),
+            TableColumn::number("Supports"),
+            TableColumn::number("Collection /hr"),
+            TableColumn::text("State"),
         ],
         cells,
         cx,

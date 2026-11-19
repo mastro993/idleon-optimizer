@@ -5,22 +5,15 @@
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Div, ElementId, SharedString, Stateful, div};
 use gpui_kit::component::ActiveTheme as _;
-use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
-use idleon_ui::widgets::TEXT_MONO;
-
-/// A column: its head, and whether it holds numbers (right-aligned, mono).
-#[derive(Clone, Copy)]
-pub(super) enum Col {
-    Text(&'static str),
-    Number(&'static str),
-}
+use gpui_kit::component::table::{Table, TableBody, TableHeader, TableRow};
+use idleon_ui::widgets::{TEXT_MONO, TableColumn};
 
 /// A table under the element id `id` with `cols` heads and one row per entry
 /// of `rows`. Each row gets the short id `<id>-tr` with its index, which keeps
 /// the ids inside it under the bridge's length limit.
 pub(super) fn table(
     id: &'static str,
-    cols: &[Col],
+    cols: &[TableColumn],
     rows: impl IntoIterator<Item = Vec<AnyElement>>,
     cx: &App,
 ) -> Stateful<Div> {
@@ -28,25 +21,21 @@ pub(super) fn table(
     let row_id = SharedString::from(format!("{id}-tr"));
     let head = cols.iter().fold(
         TableRow::new().id(SharedString::from(format!("{id}-th"))),
-        |row, col| {
-            row.child(match col {
-                Col::Text(name) => TableHead::new().child(*name),
-                Col::Number(name) => TableHead::new().text_right().child(*name),
-            })
-        },
+        |row, col| row.child(col.head()),
     );
     let body = rows.into_iter().enumerate().map(|(index, cells)| {
         cols.iter().zip(cells).fold(
             TableRow::new().id(ElementId::NamedInteger(row_id.clone(), index as u64)),
             |row, (col, cell)| {
-                row.child(match col {
-                    Col::Text(_) => TableCell::new().child(cell),
-                    Col::Number(_) => TableCell::new().text_right().child(
+                row.child(if col.is_number() {
+                    col.cell().child(
                         div()
                             .font_family(mono.clone())
                             .text_size(TEXT_MONO)
                             .child(cell),
-                    ),
+                    )
+                } else {
+                    col.cell().child(cell)
                 })
             },
         )

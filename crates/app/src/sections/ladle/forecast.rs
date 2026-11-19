@@ -9,7 +9,7 @@
 use super::State;
 use super::kitchens::Figures;
 use super::summary::tag;
-use super::table::{Col, table, text};
+use super::table::{table, text};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{
@@ -24,7 +24,7 @@ use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, Size};
 use idleon_ladle::kitchen::{self, Layout, Phase, PhaseKind};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, Tone};
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, TableColumn, Tone};
 use std::f32::consts::FRAC_PI_2;
 
 /// The height the forecast list scrolls in.
@@ -277,10 +277,10 @@ fn kitchen_grid(layout: &Layout, cx: &App) -> AnyElement {
 /// The meals the batch cooks and the levels their stock buys.
 fn batch_table(layout: &Layout, cx: &App) -> AnyElement {
     let cols = [
-        Col::Text("Meal"),
-        Col::Text("Levels"),
-        Col::Number("Stock left"),
-        Col::Text("Progress"),
+        TableColumn::text("Meal"),
+        TableColumn::text("Levels"),
+        TableColumn::number("Stock left"),
+        TableColumn::text("Progress"),
     ];
     let rows = layout.meals.iter().map(|meal| {
         vec![
@@ -421,11 +421,11 @@ fn phase_block(day: u32, phase: &Phase, cx: &App) -> AnyElement {
         .child(div().text_size(TEXT_BODY).child(phase.title(day)));
     if !phase.rows.is_empty() {
         let cols = [
-            Col::Number("#"),
-            Col::Text("Meal (spend order)"),
-            Col::Text("Levels"),
-            Col::Number("Ladles"),
-            Col::Number("Used so far"),
+            TableColumn::number("#"),
+            TableColumn::text("Meal (spend order)"),
+            TableColumn::text("Levels"),
+            TableColumn::number("Ladles"),
+            TableColumn::number("Used so far"),
         ];
         let rows = phase.rows.iter().enumerate().map(|(index, row)| {
             vec![

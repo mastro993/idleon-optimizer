@@ -10,7 +10,7 @@ use gpui_kit::component::table::DataTable;
 use gpui_kit::component::{ActiveTheme as _, v_flex};
 use idleon_sailing::{AssignmentMode, FleetPlan, Goal, RouteMetrics, route_metrics};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic};
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, fit_columns};
 
 /// The figures the tab shows, read once per [`Key`](super::controls::Key).
 pub(crate) struct View {
@@ -113,7 +113,7 @@ pub(crate) fn fleet_tab(
             gpui::div()
                 .id("fleet-table")
                 .h(table::data_height(view.pairings, 33.0, table_height))
-                .child(DataTable::new(&state.sailing_controls.fleet_table)),
+                .child(fit_columns(DataTable::new(&state.sailing_controls.fleet_table), &state.sailing_controls.fleet_table)),
         )
         .child(
             Caption::new(

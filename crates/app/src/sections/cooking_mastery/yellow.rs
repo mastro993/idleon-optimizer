@@ -8,18 +8,17 @@
 //! module only draws it.
 
 use super::controls::Derived;
-use super::{number_cell, table, text_cell, whole};
+use super::{table, whole};
 use crate::state::AppState;
 use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use gpui::{AnyElement, Context, ElementId, IntoElement, ParentElement, Role, Styled, Window, div};
 use gpui_kit::component::select::Select;
-use gpui_kit::component::table::TableRow;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_cooking_mastery::{Allocation, MealRow, Yellow};
 use idleon_ui::widgets::{
-    Callout, Caption, Card, CardHeader, PANEL_GAP, TEXT_KPI, Tone, labeled, number_width,
-    show_number,
+    Callout, Caption, Card, CardHeader, PANEL_GAP, TEXT_KPI, TableColumn, Tone, labeled,
+    number_width, show_number,
 };
 
 /// The pane: the controls, the plan's headline, its table and the context.
@@ -237,38 +236,42 @@ fn sources(plan: &Allocation, muted: gpui::Hsla) -> AnyElement {
 /// The page's allocation table, most points first.
 fn rows(plan: &Allocation) -> AnyElement {
     let multi_category = plan.goal.categories.len() > 1;
-    let mut columns = vec![("Meal", false)];
+    let mut columns = vec![TableColumn::text("Meal")];
     if multi_category {
-        columns.push(("Category", false));
+        columns.push(TableColumn::text("Category"));
     }
     columns.extend([
-        ("Effect", false),
-        ("Meal Lv", true),
-        ("Per Lv", true),
-        ("Base", true),
-        ("Points Now", true),
-        ("Points Optimal", true),
-        ("Mastery", true),
+        TableColumn::text("Effect"),
+        TableColumn::number("Meal Lv").width(72.),
+        TableColumn::number("Per Lv").width(64.),
+        TableColumn::number("Base").width(64.),
+        TableColumn::number("Points Now").width(80.),
+        TableColumn::number("Points Optimal").width(88.),
+        TableColumn::number("Mastery").width(80.),
     ]);
     let rows = plan.rows.iter().map(|row| {
-        let mut cells = vec![text_cell(row_name(row))];
+        let mut cells = vec![row_name(row).into_any_element()];
         if multi_category {
-            cells.push(text_cell(
-                plan.goal.category_label(&row.category).to_string(),
-            ));
+            cells.push(
+                plan.goal
+                    .category_label(&row.category)
+                    .to_string()
+                    .into_any_element(),
+            );
         }
         cells.extend([
-            text_cell(row.effect.clone()),
-            number_cell(whole(row.level)),
-            number_cell(format!("{}", row.bonus)),
-            number_cell(format!("{:.2}", row.base_weight)),
-            number_cell(whole(row.current)),
-            number_cell(whole(row.allocated)),
-            number_cell(format!("{:.3}x", row.mastery)),
+            row.effect.clone().into_any_element(),
+            whole(row.level).into_any_element(),
+            format!("{}", row.bonus).into_any_element(),
+            format!("{:.2}", row.base_weight).into_any_element(),
+            whole(row.current).into_any_element(),
+            whole(row.allocated).into_any_element(),
+            format!("{:.3}x", row.mastery).into_any_element(),
         ]);
-        TableRow::new()
-            .id(("cooking-mastery-yellow-table-row", row.index))
-            .children(cells)
+        (
+            ElementId::from(("cooking-mastery-yellow-table-row", row.index)),
+            cells,
+        )
     });
     div()
         .id("cooking-mastery-yellow-rows")

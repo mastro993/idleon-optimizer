@@ -20,7 +20,7 @@ use idleon_sailing::{
     upgrade_cost_type, upgrade_eta,
 };
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic};
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, fit_columns};
 use std::collections::BTreeMap;
 
 /// The figures the tab shows, read once per key and sort order.
@@ -157,7 +157,7 @@ pub(crate) fn ships_tab(
             div()
                 .id("ships-table")
                 .h(table::data_height(view.rows, 33.0, table_height))
-                .child(DataTable::new(&state.sailing_controls.ships_table)),
+                .child(fit_columns(DataTable::new(&state.sailing_controls.ships_table), &state.sailing_controls.ships_table)),
         )
         .child(
             Caption::new(

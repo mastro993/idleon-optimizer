@@ -33,7 +33,7 @@ use idleon_ui::format;
 use idleon_ui::formula::FormulaTree;
 use idleon_ui::widgets::{
     Caption, Card, CardHeader, Choice, ChoiceSelect, KpiStrip, PANEL_GAP, Statistic, TEXT_CAPTION,
-    Tone, number_state, number_value, search_input,
+    Tone, fit_columns, number_state, number_value, search_input,
 };
 use std::cmp::Ordering;
 use std::rc::Rc;
@@ -812,7 +812,10 @@ fn statues_card(
             .id("statue-table-scroll")
             .h(table_height)
             // A row holds a name over its effect and a level over its bar.
-            .child(DataTable::new(&statue.table).with_size(px(ROW_HEIGHT)))
+            .child(fit_columns(
+                DataTable::new(&statue.table).with_size(px(ROW_HEIGHT)),
+                &statue.table,
+            ))
             .into_any_element()
     };
 

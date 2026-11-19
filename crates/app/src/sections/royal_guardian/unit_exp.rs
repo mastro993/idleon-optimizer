@@ -6,7 +6,7 @@
 //! other section uses. A cancelled plan keeps the result the section showed.
 
 use super::overview::{kpi, tag};
-use super::table::{Col, table, text};
+use super::table::{table, text};
 use crate::state::AppState;
 use crate::ui::number_field;
 use gpui::prelude::*;
@@ -20,7 +20,7 @@ use idleon_royal_guardian::{ShelfAction, ShelfPlan, Status, Step, Target, UnitEx
 use idleon_ui::format;
 use idleon_ui::runner::TaskState;
 use idleon_ui::widgets::{
-    Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, Tone, show_number,
+    Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, TableColumn, Tone, show_number,
 };
 
 /// The Unit EXP pane: the unit plan and the shelf steps.
@@ -328,9 +328,9 @@ fn targets_reached(plan: &UnitExpPlan, cx: &App) -> AnyElement {
         .child(table(
             "royal-unit-exp-target-row",
             &[
-                Col::Text("Target"),
-                Col::Text("Plan"),
-                Col::Text("Saved split"),
+                TableColumn::text("Target"),
+                TableColumn::text("Plan"),
+                TableColumn::text("Saved split"),
             ],
             rows,
             cx,
@@ -373,9 +373,9 @@ fn steps(steps: &[Step], cx: &App) -> AnyElement {
         .child(table(
             "royal-unit-exp-step",
             &[
-                Col::Text("When"),
-                Col::Text("Split"),
-                Col::Text("Profession changes"),
+                TableColumn::text("When"),
+                TableColumn::text("Split"),
+                TableColumn::text("Profession changes"),
             ],
             rows,
             cx,
@@ -397,10 +397,10 @@ fn transient_rows(transients: &idleon_royal_guardian::Transients, cx: &App) -> A
     table(
         "royal-unit-exp-transient",
         &[
-            Col::Text("Assignment"),
-            Col::Number("Now"),
-            Col::Number("Available"),
-            Col::Number("Plan"),
+            TableColumn::text("Assignment"),
+            TableColumn::number("Now"),
+            TableColumn::number("Available"),
+            TableColumn::number("Plan"),
         ],
         rows,
         cx,
@@ -565,7 +565,7 @@ fn shelf_steps(plan: &ShelfPlan, cx: &App) -> AnyElement {
         .id("royal-shelf-steps")
         .child(table(
             "royal-shelf-step",
-            &[Col::Text("When"), Col::Text("Step")],
+            &[TableColumn::text("When"), TableColumn::text("Step")],
             rows,
             cx,
         ))

@@ -1,7 +1,6 @@
 //! The Sushi Station upgrade table: every upgrade in unlock order with its
 //! next cost and the time the bank needs to afford it.
 
-use super::columns::{self, Column};
 use super::rate_text;
 use crate::state::AppState;
 use gpui::prelude::*;
@@ -15,6 +14,7 @@ use idleon_sushi::data::game;
 use idleon_sushi::math::upg_lv_req;
 use idleon_sushi::{Inputs, upgrade_desc};
 use idleon_ui::widgets::{Card, CardHeader, KpiStrip, Statistic, TEXT_CAPTION};
+use idleon_ui::widgets::{TableColumn, table_header};
 
 /// One row of the upgrade table, formatted.
 struct Row {
@@ -181,19 +181,19 @@ fn figure(id: &'static str, label: &'static str, value: f64, caption: String) ->
 }
 
 /// The table's columns.
-const COLUMNS: [Column; 7] = [
-    ("Res Lv", Some(64.0), true),
-    ("Upgrade", None, false),
-    ("Level", Some(80.0), true),
-    ("Bonus", Some(90.0), true),
-    ("Next Cost", Some(90.0), true),
-    ("Time", Some(64.0), true),
-    ("Description", None, false),
+const COLUMNS: [TableColumn; 7] = [
+    TableColumn::number("Res Lv").width(64.0),
+    TableColumn::text("Upgrade"),
+    TableColumn::number("Level").width(80.0),
+    TableColumn::number("Bonus").width(90.0),
+    TableColumn::number("Next Cost").width(90.0),
+    TableColumn::number("Time").width(64.0),
+    TableColumn::text("Description"),
 ];
 
 /// A cell of the table's column `index`.
 fn cell(index: usize) -> TableCell {
-    columns::cell(&COLUMNS, index)
+    COLUMNS[index].cell()
 }
 
 pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
@@ -311,7 +311,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 div().min_w(px(720.0)).child(
                     Table::new()
                         .small()
-                        .child(columns::header(&COLUMNS))
+                        .child(table_header(&COLUMNS))
                         .child(body),
                 ),
             ),

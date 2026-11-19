@@ -22,7 +22,7 @@ use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
 use idleon_fishing::{self as fishing, TrenchPlan};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, Tone};
+use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, TableColumn, Tone};
 
 /// The depth choices the selector offers.
 const DEPTH_CHOICES: [usize; 5] = [3, 5, 10, 15, 25];
@@ -421,7 +421,7 @@ fn helpers(
             let character = helper.character;
             let entity = cx.entity();
             table::Row::new(("fishing-trench-helper-row", character))
-                .child(table::text(
+                .child(table::cell(
                     Checkbox::new(SharedString::from(format!(
                         "fishing-trench-helper-{character}"
                     )))
@@ -432,7 +432,7 @@ fn helpers(
                         entity.update(cx, |state, cx| state.set_fishing_helper(character, on, cx));
                     }),
                 ))
-                .child(table::text(
+                .child(table::cell(
                     h_flex()
                         .id(SharedString::from(format!(
                             "fishing-trench-helper-name-{character}"
@@ -445,33 +445,33 @@ fn helpers(
                             cell.child(table::tag("at the Trench", Tone::Info))
                         }),
                 ))
-                .child(table::text(
+                .child(table::cell(
                     div().text_color(muted).child(helper.target.clone()),
                 ))
-                .child(table::number(helper.level.clone()))
-                .child(table::text(helper.toolkit.clone()))
-                .child(table::number(
+                .child(table::cell(helper.level.clone()))
+                .child(table::cell(helper.toolkit.clone()))
+                .child(table::cell(
                     div()
                         .id(SharedString::from(format!(
                             "fishing-trench-helper-rate-{character}"
                         )))
                         .child(helper.rate.clone()),
                 ))
-                .child(table::number(helper.hours.clone()))
+                .child(table::cell(helper.hours.clone()))
         });
         div()
             .id("fishing-trench-helpers")
             .child(table::table(
                 "fishing-trench-helpers-scroll",
-                &table::columns(&[
-                    ("Fish with", false, 110.0),
-                    ("Character", false, 220.0),
-                    ("Saved target", false, 140.0),
-                    ("Fishing lv", true, 90.0),
-                    ("Lure + line", false, 250.0),
-                    ("Fish / hr", true, 100.0),
-                    ("ETA alone", true, 110.0),
-                ]),
+                &[
+                    TableColumn::text("Fish with").width(88.),
+                    TableColumn::text("Character"),
+                    TableColumn::text("Saved target"),
+                    TableColumn::number("Fishing lv").width(72.),
+                    TableColumn::text("Lure + line"),
+                    TableColumn::number("Fish / hr").width(80.),
+                    TableColumn::number("ETA alone").width(88.),
+                ],
                 rows,
             ))
             .into_any_element()
@@ -522,29 +522,29 @@ fn projection(
     select.show(choices, Some(&depths), window, cx);
 
     let mut headers = vec![
-        ("Depth", false, 120.0),
-        ("Fish 2 eff req", true, 110.0),
-        ("Fish needed", true, 110.0),
-        ("Fish / catch", true, 100.0),
-        ("Fish / hr", true, 100.0),
-        ("ETA", true, 100.0),
-        ("Total", true, 100.0),
+        TableColumn::text("Depth").width(64.),
+        TableColumn::number("Fish 2 eff req"),
+        TableColumn::number("Fish needed"),
+        TableColumn::number("Fish / catch"),
+        TableColumn::number("Fish / hr"),
+        TableColumn::number("ETA"),
+        TableColumn::number("Total"),
     ];
     if view.with_team {
         headers.extend([
-            ("Team fish / hr", true, 120.0),
-            ("Team ETA", true, 100.0),
-            ("Team total", true, 100.0),
+            TableColumn::number("Team fish / hr"),
+            TableColumn::number("Team ETA"),
+            TableColumn::number("Team total"),
         ]);
     }
     headers.extend([
-        ("Fastest lure + line", false, 280.0),
-        ("ETA", true, 100.0),
-        ("Total", true, 100.0),
+        TableColumn::text("Fastest lure + line"),
+        TableColumn::number("ETA"),
+        TableColumn::number("Total"),
     ]);
     let rows = view.depths.iter().enumerate().map(|(index, row)| {
         table::Row::new(("fishing-trench-depth-row", index))
-            .child(table::text(
+            .child(table::cell(
                 h_flex()
                     .id(SharedString::from(format!(
                         "fishing-trench-depth-{}",
@@ -558,9 +558,9 @@ fn projection(
                         cell.child(table::tag("current", Tone::Neutral))
                     }),
             ))
-            .children(row.selected.iter().cloned().map(table::number))
-            .children(row.team.iter().flatten().cloned().map(table::number))
-            .child(table::text(
+            .children(row.selected.iter().cloned().map(table::cell))
+            .children(row.team.iter().flatten().cloned().map(table::cell))
+            .child(table::cell(
                 h_flex()
                     .gap_2()
                     .child(row.fastest.clone())
@@ -568,7 +568,7 @@ fn projection(
                         cell.child(table::tag("selected", Tone::Accent))
                     }),
             ))
-            .children(row.best.iter().cloned().map(table::number))
+            .children(row.best.iter().cloned().map(table::cell))
     });
 
     Card::new()
@@ -591,7 +591,7 @@ fn projection(
                 )
                 .child(div().id("fishing-trench-depths-table").child(table::table(
                     "fishing-trench-projection-scroll",
-                    &table::columns(&headers),
+                    &headers,
                     rows,
                 )))
                 .child(

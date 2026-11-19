@@ -2,7 +2,7 @@
 //! the breakdowns.
 
 use super::controls::PANEL;
-use super::table::{Col, blank, table, text};
+use super::table::{blank, table, text};
 use crate::state::AppState;
 use crate::ui::number_field;
 use gpui::prelude::*;
@@ -14,7 +14,7 @@ use gpui_kit::component::tag::Tag;
 use idleon_ladle::{self as ladle, Ladle, Panel, Stats};
 use idleon_ui::format;
 use idleon_ui::widgets::{
-    Callout, Caption, Card, CardHeader, KpiStrip, Statistic, Tone, show_number,
+    Callout, Caption, Card, CardHeader, KpiStrip, Statistic, TableColumn, Tone, show_number,
 };
 
 /// The header's one-line summary.
@@ -177,17 +177,17 @@ fn characters(
 ) -> AnyElement {
     let ladle_state = &state.ladle_state;
     let cols = [
-        Col::Text("Use"),
-        Col::Text("Character"),
-        Col::Number("Cook Lv"),
-        Col::Number("Efficiency"),
-        Col::Number("AFK rate"),
-        Col::Number("Ladle multi"),
-        Col::Number("Panel / day"),
-        Col::Number("Guaranteed / day"),
-        Col::Number("Expected / day"),
-        Col::Number("/ hr"),
-        Col::Text("Next gain"),
+        TableColumn::text("Use").width(56.),
+        TableColumn::text("Character"),
+        TableColumn::number("Cook Lv").width(64.),
+        TableColumn::number("Efficiency").width(80.),
+        TableColumn::number("AFK rate").width(72.),
+        TableColumn::number("Ladle multi").width(64.),
+        TableColumn::number("Panel / day").width(72.),
+        TableColumn::number("Guaranteed / day").width(120.),
+        TableColumn::number("Expected / day").width(80.),
+        TableColumn::number("/ hr").width(56.),
+        TableColumn::text("Next gain"),
     ];
     let mut rows: Vec<Vec<AnyElement>> = stats
         .iter()
@@ -236,7 +236,7 @@ fn characters(
                 guaranteed.into_any_element(),
                 text(format::number(row.per_day)),
                 text(format::number(row.per_hour)),
-                text(row.outlook_label()),
+                text(row.outlook.label()),
             ]
         })
         .collect();

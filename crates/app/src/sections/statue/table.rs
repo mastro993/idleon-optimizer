@@ -18,7 +18,7 @@ use gpui_kit::component::tag::Tag;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, v_flex};
 use idleon_statue::Estimate;
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, TEXT_BODY, TEXT_MONO, show_number};
+use idleon_ui::widgets::{Caption, ColumnFit, FitColumns, TEXT_BODY, TEXT_MONO, show_number};
 use std::rc::Rc;
 
 /// The statue rows the table shows and the fields their cells draw.
@@ -33,6 +33,7 @@ pub(crate) struct Rows {
     /// One target and one rate field per statue, owned by the section state.
     pub(super) targets: Vec<Entity<InputState>>,
     pub(super) rates: Vec<Entity<InputState>>,
+    fit: ColumnFit,
 }
 
 impl Rows {
@@ -45,6 +46,7 @@ impl Rows {
             no_save: true,
             targets,
             rates,
+            fit: ColumnFit::default(),
         }
     }
 
@@ -64,6 +66,42 @@ pub(super) fn state(rows: Rows, window: &mut Window, cx: &mut App) -> Entity<Tab
     })
 }
 
+impl FitColumns for Rows {
+    fn column_fit(&mut self) -> &mut ColumnFit {
+        &mut self.fit
+    }
+
+    fn natural_column(&self, col_ix: usize, _: &App) -> Column {
+        match col_ix {
+            // The floors hold what a cell cannot wrap: the progress line, the
+            // tag, the stepper, the flair line, the rate field and a time.
+            0 => Column::new("statue", "Statue / effect").width(px(150.0)),
+            1 => Column::new("level", "Level / progress")
+                .width(px(170.0))
+                .min_width(px(168.0)),
+            2 => Column::new("availability", "Availability")
+                .width(px(110.0))
+                .min_width(px(96.0)),
+            3 => Column::new("target", "Target")
+                .width(px(120.0))
+                .min_width(px(116.0)),
+            4 => Column::new("exp", "EXP per statue")
+                .width(px(112.0))
+                .min_width(px(100.0))
+                .text_right(),
+            5 => Column::new("needed", "Statues needed")
+                .width(px(120.0))
+                .text_right(),
+            6 => Column::new("rate", "Raw statues/hr")
+                .width(px(120.0))
+                .min_width(px(116.0)),
+            _ => Column::new("time", "Time")
+                .width(px(90.0))
+                .min_width(px(76.0)),
+        }
+    }
+}
+
 impl TableDelegate for Rows {
     fn columns_count(&self, _: &App) -> usize {
         8
@@ -73,21 +111,21 @@ impl TableDelegate for Rows {
         self.shown.len()
     }
 
-    fn column(&self, col_ix: usize, _: &App) -> Column {
-        match col_ix {
-            0 => Column::new("statue", "Statue / effect").width(px(190.0)),
-            1 => Column::new("level", "Level / progress").width(px(170.0)),
-            2 => Column::new("availability", "Availability").width(px(130.0)),
-            3 => Column::new("target", "Target").width(px(130.0)),
-            4 => Column::new("exp", "EXP per statue")
-                .width(px(120.0))
-                .text_right(),
-            5 => Column::new("needed", "Statues needed")
-                .width(px(120.0))
-                .text_right(),
-            6 => Column::new("rate", "Raw statues/hr").width(px(130.0)),
-            _ => Column::new("time", "Time").width(px(110.0)),
-        }
+    fn column(&self, col_ix: usize, cx: &App) -> Column {
+        self.fit.apply(self.natural_column(col_ix, cx))
+    }
+
+    /// A head wraps onto a second line when the fit narrows its column.
+    fn render_th(
+        &mut self,
+        col_ix: usize,
+        _: &mut Window,
+        cx: &mut Context<TableState<Self>>,
+    ) -> impl IntoElement {
+        div()
+            .w_full()
+            .whitespace_normal()
+            .child(self.column(col_ix, cx).name)
     }
 
     fn render_td(

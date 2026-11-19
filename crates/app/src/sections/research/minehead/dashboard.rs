@@ -2,7 +2,6 @@
 //! floor rewards.
 
 use super::boss_name;
-use crate::sections::research::sushi::columns::{self, Column};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{
@@ -16,6 +15,7 @@ use gpui_kit::component::table::{Table, TableBody, TableCell, TableRow};
 use idleon_minehead::{Inputs, game, upgrade_desc};
 use idleon_ui::format;
 use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, show_number};
+use idleon_ui::widgets::{TableColumn, table_header};
 
 /// How many figures one strip holds before the next strip starts.
 const FIGURES_PER_STRIP: usize = 5;
@@ -170,17 +170,17 @@ impl Dashboard {
 }
 
 /// The upgrade table's columns.
-const COLUMNS: [Column; 5] = [
-    ("Name", Some(150.0), false),
-    ("Lv", Some(96.0), true),
-    ("Description", None, false),
-    ("Cost", Some(80.0), true),
-    ("Req", Some(48.0), true),
+const COLUMNS: [TableColumn; 5] = [
+    TableColumn::text("Name").width(150.0),
+    TableColumn::number("Lv").width(96.0),
+    TableColumn::text("Description"),
+    TableColumn::number("Cost").width(80.0),
+    TableColumn::number("Req").width(48.0),
 ];
 
 /// A cell of the upgrade table's column `index`.
 fn cell(index: usize) -> TableCell {
-    columns::cell(&COLUMNS, index)
+    COLUMNS[index].cell()
 }
 
 pub(super) fn pane(
@@ -285,7 +285,7 @@ pub(super) fn pane(
             .child(
                 Table::new()
                     .small()
-                    .child(columns::header(&COLUMNS))
+                    .child(table_header(&COLUMNS))
                     .child(body),
             ),
     );

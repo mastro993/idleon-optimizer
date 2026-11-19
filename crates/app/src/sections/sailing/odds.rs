@@ -27,7 +27,9 @@ use idleon_sailing::{
     fleet_chest_payout_breakdown, near_full_pile,
 };
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, KpiStrip, Statistic, TableColumn, Tone, fit_columns,
+};
 
 /// A value with the text its tooltip shows.
 #[derive(Clone)]
@@ -64,7 +66,7 @@ struct PileRow {
 pub(crate) struct View {
     summary: SharedString,
     kpis: [(&'static str, &'static str, SharedString, SharedString); 7],
-    headers: Vec<table::Col>,
+    headers: Vec<TableColumn>,
     generated: SharedString,
     tiers: Vec<TierRow>,
     boats: usize,
@@ -155,7 +157,7 @@ pub(crate) fn odds_tab(
             div()
                 .id("odds-boat-table")
                 .h(table::data_height(view.boats, 33.0, table_height))
-                .child(DataTable::new(&state.sailing_controls.odds_boats_table)),
+                .child(fit_columns(DataTable::new(&state.sailing_controls.odds_boats_table), &state.sailing_controls.odds_boats_table)),
         )
         .child(callout(
             "odds-boat-callout",
@@ -166,24 +168,24 @@ pub(crate) fn odds_tab(
     let pile = Card::new()
         .header(CardHeader::new("Near-full loot pile").description(view.talent.clone()))
         .child(div().id("odds-pile-table").child(table::table("odds-pile-scroll", 
-            &table::columns(&[
-                ("Transition", false, 0.0),
-                ("Promotion chance", true, 0.0),
-                ("Value / payout", true, 0.0),
-                ("Value on success", true, 0.0),
-                ("Artifact multiplier", true, 0.0),
-            ]),
+            &[
+                TableColumn::text("Transition"),
+                TableColumn::number("Promotion chance"),
+                TableColumn::number("Value / payout"),
+                TableColumn::number("Value on success"),
+                TableColumn::number("Artifact multiplier"),
+            ],
             view.pile.iter().map(|row| {
                 table::Row::new(("pile-row", row.tier))
-                    .child(table::text(
+                    .child(table::cell(
                         div()
                             .id(("pile-transition", row.tier))
                             .child(row.transition.clone()),
                     ))
-                    .child(table::number(row.chance.clone()))
-                    .child(table::number(row.value.clone()))
-                    .child(table::number(row.success.clone()))
-                    .child(table::number(row.artifact.clone()))
+                    .child(table::cell(row.chance.clone()))
+                    .child(table::cell(row.value.clone()))
+                    .child(table::cell(row.success.clone()))
+                    .child(table::cell(row.artifact.clone()))
             }),
         )))
         .child(callout(
@@ -209,44 +211,48 @@ pub(crate) fn odds_tab(
 
 fn tier_row(row: &TierRow) -> table::Row {
     let tipped = |id: ElementId, cell: &Tipped| {
-        table::number(table::tip(id, cell.tip.clone(), cell.text.clone()))
+        table::cell(table::tip(id, cell.tip.clone(), cell.text.clone()))
     };
     let [gold, primary, rare] = &row.currencies;
     table::Row::new(("odds-row", row.tier))
-        .child(table::text(
-            div()
-                .id(("odds-tier", row.tier))
-                .child(format!("Tier {}", row.tier)),
+        .child(table::cell(
+            v_flex()
+                .gap_1()
+                .child(
+                    div()
+                        .id(("odds-tier", row.tier))
+                        .child(format!("Tier {}", row.tier)),
+                )
+                .child(
+                    div()
+                        .id((
+                            if row.kept {
+                                "odds-kept"
+                            } else {
+                                "odds-discarded"
+                            },
+                            row.tier,
+                        ))
+                        .child(if row.kept {
+                            table::tag("Kept", Tone::Success)
+                        } else {
+                            table::tag("Discarded", Tone::Neutral)
+                        }),
+                ),
         ))
         .child(tipped(("odds-exact", row.tier).into(), &row.exact))
         .child(tipped(
             ("odds-cumulative", row.tier).into(),
             &row.cumulative,
         ))
-        .child(table::number(row.per_hour.clone()))
-        .child(table::number(row.multiplier.clone()))
-        .child(table::number(row.payouts.clone()))
+        .child(table::cell(row.per_hour.clone()))
+        .child(table::cell(row.multiplier.clone()))
+        .child(table::cell(row.payouts.clone()))
         .child(tipped(("odds-average", row.tier).into(), &row.average))
         .child(tipped(("odds-gold", row.tier).into(), gold))
         .child(tipped(("odds-primary", row.tier).into(), primary))
         .child(tipped(("odds-rare", row.tier).into(), rare))
-        .child(table::number(row.artifact.clone()))
-        .child(table::text(
-            div()
-                .id((
-                    if row.kept {
-                        "odds-kept"
-                    } else {
-                        "odds-discarded"
-                    },
-                    row.tier,
-                ))
-                .child(if row.kept {
-                    table::tag("Kept", Tone::Success)
-                } else {
-                    table::tag("Discarded", Tone::Neutral)
-                }),
-        ))
+        .child(table::cell(row.artifact.clone()))
 }
 
 /// Weigh the fleet's tiers once and fill the per-boat table.
@@ -334,27 +340,20 @@ fn build(state: &AppState, cx: &mut App) -> View {
             artifact: format!("{:.1}x", row.artifact_multiplier).into(),
         })
         .collect();
-    let headers = [
-        ("Tier".to_string(), false, 80.0),
-        ("Exact chance".into(), true, 110.0),
-        ("Tier+ chance".into(), true, 110.0),
-        ("Chests/hr".into(), true, 90.0),
-        ("Value / payout ×".into(), true, 130.0),
-        ("Guaranteed payouts".into(), true, 150.0),
-        ("Average value / payout".into(), true, 180.0),
-        (
-            format!("{} / opened chest", currency(0).name()),
-            true,
-            230.0,
-        ),
-        (format!("{} / opened chest", primary.name()), true, 230.0),
-        (format!("{} / opened chest", rare.name()), true, 230.0),
-        ("Artifact chance ×".into(), true, 140.0),
-        ("Filter".into(), false, 110.0),
-    ]
-    .into_iter()
-    .map(|(title, numeric, width)| (title.into(), numeric, width))
-    .collect();
+    let headers = vec![
+        // The tier carries its filter tag, which saves a column.
+        TableColumn::text("Tier").width(104.),
+        TableColumn::number("Exact chance").width(76.),
+        TableColumn::number("Tier+ chance").width(76.),
+        TableColumn::number("Chests/hr").width(64.),
+        TableColumn::number("Value / payout ×").width(72.),
+        TableColumn::number("Guaranteed payouts").width(96.),
+        TableColumn::number("Average value / payout").width(80.),
+        TableColumn::titled(format!("{} / opened chest", currency(0).name())).numeric(),
+        TableColumn::titled(format!("{} / opened chest", primary.name())).numeric(),
+        TableColumn::titled(format!("{} / opened chest", rare.name())).numeric(),
+        TableColumn::number("Artifact chance ×").width(72.),
+    ];
     View {
         summary: format!(
             "{:.2} chests/hr · rare-chest scale {weighted:.3}x · tier {minimum_tier}+ kept",

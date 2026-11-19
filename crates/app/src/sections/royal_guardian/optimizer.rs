@@ -7,7 +7,7 @@
 //! the recommendation the section already showed.
 
 use super::overview::kpi;
-use super::table::{Col, table, text};
+use super::table::{table, text};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, IntoElement, Styled, Window, div, px};
@@ -17,7 +17,7 @@ use gpui_kit::component::select::Select;
 use gpui_kit::component::{Disableable as _, Sizable as _, h_flex, v_flex};
 use idleon_royal_guardian::{Candidate, Objective, Outcome};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP};
+use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, TableColumn};
 
 /// The objective picker's options.
 pub(super) fn objective_choices() -> Vec<Choice<Objective>> {
@@ -214,7 +214,7 @@ fn moves(best: &Candidate, cx: &App) -> AnyElement {
         .id("royal-optimizer-moves")
         .child(table(
             "royal-optimizer-move",
-            &[Col::Text("#"), Col::Text("Move")],
+            &[TableColumn::text("#"), TableColumn::text("Move")],
             rows,
             cx,
         ))

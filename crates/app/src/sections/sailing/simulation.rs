@@ -23,7 +23,7 @@ use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_fl
 use idleon_sailing::{AssignmentMode, Goal, SimResult, SimSummary};
 use idleon_ui::format;
 use idleon_ui::widgets::{
-    Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Statistic, TEXT_BODY, show_number,
+    Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Statistic, TEXT_BODY, TableColumn, show_number,
 };
 
 /// What a simulation result was produced from; a change marks it stale.
@@ -395,24 +395,24 @@ fn results_card(view: &View, stale: bool, muted: gpui::Hsla) -> AnyElement {
         "Currency outcome distribution",
         table::table(
             "sailing-sim-currency-scroll",
-            &table::columns(&[
-                ("Currency", false, 0.0),
-                ("Mean value", true, 0.0),
-                ("P10", true, 0.0),
-                ("P50", true, 0.0),
-                ("P90", true, 0.0),
-                ("Avg payouts", true, 0.0),
-            ]),
+            &[
+                TableColumn::text("Currency"),
+                TableColumn::number("Mean value"),
+                TableColumn::number("P10"),
+                TableColumn::number("P50"),
+                TableColumn::number("P90"),
+                TableColumn::number("Avg payouts"),
+            ],
             view.currencies.iter().map(|(key, label, cells)| {
                 table::Row::new(SharedString::from(format!(
                     "sailing-sim-currency-row-{key}"
                 )))
-                .child(table::text(
+                .child(table::cell(
                     div()
                         .id(SharedString::from(format!("sailing-sim-currency-{key}")))
                         .child(*label),
                 ))
-                .children(cells.iter().cloned().map(table::number))
+                .children(cells.iter().cloned().map(table::cell))
             }),
         ),
     );
@@ -421,22 +421,22 @@ fn results_card(view: &View, stale: bool, muted: gpui::Hsla) -> AnyElement {
         "Final pile tier composition",
         table::table(
             "sailing-sim-tier-scroll",
-            &table::columns(&[
-                ("Tier", false, 0.0),
-                ("Average count", true, 0.0),
-                ("Pile share", true, 0.0),
-                ("Average value / payout", true, 0.0),
-                ("Average opened value / chest", true, 0.0),
-                ("Opened value contribution", true, 0.0),
-            ]),
+            &[
+                TableColumn::text("Tier"),
+                TableColumn::number("Average count"),
+                TableColumn::number("Pile share"),
+                TableColumn::number("Average value / payout"),
+                TableColumn::number("Average opened value / chest"),
+                TableColumn::number("Opened value contribution"),
+            ],
             view.tiers.iter().map(|(tier, cells)| {
                 table::Row::new(("sailing-sim-tier-row", *tier))
-                    .child(table::text(
+                    .child(table::cell(
                         div()
                             .id(SharedString::from(format!("sailing-sim-tier-{tier}")))
                             .child(format!("Tier {tier}")),
                     ))
-                    .children(cells.iter().cloned().map(table::number))
+                    .children(cells.iter().cloned().map(table::cell))
             }),
         ),
     );
@@ -445,27 +445,27 @@ fn results_card(view: &View, stale: bool, muted: gpui::Hsla) -> AnyElement {
         "Average banked chest by pile position",
         table::table(
             "sailing-sim-slot-scroll",
-            &table::columns(&[
-                ("Position", false, 0.0),
-                ("Occupied", true, 0.0),
-                ("Average tier", true, 0.0),
-                ("Most likely tier", true, 0.0),
-                ("Value / payout", true, 0.0),
-                ("Payouts", true, 0.0),
-                ("Opened value", true, 0.0),
-                ("Artifact x", true, 0.0),
-                ("Gold", true, 0.0),
-                ("Primary", true, 0.0),
-                ("Rare", true, 0.0),
-            ]),
+            &[
+                TableColumn::text("Position"),
+                TableColumn::number("Occupied"),
+                TableColumn::number("Average tier"),
+                TableColumn::number("Most likely tier"),
+                TableColumn::number("Value / payout"),
+                TableColumn::number("Payouts"),
+                TableColumn::number("Opened value"),
+                TableColumn::number("Artifact x"),
+                TableColumn::number("Gold"),
+                TableColumn::number("Primary"),
+                TableColumn::number("Rare"),
+            ],
             view.slots.iter().map(|(index, cells)| {
                 table::Row::new(("sailing-sim-slot-row", *index))
-                    .child(table::text(
+                    .child(table::cell(
                         div()
                             .id(SharedString::from(format!("sailing-sim-slot-{index}")))
                             .child(format!("#{}", index + 1)),
                     ))
-                    .children(cells.iter().cloned().map(table::number))
+                    .children(cells.iter().cloned().map(table::cell))
             }),
         ),
     )

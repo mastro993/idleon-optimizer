@@ -2,7 +2,6 @@
 //! top strategies.
 
 use super::{OptimizeInputs, Params};
-use crate::sections::research::sushi::columns::{self, Column};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
@@ -19,6 +18,7 @@ use idleon_minehead::{MonteCarlo, Optimized, Options};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
 use idleon_ui::widgets::{Caption, Card, CardHeader, Tone, show_number};
+use idleon_ui::widgets::{TableColumn, table_header};
 
 impl AppState {
     /// Start the strategy search over the current slider ranges.
@@ -246,23 +246,23 @@ pub(super) fn pane(
 }
 
 /// The strategy table's columns.
-const COLUMNS: [Column; 10] = [
-    ("#", Some(36.0), true),
-    ("Win%", None, true),
-    ("Avg Dmg", None, true),
-    ("T1 Dmg", None, true),
-    ("Turns", None, true),
-    ("Dmg/Cmt", None, true),
-    ("EV", None, true),
-    ("Min", None, true),
-    ("Cap", None, true),
-    ("HP", None, true),
+const COLUMNS: [TableColumn; 10] = [
+    TableColumn::number("#").width(36.0),
+    TableColumn::number("Win%"),
+    TableColumn::number("Avg Dmg"),
+    TableColumn::number("T1 Dmg"),
+    TableColumn::number("Turns"),
+    TableColumn::number("Dmg/Cmt"),
+    TableColumn::number("EV"),
+    TableColumn::number("Min"),
+    TableColumn::number("Cap"),
+    TableColumn::number("HP"),
 ];
 
 fn results(result: &Optimized, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().muted_foreground;
     let best = &result.best;
-    let cell = |index| columns::cell(&COLUMNS, index).min_w(px(56.0));
+    let cell = |index: usize| COLUMNS[index].cell();
     let body =
         TableBody::new().children(result.top.iter().enumerate().map(|(index, candidate)| {
             let params = &candidate.params;
@@ -291,7 +291,7 @@ fn results(result: &Optimized, cx: &mut Context<AppState>) -> AnyElement {
             .child(
                 Table::new()
                     .small()
-                    .child(columns::header(&COLUMNS))
+                    .child(table_header(&COLUMNS))
                     .child(body),
             ),
     );

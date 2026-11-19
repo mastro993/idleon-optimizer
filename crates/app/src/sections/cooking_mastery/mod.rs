@@ -24,7 +24,8 @@ use crate::ui::layout;
 use controls::Derived;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, Role, Styled, Window, div, px,
+    AnyElement, Context, ElementId, Entity, IntoElement, ParentElement, Role, Styled, Window, div,
+    px,
 };
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::Button;
@@ -32,14 +33,15 @@ use gpui_kit::component::empty::{
     Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 };
 use gpui_kit::component::scroll::ScrollableElement as _;
-use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::table::{Table, TableBody, TableRow};
 use gpui_kit::component::tag::Tag;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
 use idleon_cooking_mastery::{Mastery, RIBBON_CHANCE, UPGRADE_NAMES, Upgrade};
 use idleon_ui::format;
 use idleon_ui::formula::FormulaTree;
 use idleon_ui::widgets::{
-    Callout, Caption, Card, CardHeader, KpiStrip, PANEL_GAP, PANEL_PADDING, Statistic, Tone,
+    Callout, Caption, Card, CardHeader, KpiStrip, PANEL_GAP, PANEL_PADDING, Statistic, TableColumn,
+    Tone, table_header,
 };
 
 /// The page's two tabs.
@@ -277,19 +279,12 @@ fn recommendation(
 fn comparison(ranking: &[Upgrade], cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().muted_foreground;
     let table = table(
-        &[
-            ("#", false),
-            ("Upgrade", false),
-            ("Level", true),
-            ("Per Lv", true),
-            ("Scaling", true),
-            ("Current Bonus%", true),
-            ("+1 Gain%", true),
-        ],
+        &COMPARISON,
         ranking.iter().enumerate().map(|(position, row)| {
-            TableRow::new()
-                .id(("cooking-mastery-comparison-row", row.index))
-                .children(comparison_row(position, row))
+            (
+                ElementId::from(("cooking-mastery-comparison-row", row.index)),
+                comparison_row(position, row),
+            )
         }),
     );
     Card::new()
@@ -308,8 +303,19 @@ fn comparison(ranking: &[Upgrade], cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
+/// The comparison's columns: the rank and the figures pinned, the name wraps.
+const COMPARISON: [TableColumn; 7] = [
+    TableColumn::text("#").width(88.),
+    TableColumn::text("Upgrade"),
+    TableColumn::number("Level").width(64.),
+    TableColumn::number("Per Lv").width(72.),
+    TableColumn::number("Scaling").width(80.),
+    TableColumn::number("Current Bonus%").width(128.),
+    TableColumn::number("+1 Gain%").width(120.),
+];
+
 /// One comparison row; the page marks the top gain and flags the locked rows.
-fn comparison_row(position: usize, row: &Upgrade) -> [TableCell; 7] {
+fn comparison_row(position: usize, row: &Upgrade) -> Vec<AnyElement> {
     let place = h_flex()
         .id(("cooking-mastery-place", row.index))
         .gap_1()
@@ -333,14 +339,14 @@ fn comparison_row(position: usize, row: &Upgrade) -> [TableCell; 7] {
                 row.required_level
             )))
         });
-    [
-        TableCell::new().child(place),
-        text_cell(name),
-        number_cell(whole(row.level)),
-        number_cell(whole(row.per_lv)),
-        number_cell(format!("{:.2}", row.scaling)),
-        number_cell(format!("{:.2}%", row.bonus)),
-        number_cell(format!("+{:.4}%", row.gain_pct)),
+    vec![
+        place.into_any_element(),
+        name.into_any_element(),
+        whole(row.level).into_any_element(),
+        whole(row.per_lv).into_any_element(),
+        format!("{:.2}", row.scaling).into_any_element(),
+        format!("{:.2}%", row.bonus).into_any_element(),
+        format!("+{:.4}%", row.gain_pct).into_any_element(),
     ]
 }
 
@@ -358,30 +364,24 @@ fn span(hours: f64) -> String {
     }
 }
 
-/// A kit table with these `(title, numeric)` columns over `rows`. Number
-/// columns sit right-aligned, as `docs/ui-kit/data.md` sets them.
-fn table(columns: &[(&'static str, bool)], rows: impl IntoIterator<Item = TableRow>) -> Table {
+/// A kit table over `columns`, one row per `(id, cells)` of `rows`, each cell
+/// sized and aligned by its column (`docs/ui-kit/data.md`).
+fn table(
+    columns: &[TableColumn],
+    rows: impl IntoIterator<Item = (ElementId, Vec<AnyElement>)>,
+) -> Table {
     Table::new()
+        .child(table_header(columns))
         .child(
-            TableHeader::new().child(TableRow::new().children(columns.iter().map(
-                |(title, numeric)| {
-                    TableHead::new()
-                        .when(*numeric, TableHead::text_right)
-                        .child(*title)
-                },
-            ))),
+            TableBody::new().children(rows.into_iter().map(|(id, cells)| {
+                TableRow::new().id(id).children(
+                    columns
+                        .iter()
+                        .zip(cells)
+                        .map(|(column, cell)| column.cell().child(cell)),
+                )
+            })),
         )
-        .child(TableBody::new().children(rows))
-}
-
-/// A cell whose content wraps inside its column.
-fn text_cell(content: impl IntoElement) -> TableCell {
-    TableCell::new().child(div().min_w_0().child(content))
-}
-
-/// A right-aligned number cell.
-fn number_cell(text: String) -> TableCell {
-    TableCell::new().text_right().child(text)
 }
 
 /// The shared formula tree, sized like the other sections' breakdown cards.

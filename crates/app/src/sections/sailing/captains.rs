@@ -19,7 +19,7 @@ use idleon_sailing::{
     FleetPlan, RollQuality, captain_bonus, captain_bonus_name, level_time, roll_quality,
 };
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone, fit_columns};
 
 /// The figures the tab shows, read once per key.
 pub(crate) struct View {
@@ -169,7 +169,7 @@ pub(crate) fn captains_tab(
             div()
                 .id("captains-table")
                 .h(table::data_height(view.count, 33.0, table_height))
-                .child(DataTable::new(&state.sailing_controls.captains_table)),
+                .child(fit_columns(DataTable::new(&state.sailing_controls.captains_table), &state.sailing_controls.captains_table)),
         )
         .child(
             Caption::new(

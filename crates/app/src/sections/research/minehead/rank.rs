@@ -1,7 +1,6 @@
 //! Rank Upgrades: what one more level of each unlocked upgrade buys.
 
 use super::{boss_name, run_inputs};
-use crate::sections::research::sushi::columns::{self, Column};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
@@ -15,6 +14,7 @@ use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_minehead::RankOutcome;
 use idleon_ui::format;
 use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone};
+use idleon_ui::widgets::{TableColumn, table_header};
 
 impl AppState {
     /// Rank every unlocked upgrade's +1 against a baseline run.
@@ -158,20 +158,20 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
 }
 
 /// The ranking table's columns.
-const COLUMNS: [Column; 9] = [
-    ("#", Some(36.0), true),
-    ("Upgrade", Some(150.0), false),
-    ("Affordable", Some(80.0), false),
-    ("Dmg%", None, true),
-    ("Cost", None, true),
-    ("Dmg/Cost", None, true),
-    ("Win%", Some(110.0), true),
-    ("Avg Dmg", None, true),
-    ("Turns", None, true),
+const COLUMNS: [TableColumn; 9] = [
+    TableColumn::number("#").width(36.0),
+    TableColumn::text("Upgrade").width(150.0),
+    TableColumn::text("Affordable").width(80.0),
+    TableColumn::number("Dmg%"),
+    TableColumn::number("Cost"),
+    TableColumn::number("Dmg/Cost"),
+    TableColumn::number("Win%").width(110.0),
+    TableColumn::number("Avg Dmg"),
+    TableColumn::number("Turns"),
 ];
 
 fn result_card(result: &RankOutcome, muted: gpui::Hsla, success: gpui::Hsla) -> AnyElement {
-    let cell = |index| columns::cell(&COLUMNS, index).min_w(px(56.0));
+    let cell = |index: usize| COLUMNS[index].cell();
     let body = TableBody::new().children(result.rows.iter().enumerate().map(|(rank, row)| {
         TableRow::new()
             .child(cell(0).child(format!("{}", rank + 1)))
@@ -206,7 +206,7 @@ fn result_card(result: &RankOutcome, muted: gpui::Hsla, success: gpui::Hsla) -> 
             .child(
                 Table::new()
                     .small()
-                    .child(columns::header(&COLUMNS))
+                    .child(table_header(&COLUMNS))
                     .child(body),
             ),
     );

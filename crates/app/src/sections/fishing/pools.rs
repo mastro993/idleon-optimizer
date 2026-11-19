@@ -5,10 +5,10 @@ use super::table::{self, Kpi};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div};
-use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
+use gpui_kit::component::{ActiveTheme as _, v_flex};
 use idleon_fishing::{Evaluation, Objective, PoolOutcome, ties};
 use idleon_ui::format;
-use idleon_ui::widgets::{Card, CardHeader, Tone};
+use idleon_ui::widgets::{Card, CardHeader, TableColumn, Tone};
 
 /// The character's fishing context: its summary and two strips of figures.
 pub(crate) struct Kpis {
@@ -237,7 +237,8 @@ pub(crate) fn location_table(locations: &Locations, cx: &mut Context<AppState>) 
     let rows = locations.rows.iter().enumerate().map(|(index, row)| {
         let entity = cx.entity();
         let location = row.location.clone();
-        let mut first = h_flex()
+        // A column, so the name wraps inside its share of the table.
+        let mut first = v_flex()
             .id(row.id.clone())
             .role(Role::Button)
             .aria_label(format!("{}: select this pool", row.label))
@@ -247,7 +248,8 @@ pub(crate) fn location_table(locations: &Locations, cx: &mut Context<AppState>) 
                     state.set_fishing_location(location.clone(), cx)
                 });
             })
-            .gap_2()
+            .items_start()
+            .gap_1()
             .child(if row.selected {
                 SharedString::from(format!("{} · selected", row.label))
             } else {
@@ -257,19 +259,19 @@ pub(crate) fn location_table(locations: &Locations, cx: &mut Context<AppState>) 
             first = first.child(table::tag("Selected", Tone::Accent));
         }
         table::Row::new(("fishing-location-row", index))
-            .child(table::text(first))
-            .child(table::text(row.pool.clone()))
-            .child(table::text(div().text_color(muted).child(row.spot.clone())))
+            .child(table::cell(first))
+            .child(table::cell(row.pool.clone()))
+            .child(table::cell(div().text_color(muted).child(row.spot.clone())))
             .children(
                 row.shares
                     .iter()
-                    .map(|share| table::number(div().text_color(muted).child(share.clone()))),
+                    .map(|share| table::cell(div().text_color(muted).child(share.clone()))),
             )
-            .child(table::number(row.per_catch.clone()))
-            .child(table::number(row.fish.clone()))
-            .child(table::number(row.exp.clone()))
-            .child(table::number(row.panel.clone()))
-            .child(table::number(
+            .child(table::cell(row.per_catch.clone()))
+            .child(table::cell(row.fish.clone()))
+            .child(table::cell(row.exp.clone()))
+            .child(table::cell(row.panel.clone()))
+            .child(table::cell(
                 div()
                     .text_color(if row.ratio_good { success } else { warning })
                     .child(row.ratio.clone()),
@@ -281,20 +283,20 @@ pub(crate) fn location_table(locations: &Locations, cx: &mut Context<AppState>) 
         )
         .child(div().id("fishing-table").child(table::table(
             "fishing-table-scroll",
-            &table::columns(&[
-                ("Location", false, 290.0),
-                ("Pool", false, 110.0),
-                ("Spot depth", false, 140.0),
-                ("Fish 1", true, 90.0),
-                ("Fish 2", true, 90.0),
-                ("Fish 3", true, 90.0),
-                ("Fish 4", true, 90.0),
-                ("Fish / catch", true, 100.0),
-                ("Fish", true, 90.0),
-                ("Fishing EXP", true, 110.0),
-                ("Panel EXP/hr", true, 120.0),
-                ("Real ÷ panel", true, 100.0),
-            ]),
+            &[
+                TableColumn::text("Location"),
+                TableColumn::text("Pool").width(88.),
+                TableColumn::text("Spot depth"),
+                TableColumn::number("Fish 1").width(84.),
+                TableColumn::number("Fish 2").width(84.),
+                TableColumn::number("Fish 3").width(84.),
+                TableColumn::number("Fish 4").width(84.),
+                TableColumn::number("Fish / catch").width(56.),
+                TableColumn::number("Fish").width(48.),
+                TableColumn::number("Fishing EXP").width(64.),
+                TableColumn::number("Panel EXP/hr").width(72.),
+                TableColumn::number("Real ÷ panel").width(64.),
+            ],
             rows,
         )))
         .into_any_element()

@@ -13,7 +13,7 @@ use gpui_kit::component::table::{Column, TableDelegate, TableState};
 use gpui_kit::component::tag::Tag;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_killroy::{CharacterBuffs, Plan, RowSummary};
-use idleon_ui::widgets::{Caption, TEXT_MONO, Tone};
+use idleon_ui::widgets::{Caption, ColumnFit, FitColumns, TEXT_MONO, Tone};
 use std::sync::Arc;
 
 /// One column: the kit column, how a row draws in it and how it reads aloud.
@@ -33,6 +33,7 @@ impl<T> Cell<T> {
 pub(crate) struct Rows<T> {
     columns: Vec<Cell<T>>,
     rows: Vec<T>,
+    fit: ColumnFit,
 }
 
 impl<T: 'static> Rows<T> {
@@ -40,11 +41,22 @@ impl<T: 'static> Rows<T> {
         Self {
             columns,
             rows: Vec::new(),
+            fit: ColumnFit::default(),
         }
     }
 
     fn text(&self, row_ix: usize, col_ix: usize) -> Option<SharedString> {
         Some((self.columns.get(col_ix)?.text)(self.rows.get(row_ix)?))
+    }
+}
+
+impl<T: 'static> FitColumns for Rows<T> {
+    fn column_fit(&mut self) -> &mut ColumnFit {
+        &mut self.fit
+    }
+
+    fn natural_column(&self, col_ix: usize, _: &App) -> Column {
+        self.columns[col_ix].column.clone()
     }
 }
 
@@ -57,8 +69,8 @@ impl<T: 'static> TableDelegate for Rows<T> {
         self.rows.len()
     }
 
-    fn column(&self, col_ix: usize, _: &App) -> Column {
-        self.columns[col_ix].column.clone()
+    fn column(&self, col_ix: usize, cx: &App) -> Column {
+        self.fit.apply(self.natural_column(col_ix, cx))
     }
 
     fn render_td(
@@ -122,10 +134,6 @@ fn mono(text: &SharedString, cx: &App) -> AnyElement {
         .into_any_element()
 }
 
-fn plain(text: &SharedString) -> AnyElement {
-    div().child(text.clone()).into_any_element()
-}
-
 /// A name over a caption, as a two-line cell.
 fn stacked(title: &SharedString, caption: &SharedString) -> AnyElement {
     v_flex()
@@ -154,24 +162,31 @@ pub(crate) struct QueueRow {
 
 pub(crate) fn queue_columns() -> Vec<Cell<QueueRow>> {
     vec![
+        // The queue sits in a narrow rail, so the character stacks under its
+        // week and the configurations keep the width that is left.
         Cell::new(
-            Column::new("week", "Week").width(gpui::px(72.)),
-            |row, _| plain(&row.week),
-            |row| row.week.clone(),
+            Column::new("week", "Week")
+                .width(gpui::px(100.))
+                .min_width(gpui::px(92.)),
+            |row, _| stacked(&row.week, &row.character),
+            |row| format!("{} · {}", row.week, row.character).into(),
         ),
         Cell::new(
-            Column::new("map", "Map / class").width(gpui::px(132.)),
+            Column::new("map", "Map / class")
+                .width(gpui::px(160.))
+                .min_width(gpui::px(128.)),
             |row, _| stacked(&row.map, &row.detail),
             |row| format!("{} · {}", row.map, row.detail).into(),
         ),
         Cell::new(
-            Column::new("character", "Character").width(gpui::px(80.)),
-            |row, _| plain(&row.character),
-            |row| row.character.clone(),
-        ),
-        Cell::new(
-            Column::new("configurations", "Configurations").width(gpui::px(140.)),
-            |row, _| Caption::new(row.configurations.clone()).into_any_element(),
+            Column::new("configurations", "Configurations").width(gpui::px(300.)),
+            // Two lines of the queue's configurations fit the two-line row.
+            |row, _| {
+                div()
+                    .whitespace_normal()
+                    .child(Caption::new(row.configurations.clone()))
+                    .into_any_element()
+            },
             |row| row.configurations.clone(),
         ),
     ]

@@ -2,7 +2,6 @@
 //! step.
 
 use super::{boss_name, run_inputs};
-use crate::sections::research::sushi::columns::{self, Column};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
@@ -16,6 +15,7 @@ use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_minehead::Path;
 use idleon_ui::format;
 use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone};
+use idleon_ui::widgets::{TableColumn, table_header};
 
 impl AppState {
     /// Find the affordable, cost-effective upgrade order.
@@ -161,17 +161,17 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
 }
 
 /// The path table's columns.
-const COLUMNS: [Column; 6] = [
-    ("Step", Some(56.0), true),
-    ("Buy upgrade", None, false),
-    ("Cost", None, true),
-    ("Win%", None, true),
-    ("Avg Dmg", None, true),
-    ("Turns", None, true),
+const COLUMNS: [TableColumn; 6] = [
+    TableColumn::number("Step").width(56.0),
+    TableColumn::text("Buy upgrade"),
+    TableColumn::number("Cost"),
+    TableColumn::number("Win%"),
+    TableColumn::number("Avg Dmg"),
+    TableColumn::number("Turns"),
 ];
 
 fn result_card(result: &Path, muted: gpui::Hsla, success: gpui::Hsla) -> AnyElement {
-    let cell = |index| columns::cell(&COLUMNS, index).min_w(px(56.0));
+    let cell = |index: usize| COLUMNS[index].cell();
     let body = TableBody::new().children(result.steps.iter().map(|step| {
         let name = idleon_minehead::game()
             .upgrade(step.upg_idx)
@@ -201,7 +201,7 @@ fn result_card(result: &Path, muted: gpui::Hsla, success: gpui::Hsla) -> AnyElem
             .child(
                 Table::new()
                     .small()
-                    .child(columns::header(&COLUMNS))
+                    .child(table_header(&COLUMNS))
                     .child(body),
             ),
     );

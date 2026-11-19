@@ -1,7 +1,7 @@
 //! The Overview tab: counters, world progress, raw clearing values and range
 //! targets.
 
-use super::table::{Col, table, text};
+use super::table::{table, text};
 use super::world_rail;
 use crate::state::AppState;
 use gpui::prelude::*;
@@ -15,7 +15,7 @@ use idleon_royal_guardian::RoyalGuardian;
 use idleon_royal_guardian::{self as royal_guardian, Clear, ClearState, RangeTarget};
 use idleon_ui::format;
 use idleon_ui::widgets::{
-    Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, Statistic, TEXT_KPI, Tone,
+    Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, Statistic, TEXT_KPI, TableColumn, Tone,
 };
 
 /// The overview pane, in order: counters, world progress, the
@@ -217,14 +217,14 @@ fn clearing_values(royal: &RoyalGuardian, world: usize, cx: &mut Context<AppStat
     let table = table(
         "royal-clear-row",
         &[
-            Col::Text("Outpost"),
-            Col::Text("State"),
-            Col::Number("Progress"),
-            Col::Number("Requirement"),
-            Col::Number("Remaining"),
-            Col::Number("Militia"),
-            Col::Number("Clears /hr"),
-            Col::Number("ETA"),
+            TableColumn::text("Outpost"),
+            TableColumn::text("State"),
+            TableColumn::number("Progress"),
+            TableColumn::number("Requirement"),
+            TableColumn::number("Remaining"),
+            TableColumn::number("Militia"),
+            TableColumn::number("Clears /hr"),
+            TableColumn::number("ETA"),
         ],
         rows,
         cx,
@@ -292,13 +292,13 @@ fn range_targets(
     let table = table(
         "royal-range-row",
         &[
-            Col::Text("Outpost"),
-            Col::Text("Type"),
-            Col::Number("Guards"),
-            Col::Number("Range"),
-            Col::Text("Next node"),
-            Col::Number("Distance"),
-            Col::Text("Plan"),
+            TableColumn::text("Outpost"),
+            TableColumn::text("Type").width(96.),
+            TableColumn::number("Guards").width(72.),
+            TableColumn::number("Range").width(72.),
+            TableColumn::text("Next node").width(104.),
+            TableColumn::number("Distance").width(88.),
+            TableColumn::text("Plan"),
         ],
         rows,
         cx,

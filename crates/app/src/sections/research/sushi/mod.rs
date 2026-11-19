@@ -5,7 +5,6 @@
 //! the tab state the window keeps and renders the subtabs.
 
 mod best;
-pub(crate) mod columns;
 mod currency;
 mod overview;
 mod tiers;
