@@ -5,24 +5,26 @@
 //! cancelled notice and stale marker are the ones every other section uses.
 //! Every trial starts with an empty pile and all boats freshly departed, and
 //! the tier filter applies only until the pile reaches its near-full target,
-//! matching the game's order.
+//! matching the game's order. A stored run is formatted once, when it lands
+//! ([`View::of`]); the tables are bounded by the pile's slots and tiers.
 
-use super::text_kpi;
+use super::table;
+use super::{choice_button, field, islands};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::forms::{Choice, Select, Stepper};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
+use crate::ui::number_field;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div};
-use idleon_sailing::{
-    AssignmentMode, Goal, MAX_HOURS, MAX_TRIALS, MIN_HOURS, MIN_TRIALS, SimCurrencies, SimResult,
-    SimSummary, island_artifact_count, island_distance,
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
+use idleon_sailing::{AssignmentMode, Goal, SimResult, SimSummary};
 use idleon_ui::format;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Statistic, TEXT_BODY, show_number,
+};
 
 /// What a simulation result was produced from; a change marks it stale.
 #[derive(Clone, Debug, PartialEq)]
@@ -41,21 +43,184 @@ pub(crate) struct RunInputs {
     pub(crate) revision: u64,
 }
 
+/// A stored run, formatted once.
+pub(crate) struct View {
+    description: SharedString,
+    kpis: [(&'static str, &'static str, SharedString, SharedString); 7],
+    currencies: Vec<(&'static str, &'static str, [SharedString; 5])>,
+    tiers: Vec<(usize, [SharedString; 5])>,
+    slots: Vec<(usize, [SharedString; 10])>,
+}
+
+impl View {
+    pub(crate) fn of(result: &SimResult) -> Self {
+        let pile = result.pile;
+        let events = result.events;
+        let assignment = match result.setup.mode {
+            AssignmentMode::Optimized => format!("{} optimized", result.setup.goal.id()),
+            AssignmentMode::Saved => "current save".into(),
+        };
+        let currencies = &result.currencies;
+        let total = pile.count.mean;
+        Self {
+            description: format!(
+                "{}h · {} trials · seed {} · Island {} · {assignment} assignment · empty/fresh start",
+                result.setup.hours,
+                result.setup.trials,
+                result.setup.seed,
+                result.setup.island + 1
+            )
+            .into(),
+            kpis: [
+                (
+                    "sailing-sim-pile-count",
+                    "Average final pile",
+                    format!("{:.2} chests", pile.count.mean).into(),
+                    format!("{} near-full target", result.setup.target_count).into(),
+                ),
+                (
+                    "sailing-sim-pile-value",
+                    "Final opened value",
+                    format::value(pile.value.mean).into(),
+                    summary_line(&pile.value).into(),
+                ),
+                (
+                    "sailing-sim-average",
+                    "Average / banked chest",
+                    format::value(pile.average_value_per_chest).into(),
+                    "Total opened value ÷ average chest count".into(),
+                ),
+                (
+                    "sailing-sim-retained",
+                    "Retained vs active",
+                    format!("{:.1}%", result.retained_fraction * 100.0).into(),
+                    "Final pile value ÷ collect-everything value".into(),
+                ),
+                (
+                    "sailing-sim-generated",
+                    "Generated",
+                    format::value(events.generated).into(),
+                    format!(
+                        "{} accepted before near-full",
+                        format::value(events.accepted)
+                    )
+                    .into(),
+                ),
+                (
+                    "sailing-sim-improvements",
+                    "Pile improvements",
+                    format!("{} upgrades", format::value(events.upgrades)).into(),
+                    format!(
+                        "{} higher-tier replacements",
+                        format::value(events.replacements)
+                    )
+                    .into(),
+                ),
+                (
+                    "sailing-sim-discards",
+                    "Discarded / blocked",
+                    format::value(events.filter_discards + events.overflow_discards + events.blocked)
+                        .into(),
+                    format!(
+                        "{} filter · {} overflow · {} full",
+                        format::value(events.filter_discards),
+                        format::value(events.overflow_discards),
+                        format::value(events.blocked)
+                    )
+                    .into(),
+                ),
+            ],
+            currencies: [
+                ("gold", "Gold Bars", currencies.gold),
+                (
+                    "primary",
+                    "Primary treasure (chest island)",
+                    currencies.primary,
+                ),
+                ("rare", "Rare treasure (chest island)", currencies.rare),
+            ]
+            .into_iter()
+            .map(|(key, label, row)| {
+                (
+                    key,
+                    label,
+                    [
+                        format::value(row.value.mean).into(),
+                        format::value(row.value.p10).into(),
+                        format::value(row.value.median).into(),
+                        format::value(row.value.p90).into(),
+                        format!("{:.2}", row.payouts.mean).into(),
+                    ],
+                )
+            })
+            .collect(),
+            tiers: result
+                .tiers
+                .iter()
+                .map(|row| {
+                    let share = if total > 0.0 {
+                        row.average_count / total
+                    } else {
+                        0.0
+                    };
+                    (
+                        row.tier,
+                        [
+                            format!("{:.3}", row.average_count).into(),
+                            format!("{:.1}%", share * 100.0).into(),
+                            format::value(row.average_value_per_payout).into(),
+                            format::value(row.average_opened_value).into(),
+                            format::value(row.opened_value_contribution).into(),
+                        ],
+                    )
+                })
+                .collect(),
+            slots: result
+                .slots
+                .iter()
+                .filter(|slot| slot.occupancy > 0.0)
+                .map(|slot| {
+                    (
+                        slot.index,
+                        [
+                            format!("{:.1}%", slot.occupancy * 100.0).into(),
+                            format!("{:.2}", slot.average_tier).into(),
+                            slot.most_likely_tier
+                                .map_or_else(|| "—".into(), |tier| format!("Tier {tier}"))
+                                .into(),
+                            format::value(slot.average_value_per_payout).into(),
+                            format!("{:.2}", slot.average_payouts).into(),
+                            format::value(slot.average_opened_value).into(),
+                            format!("{}x", format::value(slot.average_artifact_multiplier)).into(),
+                            format::value(slot.average_currency_value[0]).into(),
+                            format::value(slot.average_currency_value[1]).into(),
+                            format::value(slot.average_currency_value[2]).into(),
+                        ],
+                    )
+                })
+                .collect(),
+        }
+    }
+}
+
 /// The simulation tab: controls, the run in flight and the stored results.
 pub(crate) fn simulation_tab(
     state: &mut AppState,
-    _table_height: Pixels,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let task = state.sailing_simulation(cx);
-    let muted = cx.theme().colors.fg_muted;
-    let mut body = div()
+    let runner = state.sailing_sim.read(cx);
+    let running = runner.running();
+    let cancelled = runner.cancelled();
+    let progress = runner.progress().cloned();
+    let stale = runner.is_stale(&state.sailing_sim_inputs());
+    // The stored result drawn is the one the runner still holds.
+    let result = runner.result().and(state.sailing_controls.sim.clone());
+    let muted = cx.theme().muted_foreground;
+    let mut body = v_flex()
         .id("sailing-sim-panel")
-        .flex()
-        .flex_col()
         .gap_3()
-        .p_3()
-        .child(controls(state, cx))
+        .child(controls(state, running, window, cx))
         .child(
             Caption::new(
                 "Every trial starts with an empty pile and all boats freshly departed, so the first \
@@ -65,9 +230,7 @@ pub(crate) fn simulation_tab(
             )
             .text_color(muted),
         );
-    if task.running
-        && let Some(progress) = task.progress.clone()
-    {
+    if running && let Some(progress) = progress {
         let cancel = cx.entity();
         body = body.child(idleon_ui::run_chrome::progress_card(
             "sailing-sim",
@@ -79,119 +242,83 @@ pub(crate) fn simulation_tab(
             },
         ));
     }
-    if task.cancelled {
+    if cancelled {
         body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "sailing-sim-cancelled",
-            task.result.is_some(),
+            result.is_some(),
         ));
     }
-    if let Some(result) = task.result.clone() {
-        body = body.child(results_card(&result, task.stale, cx));
+    if let Some(result) = result {
+        body = body.child(results_card(&result, stale, muted));
     }
-    ScrollArea::new("sailing-sim-scroll")
-        .vertical()
-        .flex_1()
-        .min_h_0()
-        .child(body)
-        .into_any_element()
+    body.into_any_element()
 }
 
-/// The interval presets, the two steppers, the destination and the actions.
-fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let running = state.sailing_simulation(cx).running;
+/// The interval presets, the two number fields, the destination and the actions.
+fn controls(
+    state: &mut AppState,
+    running: bool,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let hours = state.sailing_state.sim_hours;
-    let trials = state.sailing_state.sim_trials;
-    let island = state.sailing_state.sim_island;
-    let available = state.fleet.available_islands().max(1);
     let assignment = match state.sailing_state.mode {
         AssignmentMode::Optimized => format!("optimized {}", state.sailing_state.goal.id()),
         AssignmentMode::Saved => "current save".into(),
     };
+    let islands = islands(state, cx);
+    let controls = &state.sailing_controls;
+    controls.sim_island.show(
+        (*islands).clone(),
+        Some(&state.sailing_state.sim_island.min(islands.len() - 1)),
+        window,
+        cx,
+    );
+    show_number(&controls.sim_hours, hours, 2, window, cx);
+    show_number(
+        &controls.sim_trials,
+        state.sailing_state.sim_trials as f64,
+        0,
+        window,
+        cx,
+    );
 
-    let mut presets = div()
-        .id("sailing-sim-presets")
-        .flex()
-        .items_center()
-        .gap_1();
-    for preset in [8.0_f64, 12.0, 24.0, 48.0] {
-        let entity = cx.entity();
-        presets = presets.child(
-            Button::new(
-                format!("sailing-sim-hours-{}", preset as u32),
-                format!("{preset:.0}h"),
-            )
-            .variant(if (hours - preset).abs() < f64::EPSILON {
-                ButtonVariant::Primary
-            } else {
-                ButtonVariant::Subtle
-            })
-            .size(ControlSize::Sm)
-            .on_click(move |_event, _window, cx| {
-                entity.update(cx, |state, cx| state.set_sailing_sim_hours(preset, cx));
-            }),
-        );
-    }
-
-    let hours_entity = cx.entity();
-    let hours_control = Stepper::new("sailing-sim-hours", hours)
-        .range(MIN_HOURS, MAX_HOURS)
-        .step(0.25)
-        .precision(2)
-        .on_change(move |value, _window, cx| {
-            hours_entity.update(cx, |state, cx| state.set_sailing_sim_hours(value, cx));
-        });
-
-    let island_entity = cx.entity();
-    let islands: Vec<Choice> = (0..available)
-        .map(|island| {
-            Choice::new(
-                island.to_string(),
-                format!("Island {} · {} dist", island + 1, island_distance(island)),
-            )
-            .note(format!("{} artifacts", island_artifact_count(island)))
-        })
-        .collect();
-    let island_select = Select::new("sailing-sim-island", islands)
-        .label("Destination")
-        .selected(island.min(available - 1).to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(island) = value.parse::<usize>() {
-                island_entity.update(cx, |state, cx| state.set_sailing_sim_island(island, cx));
-            }
-        });
-
-    let trials_entity = cx.entity();
-    let trials_control = Stepper::new("sailing-sim-trials", trials as f64)
-        .range(MIN_TRIALS as f64, MAX_TRIALS as f64)
-        .step(100.0)
-        .precision(0)
-        .on_change(move |value, _window, cx| {
-            trials_entity.update(cx, |state, cx| {
-                state.set_sailing_sim_trials(value.round().max(0.0) as usize, cx);
-            });
-        });
+    let presets =
+        h_flex()
+            .id("sailing-sim-presets")
+            .gap_1()
+            .children([8.0_f64, 12.0, 24.0, 48.0].map(|preset| {
+                let entity = cx.entity();
+                choice_button(
+                    SharedString::from(format!("sailing-sim-hours-{}", preset as u32)),
+                    &format!("{preset:.0}h"),
+                    (hours - preset).abs() < f64::EPSILON,
+                )
+                .on_click(move |_event, _window, cx| {
+                    entity.update(cx, |state, cx| state.set_sailing_sim_hours(preset, cx));
+                })
+            }));
 
     let run_entity = cx.entity();
-    let run = Button::new(
-        "sailing-sim-run",
-        if running {
+    let run = Button::new("sailing-sim-run")
+        .label(if running {
             "Running…"
         } else {
             "Run simulation"
-        },
-    )
-    .primary()
-    .icon(IconName::Play)
-    .disabled(running)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.run_sailing_simulation(cx));
-    });
-
+        })
+        .primary()
+        .small()
+        .icon(IconName::Play)
+        .disabled(running)
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.run_sailing_simulation(cx));
+        });
     let cancel_entity = cx.entity();
-    let cancel = Button::new("sailing-sim-cancel", "Cancel")
-        .variant(ButtonVariant::Subtle)
+    let cancel = Button::new("sailing-sim-cancel")
+        .label("Cancel")
+        .secondary()
+        .small()
         .icon(IconName::X)
         .disabled(!running)
         .on_click(move |_event, _window, cx| {
@@ -203,76 +330,50 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             "Runs a fresh seeded Monte Carlo over the active fleet; the same inputs and seed reproduce the result.",
         ))
         .child(
-            div()
+            v_flex()
                 .id("sailing-sim-controls")
-                .flex()
-                .flex_wrap()
-                .items_end()
-                .gap_4()
-                .p_3()
+                .gap_3()
                 .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Interval presets").text_color(muted))
-                        .child(presets),
+                    h_flex()
+                        .items_end()
+                        .gap_4()
+                        .child(field("Interval presets", presets))
+                        .child(field(
+                            "Hours",
+                            number_field("sailing-sim-hours", &controls.sim_hours, "Hours"),
+                        ))
+                        .child(field(
+                            "Destination",
+                            div().w(px(260.0)).child(
+                                Select::new(controls.sim_island.state())
+                                    .id("sailing-sim-island")
+                                    .accessibility_label("Destination")
+                                    .small(),
+                            ),
+                        ))
+                        .child(field(
+                            "Trials",
+                            number_field("sailing-sim-trials", &controls.sim_trials, "Trials"),
+                        )),
                 )
                 .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Hours").text_color(muted))
-                        .child(hours_control),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .min_w(gpui::px(220.0))
-                        .child(Caption::new("Destination").text_color(muted))
-                        .child(island_select),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Trials").text_color(muted))
-                        .child(trials_control),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Assignment").text_color(muted))
-                        .child(Caption::new(assignment).text_color(muted)),
-                )
-                .child(div().flex().items_center().gap_2().child(run).child(cancel)),
+                    h_flex()
+                        .gap_4()
+                        .child(field(
+                            "Assignment",
+                            Caption::new(assignment).text_color(muted),
+                        ))
+                        .child(div().flex_1())
+                        .child(h_flex().gap_2().child(run).child(cancel)),
+                ),
         )
         .into_any_element()
 }
 
-/// The stored run: the summary cards, the currency spread, the tier mix and
+/// The stored run: the summary figures, the currency spread, the tier mix and
 /// each pile position's expected chest.
-fn results_card(result: &SimResult, stale: bool, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let pile = result.pile;
-    let events = result.events;
-    let assignment = match result.setup.mode {
-        AssignmentMode::Optimized => format!("{} optimized", result.setup.goal.id()),
-        AssignmentMode::Saved => "current save".into(),
-    };
-    let mut header = CardHeader::new("Simulation results").description(format!(
-        "{}h · {} trials · seed {} · Island {} · {assignment} assignment · empty/fresh start",
-        result.setup.hours,
-        result.setup.trials,
-        result.setup.seed,
-        result.setup.island + 1
-    ));
+fn results_card(view: &View, stale: bool, muted: gpui::Hsla) -> AnyElement {
+    let mut header = CardHeader::new("Simulation results").description(view.description.clone());
     if stale {
         header = header.action(idleon_ui::run_chrome::stale_badge("sailing-sim"));
     }
@@ -280,91 +381,134 @@ fn results_card(result: &SimResult, stale: bool, cx: &mut Context<AppState>) -> 
     if stale {
         card = card.child(idleon_ui::run_chrome::stale_banner("sailing-sim"));
     }
-    let cards = div()
+    let kpis = div()
         .id("sailing-sim-kpis")
-        .flex()
-        .flex_wrap()
-        .items_stretch()
-        .gap_2()
-        .child(text_kpi(
-            "sailing-sim-pile-count",
-            "Average final pile",
-            &format!("{:.2} chests", pile.count.mean),
-            &format!("{} near-full target", result.setup.target_count),
-            muted,
-        ))
-        .child(text_kpi(
-            "sailing-sim-pile-value",
-            "Final opened value",
-            &format::value(pile.value.mean),
-            &summary_line(&pile.value),
-            muted,
-        ))
-        .child(text_kpi(
-            "sailing-sim-average",
-            "Average / banked chest",
-            &format::value(pile.average_value_per_chest),
-            "Total opened value ÷ average chest count",
-            muted,
-        ))
-        .child(text_kpi(
-            "sailing-sim-retained",
-            "Retained vs active",
-            &format!("{:.1}%", result.retained_fraction * 100.0),
-            "Final pile value ÷ collect-everything value",
-            muted,
-        ))
-        .child(text_kpi(
-            "sailing-sim-generated",
-            "Generated",
-            &format::value(events.generated),
-            &format!(
-                "{} accepted before near-full",
-                format::value(events.accepted)
-            ),
-            muted,
-        ))
-        .child(text_kpi(
-            "sailing-sim-improvements",
-            "Pile improvements",
-            &format!("{} upgrades", format::value(events.upgrades)),
-            &format!(
-                "{} higher-tier replacements",
-                format::value(events.replacements)
-            ),
-            muted,
-        ))
-        .child(text_kpi(
-            "sailing-sim-discards",
-            "Discarded / blocked",
-            &format::value(events.filter_discards + events.overflow_discards + events.blocked),
-            &format!(
-                "{} filter · {} overflow · {} full",
-                format::value(events.filter_discards),
-                format::value(events.overflow_discards),
-                format::value(events.blocked)
-            ),
-            muted,
-        ));
-    card.child(
-        div()
-            .flex()
-            .flex_col()
-            .gap_4()
-            .p_3()
-            .child(cards)
-            .child(currency_table(&result.currencies))
-            .child(tier_table(result))
-            .child(slot_table(result, muted))
-            .child(Caption::new(
+        .child(
+            KpiStrip::new().children(view.kpis.iter().map(|(id, label, value, caption)| {
+                Statistic::new(*id, *label, value.clone())
+                    .caption(caption.clone())
+                    .small()
+            })),
+        );
+    let currencies = section(
+        "sailing-sim-currency-table",
+        "Currency outcome distribution",
+        table::table(
+            "sailing-sim-currency-scroll",
+            &table::columns(&[
+                ("Currency", false, 0.0),
+                ("Mean value", true, 0.0),
+                ("P10", true, 0.0),
+                ("P50", true, 0.0),
+                ("P90", true, 0.0),
+                ("Avg payouts", true, 0.0),
+            ]),
+            view.currencies.iter().map(|(key, label, cells)| {
+                table::Row::new(SharedString::from(format!(
+                    "sailing-sim-currency-row-{key}"
+                )))
+                .child(table::text(
+                    div()
+                        .id(SharedString::from(format!("sailing-sim-currency-{key}")))
+                        .child(*label),
+                ))
+                .children(cells.iter().cloned().map(table::number))
+            }),
+        ),
+    );
+    let tiers = section(
+        "sailing-sim-tier-table",
+        "Final pile tier composition",
+        table::table(
+            "sailing-sim-tier-scroll",
+            &table::columns(&[
+                ("Tier", false, 0.0),
+                ("Average count", true, 0.0),
+                ("Pile share", true, 0.0),
+                ("Average value / payout", true, 0.0),
+                ("Average opened value / chest", true, 0.0),
+                ("Opened value contribution", true, 0.0),
+            ]),
+            view.tiers.iter().map(|(tier, cells)| {
+                table::Row::new(("sailing-sim-tier-row", *tier))
+                    .child(table::text(
+                        div()
+                            .id(SharedString::from(format!("sailing-sim-tier-{tier}")))
+                            .child(format!("Tier {tier}")),
+                    ))
+                    .children(cells.iter().cloned().map(table::number))
+            }),
+        ),
+    );
+    let slots = section(
+        "sailing-sim-slot-table",
+        "Average banked chest by pile position",
+        table::table(
+            "sailing-sim-slot-scroll",
+            &table::columns(&[
+                ("Position", false, 0.0),
+                ("Occupied", true, 0.0),
+                ("Average tier", true, 0.0),
+                ("Most likely tier", true, 0.0),
+                ("Value / payout", true, 0.0),
+                ("Payouts", true, 0.0),
+                ("Opened value", true, 0.0),
+                ("Artifact x", true, 0.0),
+                ("Gold", true, 0.0),
+                ("Primary", true, 0.0),
+                ("Rare", true, 0.0),
+            ]),
+            view.slots.iter().map(|(index, cells)| {
+                table::Row::new(("sailing-sim-slot-row", *index))
+                    .child(table::text(
+                        div()
+                            .id(SharedString::from(format!("sailing-sim-slot-{index}")))
+                            .child(format!("#{}", index + 1)),
+                    ))
+                    .children(cells.iter().cloned().map(table::number))
+            }),
+        ),
+    )
+    .child(
+        Caption::new(
+            "Position is opening order: #1 opens next and is the first banked chest the \
+             near-full scan reads. Averages are conditional on occupancy except the currency \
+             columns, which are the expected contribution per trial.",
+        )
+        .text_color(muted),
+    );
+    card.child(kpis)
+        .child(currencies)
+        .child(tiers)
+        .child(slots)
+        .child(
+            Caption::new(
                 "Final pile values include every guaranteed payout. Each payout picks its currency \
                  independently. P10/P50/P90 describe the spread across trials, not confidence \
                  intervals around the mean. Active collection opens every generated chest \
                  immediately and has no capacity loss.",
             )
-            .text_color(muted)),
-    )
-    .into_any_element()
+            .text_color(muted),
+        )
+        .into_any_element()
+}
+
+/// A titled table of the results card.
+fn section(
+    id: &'static str,
+    title: &'static str,
+    table: impl IntoElement,
+) -> gpui::Stateful<gpui::Div> {
+    v_flex()
+        .id(id)
+        .gap(PANEL_GAP)
+        .child(
+            div()
+                .text_size(TEXT_BODY)
+                .font_weight(gpui::FontWeight::SEMIBOLD)
+                .child(title),
+        )
+        .child(table)
 }
 
 fn summary_line(summary: &SimSummary) -> String {
@@ -374,179 +518,4 @@ fn summary_line(summary: &SimSummary) -> String {
         format::value(summary.median),
         format::value(summary.p90)
     )
-}
-
-fn currency_table(currencies: &SimCurrencies) -> AnyElement {
-    let mut table = Table::new(["Currency", "Mean value", "P10", "P50", "P90", "Avg payouts"]);
-    for (key, label, row) in [
-        ("gold", "Gold Bars", currencies.gold),
-        (
-            "primary",
-            "Primary treasure (chest island)",
-            currencies.primary,
-        ),
-        ("rare", "Rare treasure (chest island)", currencies.rare),
-    ] {
-        table = table.row([
-            div()
-                .id(format!("sailing-sim-currency-{key}"))
-                .child(label)
-                .into_any_element(),
-            div()
-                .child(format::value(row.value.mean))
-                .into_any_element(),
-            div().child(format::value(row.value.p10)).into_any_element(),
-            div()
-                .child(format::value(row.value.median))
-                .into_any_element(),
-            div().child(format::value(row.value.p90)).into_any_element(),
-            div()
-                .child(format!("{:.2}", row.payouts.mean))
-                .into_any_element(),
-        ]);
-    }
-    div()
-        .id("sailing-sim-currency-table")
-        .flex()
-        .flex_col()
-        .gap_2()
-        .child(
-            div()
-                .text_size(gpui::px(14.0))
-                .child("Currency outcome distribution"),
-        )
-        .child(table)
-        .into_any_element()
-}
-
-fn tier_table(result: &SimResult) -> AnyElement {
-    let total = result.pile.count.mean;
-    let mut table = Table::new([
-        "Tier",
-        "Average count",
-        "Pile share",
-        "Average value / payout",
-        "Average opened value / chest",
-        "Opened value contribution",
-    ]);
-    for row in &result.tiers {
-        let share = if total > 0.0 {
-            row.average_count / total
-        } else {
-            0.0
-        };
-        table = table.row([
-            div()
-                .id(format!("sailing-sim-tier-{}", row.tier))
-                .child(format!("Tier {}", row.tier))
-                .into_any_element(),
-            div()
-                .child(format!("{:.3}", row.average_count))
-                .into_any_element(),
-            div()
-                .child(format!("{:.1}%", share * 100.0))
-                .into_any_element(),
-            div()
-                .child(format::value(row.average_value_per_payout))
-                .into_any_element(),
-            div()
-                .child(format::value(row.average_opened_value))
-                .into_any_element(),
-            div()
-                .child(format::value(row.opened_value_contribution))
-                .into_any_element(),
-        ]);
-    }
-    div()
-        .id("sailing-sim-tier-table")
-        .flex()
-        .flex_col()
-        .gap_2()
-        .child(
-            div()
-                .text_size(gpui::px(14.0))
-                .child("Final pile tier composition"),
-        )
-        .child(table)
-        .into_any_element()
-}
-
-fn slot_table(result: &SimResult, muted: gpui::Hsla) -> AnyElement {
-    let mut table = Table::new([
-        "Position",
-        "Occupied",
-        "Average tier",
-        "Most likely tier",
-        "Value / payout",
-        "Payouts",
-        "Opened value",
-        "Artifact x",
-        "Gold",
-        "Primary",
-        "Rare",
-    ]);
-    for slot in result.slots.iter().filter(|slot| slot.occupancy > 0.0) {
-        table = table.row([
-            div()
-                .id(format!("sailing-sim-slot-{}", slot.index))
-                .child(format!("#{}", slot.index + 1))
-                .into_any_element(),
-            div()
-                .child(format!("{:.1}%", slot.occupancy * 100.0))
-                .into_any_element(),
-            div()
-                .child(format!("{:.2}", slot.average_tier))
-                .into_any_element(),
-            div()
-                .child(
-                    slot.most_likely_tier
-                        .map_or_else(|| "—".into(), |tier| format!("Tier {tier}")),
-                )
-                .into_any_element(),
-            div()
-                .child(format::value(slot.average_value_per_payout))
-                .into_any_element(),
-            div()
-                .child(format!("{:.2}", slot.average_payouts))
-                .into_any_element(),
-            div()
-                .child(format::value(slot.average_opened_value))
-                .into_any_element(),
-            div()
-                .child(format!(
-                    "{}x",
-                    format::value(slot.average_artifact_multiplier)
-                ))
-                .into_any_element(),
-            div()
-                .child(format::value(slot.average_currency_value[0]))
-                .into_any_element(),
-            div()
-                .child(format::value(slot.average_currency_value[1]))
-                .into_any_element(),
-            div()
-                .child(format::value(slot.average_currency_value[2]))
-                .into_any_element(),
-        ]);
-    }
-    div()
-        .id("sailing-sim-slot-table")
-        .flex()
-        .flex_col()
-        .gap_2()
-        .child(
-            div()
-                .text_size(gpui::px(14.0))
-                .child("Average banked chest by pile position"),
-        )
-        .child(table)
-        .child(
-            Caption::new(
-                "Position is opening order: #1 opens next and is the first banked chest the \
-                 near-full scan reads. Averages are conditional on occupancy except the currency \
-                 columns, which are the expected contribution per trial.",
-            )
-            .text_color(muted),
-        )
-        .into_any_element()
 }

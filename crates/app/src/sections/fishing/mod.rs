@@ -11,30 +11,33 @@
 
 mod actions;
 
+mod controls;
 pub(crate) mod detail;
 pub(crate) mod inputs;
 pub(crate) mod pools;
 pub(crate) mod ranking;
+mod table;
 pub(crate) mod toolbar;
 pub(crate) mod trench;
 
+pub(crate) use controls::Controls;
+
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::layout::ScrollArea;
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
-use idleon_fishing::{
-    self as fishing, AccountInputs, Evaluation, FishingSave, HelperMode, Objective,
+use gpui::{
+    AnyElement, App, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div,
+    px,
 };
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
+use idleon_fishing::{self as fishing, AccountInputs, FishingSave, HelperMode, Objective};
+use idleon_ui::widgets::{Caption, Tone};
 
 /// The section's live state: the character, toolkit, location, hours and the
 /// account values the skill systems would supply.
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub(crate) struct State {
     pub(crate) character: usize,
@@ -171,19 +174,28 @@ impl State {
     }
 }
 
-/// The section: the character toolbar, the account inputs, the pool table and
-/// the selected pool's split, with the shared formula tree underneath.
-pub(crate) fn view(
-    state: &mut AppState,
-    window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let breakpoint = Breakpoint::of(window, cx);
-    let save = state.fishing_save.clone();
-    state.fishing.clamp(&save);
-    let config = state.fishing.clone();
+/// What the page shows for one [`controls::Key`]: every pool, the selected
+/// pool's split and the ranking's summary, formatted once.
+pub(crate) struct Page {
+    summary: SharedString,
+    /// The selected character's index and whether the save carried its
+    /// toolkit and spot.
+    character: (usize, bool, bool),
+    /// The rod's item key and its `name · speed` line.
+    rod: Option<(String, SharedString, SharedString)>,
+    kpis: pools::Kpis,
+    locations: pools::Locations,
+    detail: detail::View,
+    ranking: ranking::Summary,
+}
+
+/// Evaluate the selected pool, every other pool and all 225 combinations once,
+/// fill the ranking table and hand the formula tree its root.
+fn build(state: &AppState, cx: &mut App) -> Page {
+    let save = &state.fishing_save;
+    let config = &state.fishing;
     let evaluation = fishing::evaluate(
-        &save,
+        save,
         &config.account,
         config.character,
         config.lure,
@@ -191,12 +203,12 @@ pub(crate) fn view(
         &config.location,
         config.hours,
     );
-    let rows: Vec<Evaluation> = fishing::data()
+    let rows: Vec<fishing::Evaluation> = fishing::data()
         .locations
         .iter()
         .map(|location| {
             fishing::evaluate(
-                &save,
+                save,
                 &config.account,
                 config.character,
                 config.lure,
@@ -207,80 +219,100 @@ pub(crate) fn view(
         })
         .collect();
     let ranked = fishing::rank(
-        &save,
+        save,
         &config.account,
         config.character,
         &config.location,
         config.objective,
         config.hours,
     );
-
-    // The shared tree owns its search and its open branches; the section only
-    // hands it the tree for the current location.
-    let tree = state.fishing_breakdown.clone();
     let root = fishing::breakdown(&evaluation);
-    tree.update(cx, |tree, cx| tree.set_root(root, cx));
+    state
+        .fishing_breakdown
+        .update(cx, |tree, cx| tree.set_root(root, cx));
+    let ranking = ranking::fill(state, &ranked, &evaluation, cx);
 
-    let character = evaluation.character.clone();
-    let toolkit = format!("{} + {}", evaluation.lure.name, evaluation.line.name);
+    let character = &evaluation.character;
     let summary = format!(
-        "{} · Lv {} · {} · {} · {} · {}h",
+        "{} · Lv {} · {} · {} + {} · {} · {}h",
         character.name,
         character.level,
         character.rod_name,
-        toolkit,
+        evaluation.lure.name,
+        evaluation.line.name,
         evaluation.location.label,
         config.hours
     );
-    let header = div()
+    let rod = save.character(config.character).map(|character| {
+        (
+            character.rod_key.clone(),
+            SharedString::from(character.rod_name.clone()),
+            SharedString::from(format!(
+                "{} · speed {}",
+                character.rod_name, character.rod_speed
+            )),
+        )
+    });
+    Page {
+        summary: summary.into(),
+        character: (
+            character.index,
+            character.toolkit_available,
+            character.spot_available,
+        ),
+        rod,
+        kpis: pools::kpis(&evaluation, &ranked, config.objective, config.hours),
+        locations: pools::locations(&rows, &evaluation.location.id, config.hours),
+        detail: detail::view(&evaluation, config.hours),
+        ranking,
+    }
+}
+
+/// The section: the character toolbar, the account inputs, the pool table and
+/// the selected pool's split, with the shared formula tree underneath.
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let breakpoint = Breakpoint::of(window, cx);
+    let save = std::mem::take(&mut state.fishing_save);
+    state.fishing.clamp(&save);
+    state.fishing_save = save;
+    let key = state.fishing_key();
+    let page = controls::cached(state, |controls| &mut controls.page, key, cx, build);
+    let table_height = layout::table_height(f32::from(window.viewport_size().height));
+    let muted = cx.theme().muted_foreground;
+
+    let header = h_flex()
         .id("fishing-header")
-        .flex()
         .flex_none()
-        .items_center()
         .gap_3()
-        .child(Badge::new("AFK fishing").tone(Tone::Accent))
+        .child(table::tag("AFK fishing", Tone::Accent))
         .child(
             div()
                 .id("fishing-summary")
                 .role(Role::Label)
-                .aria_label(summary.clone())
+                .aria_label(page.summary.clone())
                 .min_w_0()
-                .child(Caption::new(summary).text_color(cx.theme().colors.fg_muted)),
+                .child(Caption::new(page.summary.clone()).text_color(muted)),
         )
         .child(div().flex_1())
-        .child(toolbar::reset(cx))
-        .into_any_element();
+        .child(toolbar::reset(cx));
 
-    let warnings = warnings(state, &character);
-    let toolbar = toolbar::pane(state, &save, breakpoint, cx);
-    let account = inputs::card(state, cx);
-    let kpis = pools::kpis(&evaluation, &ranked, config.objective, config.hours, cx);
-    let pool_table = pools::location_table(
-        &rows,
-        &evaluation.location.id,
-        config.hours,
-        layout::table_height(f32::from(window.viewport_size().height)),
-        cx,
-    );
-    let detail = detail::card(&evaluation, config.hours, cx);
-    let ranking = ranking::card(
-        state,
-        &ranked,
-        &evaluation,
-        layout::table_height(f32::from(window.viewport_size().height)),
-        cx,
-    );
-    let trench = trench::card(
-        state,
-        layout::table_height(f32::from(window.viewport_size().height)),
-        cx,
-    );
+    let warnings = warnings(state, &page);
+    let toolbar = toolbar::pane(state, &page, window, cx);
+    let account = inputs::card(state, window, cx);
+    let detail = detail::card(&page.detail, cx);
+    let pool_table = pools::location_table(&page.locations, cx);
+    let ranking = ranking::card(state, &page.ranking, table_height, window, cx);
+    let trench = trench::card(state, window, cx);
     let formula = toolbar::formula_card(&state.fishing_breakdown);
 
     let panes = if breakpoint.is_compact() {
-        div().flex().flex_col().gap_3()
+        v_flex().gap_3()
     } else {
-        div().flex().flex_row().items_start().gap_3()
+        h_flex().items_start().gap_3()
     };
     let panes = panes
         .child(div().flex_1().min_w_0().child(pool_table))
@@ -291,79 +323,69 @@ pub(crate) fn view(
                 .child(detail),
         );
 
-    div()
+    v_flex()
         .id("fishing-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
         .gap_3()
         .child(header)
         .child(toolbar)
         .child(
-            ScrollArea::new("fishing-scroll")
-                .vertical()
-                .shadows()
+            div()
                 .flex_1()
                 .min_h_0()
                 .child(
-                    div()
-                        .flex()
-                        .flex_col()
+                    v_flex()
                         .gap_3()
                         .pb_4()
                         .when_some(warnings, |page, warnings| page.child(warnings))
-                        .child(kpis)
+                        .child(pools::kpis_view(&page.kpis))
                         .child(panes)
                         .child(ranking)
                         .child(trench)
                         .child(account)
                         .child(formula),
-                ),
+                )
+                .overflow_y_scrollbar()
+                .id("fishing-scroll"),
         )
         .into_any_element()
 }
 
 /// The missing-toolkit and missing-spot flags.
-fn warnings(state: &AppState, character: &fishing::Character) -> Option<AnyElement> {
+fn warnings(state: &AppState, page: &Page) -> Option<AnyElement> {
     if !state.save_loaded {
         return None;
     }
+    let (index, toolkit, spot) = page.character;
     let mut flags = Vec::new();
-    if !character.toolkit_available {
+    if !toolkit {
         flags.push(
-            Banner::new(
+            Alert::new(
                 "fishing-toolkit-missing",
-                Severity::Warning,
                 format!(
-                    "This save has no PVFishingToolkit_{}; the saved lure and line default to Fly + Fishing Twine.",
-                    character.index
+                    "This save has no PVFishingToolkit_{index}; the saved lure and line default to Fly + Fishing Twine."
                 ),
             )
+            .with_variant(Tone::Warning.into())
+            .banner()
             .into_any_element(),
         );
     }
-    if !character.spot_available {
+    if !spot {
         flags.push(
-            Banner::new(
+            Alert::new(
                 "fishing-spot-missing",
-                Severity::Info,
                 format!(
-                    "This save has no PVFishingSpotIndex_{}; the saved fishing spot is unknown.",
-                    character.index
+                    "This save has no PVFishingSpotIndex_{index}; the saved fishing spot is unknown."
                 ),
             )
+            .with_variant(Tone::Info.into())
+            .banner()
             .into_any_element(),
         );
     }
-    (!flags.is_empty()).then(|| {
-        div()
-            .flex()
-            .flex_col()
-            .gap_2()
-            .children(flags)
-            .into_any_element()
-    })
+    (!flags.is_empty()).then(|| v_flex().gap_2().children(flags).into_any_element())
 }
 
 /// One location's spot depth bonus as `D1 +25, D2 +5`.

@@ -4,386 +4,388 @@
 //! the quality bar reads where inside the recruitment range the roll landed. The
 //! boat column follows the section's assignment mode.
 
+use super::controls::cached;
+use super::table::{self, Cell};
 use super::{captain_code, hours_or_ready};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, KpiCard, Meter, Statistic, Tone};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::Tooltip;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div, px};
+use gpui::{
+    AnyElement, App, Context, IntoElement, ParentElement, Pixels, SharedString, Styled, div, px,
+};
+use gpui_kit::component::progress::Progress;
+use gpui_kit::component::table::DataTable;
+use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use idleon_sailing::{
-    CaptainLevelTime, FleetPlan, RollQuality, captain_bonus, captain_bonus_name, level_time,
-    roll_quality,
+    FleetPlan, RollQuality, captain_bonus, captain_bonus_name, level_time, roll_quality,
 };
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
 
-/// One captain row: their bonuses, their boat and their level time.
-struct Row {
+/// The figures the tab shows, read once per key.
+pub(crate) struct View {
+    count: usize,
+    assigned: usize,
+    unassigned: usize,
+    summary: SharedString,
+    /// Whether any boat or captain is flagged.
+    flagged: bool,
+    /// One line per flagged boat or captain.
+    lines: Vec<SharedString>,
+    boats_missing: bool,
+}
+
+/// One rolled bonus: its name, what it gives now and where the roll landed.
+#[derive(Clone)]
+pub(crate) struct Bonus {
+    id: SharedString,
+    meter: SharedString,
+    name: SharedString,
+    total: SharedString,
+    tip: SharedString,
+    quality: f32,
+    quality_text: SharedString,
+}
+
+/// One captain, formatted.
+pub(crate) struct Row {
     captain: usize,
-    boat: Option<usize>,
-    rolls: [RollQuality; 2],
-    time: Option<CaptainLevelTime>,
-    fastest: Option<(usize, f64)>,
+    code: SharedString,
+    boat: SharedString,
+    level: SharedString,
+    bonuses: [Option<Bonus>; 2],
+    exp: SharedString,
+    exp_rate: SharedString,
+    eta: SharedString,
+    fastest: SharedString,
+}
+
+pub(crate) fn columns() -> Vec<Cell<Row>> {
+    vec![
+        Cell::element(
+            "Captain",
+            100.0,
+            |row, _| {
+                div()
+                    .id(("captain-code", row.captain))
+                    .child(row.code.clone())
+                    .into_any_element()
+            },
+            |row| row.code.clone(),
+        ),
+        Cell::text("Boat", 100.0, |row| row.boat.clone()),
+        Cell::number("Level", 60.0, |row| row.level.clone()),
+        Cell::element(
+            "First bonus",
+            300.0,
+            |row, cx| bonus_cell(row.bonuses[0].as_ref(), cx),
+            |row| bonus_text(row.bonuses[0].as_ref()),
+        ),
+        Cell::element(
+            "Second bonus",
+            300.0,
+            |row, cx| bonus_cell(row.bonuses[1].as_ref(), cx),
+            |row| bonus_text(row.bonuses[1].as_ref()),
+        ),
+        Cell::number("EXP", 210.0, |row| row.exp.clone()),
+        Cell::number("EXP/hr", 90.0, |row| row.exp_rate.clone()),
+        Cell::number("Destination ETA", 120.0, |row| row.eta.clone()),
+        Cell::text("Fastest level route", 160.0, |row| row.fastest.clone()),
+    ]
 }
 
 /// The captains tab: the flags, the KPI row and the captain table.
 pub(crate) fn captains_tab(
-    state: &AppState,
+    state: &mut AppState,
     table_height: Pixels,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let plan = state.fleet_plan(state.sailing_state.island, state.sailing_state.goal);
-    let missing = Missing::of(state, &plan);
-    let rows = rows(state, &plan);
-    div()
-        .id("captains-body")
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_h_0()
-        .gap_3()
-        .child(flags(state, &missing, cx))
-        .child(kpis(state, &rows, &missing, cx))
-        .child(table(state, &rows, table_height, cx))
-        .into_any_element()
-}
-
-/// Everything the save leaves uncrewed or unassigned.
-struct Missing {
-    /// Boats whose saved captain row is not in the save.
-    boats: Vec<usize>,
-    /// Captains with no boat in the current plan.
-    captains: Vec<usize>,
-}
-
-impl Missing {
-    fn of(state: &AppState, plan: &FleetPlan) -> Self {
-        let boats = state
-            .fleet
-            .boats
-            .iter()
-            .enumerate()
-            .filter_map(|(boat, entry)| {
-                let captain = entry.captain?;
-                (captain >= state.fleet.captains.len()).then_some(boat)
-            })
-            .collect();
-        let assigned: Vec<usize> = plan
-            .routes
-            .iter()
-            .filter_map(|route| route.captain)
-            .collect();
-        let captains = (0..state.fleet.captains.len())
-            .filter(|captain| !assigned.contains(captain))
-            .collect();
-        Self { boats, captains }
-    }
-
-    fn any(&self) -> bool {
-        !self.boats.is_empty() || !self.captains.is_empty()
-    }
-
-    fn summary(&self) -> String {
-        let mut parts = Vec::new();
-        if !self.boats.is_empty() {
-            parts.push(format!(
-                "{} boat(s) point at a captain the save does not have",
-                self.boats.len()
-            ));
-        }
-        if !self.captains.is_empty() {
-            parts.push(format!("{} captain(s) sail no boat", self.captains.len()));
-        }
-        parts.join(" · ")
-    }
-}
-
-fn rows(state: &AppState, plan: &FleetPlan) -> Vec<Row> {
-    let boat_of = |captain: usize| {
-        plan.routes
-            .iter()
-            .find(|route| route.captain == Some(captain))
-            .map(|route| route.boat)
-    };
-    (0..state.fleet.captains.len())
-        .map(|captain| {
-            let boat = boat_of(captain);
-            let time = boat.map(|boat| {
-                level_time(
-                    &state.fleet,
-                    captain,
-                    boat,
-                    state.sailing_state.island,
-                    &state.sailing,
-                )
-            });
-            let fastest = boat.and_then(|boat| {
-                let available = state.fleet.available_islands().max(1);
-                (0..available)
-                    .map(|island| {
-                        (
-                            island,
-                            level_time(&state.fleet, captain, boat, island, &state.sailing).hours,
-                        )
-                    })
-                    .min_by(|left, right| left.1.total_cmp(&right.1))
-            });
-            let entry = &state.fleet.captains[captain];
-            Row {
-                captain,
-                boat,
-                rolls: [roll_quality(entry, 0), roll_quality(entry, 1)],
-                time,
-                fastest,
-            }
-        })
-        .collect()
-}
-
-fn flags(state: &AppState, missing: &Missing, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let summary = if missing.any() {
-        missing.summary()
-    } else {
-        "Every boat has a captain and every captain sails a boat.".into()
-    };
-    let mut body = div()
-        .id("captains-missing")
-        .role(gpui::Role::Label)
-        .aria_label(summary.clone())
-        .flex()
-        .flex_col()
-        .gap_1()
-        .p_3();
-    if missing.any() {
-        body = body.child(
-            div()
-                .flex()
-                .items_center()
-                .gap_2()
-                .child(Badge::new("Missing captains").tone(Tone::Warning))
-                .child(Caption::new(summary).text_color(muted)),
-        );
-    } else {
-        body = body.child(Caption::new(summary).text_color(muted));
-    }
-    for boat in &missing.boats {
-        body = body.child(Caption::new(format!(
-            "Boat {} · captain {} is missing from the save",
-            boat + 1,
-            state.fleet.boats[*boat].captain.unwrap_or(0)
-        )));
-    }
-    for captain in &missing.captains {
-        body = body.child(Caption::new(format!(
-            "Captain {} · sails no boat in the {} assignment",
-            captain_code(*captain),
-            state.sailing_state.mode.label().to_lowercase()
-        )));
-    }
-    Card::new()
+    let key = state.sailing_key();
+    let view = cached(state, |controls| &mut controls.captains, key, cx, build);
+    let muted = cx.theme().muted_foreground;
+    let flags = Card::new()
         .header(CardHeader::new("Fleet crew").description(
             "A boat whose saved captain row is missing loses that pairing; the optimizer still sails the boat.",
         ))
-        .child(body)
-        .into_any_element()
-}
-
-fn kpis(
-    state: &AppState,
-    rows: &[Row],
-    missing: &Missing,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let count = rows.len();
-    let assigned = rows.iter().filter(|row| row.boat.is_some()).count();
-    div()
+        .child(
+            v_flex()
+                .id("captains-missing")
+                .role(gpui::Role::Label)
+                .aria_label(view.summary.clone())
+                .gap_1()
+                .child(if view.flagged {
+                    h_flex()
+                        .gap_2()
+                        .child(table::tag("Missing captains", Tone::Warning))
+                        .child(Caption::new(view.summary.clone()).text_color(muted))
+                        .into_any_element()
+                } else {
+                    Caption::new(view.summary.clone())
+                        .text_color(muted)
+                        .into_any_element()
+                })
+                .children(view.lines.iter().cloned().map(Caption::new)),
+        );
+    let kpis = div()
         .id("captains-kpis")
         .role(gpui::Role::Label)
-        .aria_label(format!("{count} captains · {assigned} assigned"))
-        .flex()
-        .flex_wrap()
-        .gap_3()
+        .aria_label(format!(
+            "{} captains · {} assigned",
+            view.count, view.assigned
+        ))
         .child(
-            KpiCard::new(Statistic::new("captains-count", "Captains", count as f64).decimals(0))
-                .caption("saved rows; the assignment limits how many sail"),
-        )
-        .child(
-            KpiCard::new(Statistic::new("captains-assigned", "Assigned", assigned as f64).decimals(0))
-                .caption(state.sailing_state.mode.label()),
-        )
-        .child(
-            div()
-                .id("captains-missing-count")
-                .role(gpui::Role::Label)
-                .aria_label(missing.captains.len().to_string())
+            KpiStrip::new()
                 .child(
-                    KpiCard::new(
-                        Statistic::new(
-                            "captains-unassigned",
-                            "Unassigned captains",
-                            missing.captains.len() as f64,
-                        )
-                        .decimals(0)
-                        .size(TextSize::Lg),
-                    )
-                    .caption(if missing.boats.is_empty() {
-                        "flagged in the crew card"
-                    } else {
-                        "and boats with a missing captain"
-                    }),
+                    Statistic::new("captains-count", "Captains", view.count.to_string())
+                        .caption("saved rows; the assignment limits how many sail"),
+                )
+                .child(
+                    Statistic::new("captains-assigned", "Assigned", view.assigned.to_string())
+                        .caption(state.sailing_state.mode.label()),
+                )
+                .child(
+                    div()
+                        .id("captains-missing-count")
+                        .role(gpui::Role::Label)
+                        .aria_label(view.unassigned.to_string())
+                        .child(
+                            Statistic::new(
+                                "captains-unassigned",
+                                "Unassigned captains",
+                                view.unassigned.to_string(),
+                            )
+                            .caption(if view.boats_missing {
+                                "and boats with a missing captain"
+                            } else {
+                                "flagged in the crew card"
+                            }),
+                        ),
                 ),
-        )
-        .child(Caption::new(
-            "EXP needs the trip rate and the island's captain EXP; account multipliers outside the save model are excluded.",
-        )
-        .text_color(muted)
-        .into_any_element())
-        .into_any_element()
-}
-
-fn table(
-    state: &AppState,
-    rows: &[Row],
-    table_height: Pixels,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let mut table = Table::new([
-        "Captain",
-        "Boat",
-        "Level",
-        "First bonus",
-        "Second bonus",
-        "EXP",
-        "EXP/hr",
-        "Destination ETA",
-        "Fastest level route",
-    ]);
-    for row in rows {
-        let entry = &state.fleet.captains[row.captain];
-        let progress = row.time.map_or(0.0, |time| {
-            if time.requirement > 0.0 {
-                (time.progress / time.requirement).clamp(0.0, 1.0)
-            } else {
-                0.0
-            }
-        });
-        let fastest = row.fastest.and_then(|(island, hours)| {
-            hours
-                .is_finite()
-                .then(|| format!("Island {} · {}", island + 1, hours_or_ready(hours)))
-        });
-        table = table.row([
-            div()
-                .id(("captain-code", row.captain))
-                .child(format!("Captain {}", captain_code(row.captain)))
-                .into_any_element(),
-            div()
-                .child(match row.boat {
-                    Some(boat) => format!("Boat {}", boat + 1),
-                    None => "not assigned".to_string(),
-                })
-                .into_any_element(),
-            div().child(entry.level.to_string()).into_any_element(),
-            bonus_cell(state, row.captain, row.rolls[0], 0),
-            bonus_cell(state, row.captain, row.rolls[1], 1),
-            div()
-                .child(match row.time {
-                    Some(time) => format!(
-                        "{} / {} ({}%)",
-                        format::rate(time.progress),
-                        format::rate(time.requirement),
-                        (progress * 100.0 * 10.0).round() / 10.0
-                    ),
-                    None => "—".into(),
-                })
-                .into_any_element(),
-            div()
-                .child(match row.time {
-                    Some(time) => format::rate(time.exp_per_hour),
-                    None => "—".into(),
-                })
-                .into_any_element(),
-            div()
-                .child(match row.time {
-                    Some(time) => hours_or_ready(time.hours),
-                    None => "—".into(),
-                })
-                .into_any_element(),
-            div()
-                .child(fastest.unwrap_or_else(|| "—".into()))
-                .into_any_element(),
-        ]);
-    }
-
-    let table = ScrollArea::new("captains-table-scroll")
-        .vertical()
-        .h(table_height)
-        .child(div().min_w_0().child(table));
-    Card::new()
-        .header(
-            CardHeader::new("Captain Quality and Leveling").description(
-                "Each bonus gain is rolled once at recruitment and stays fixed as the captain levels.",
-            ),
-        )
+        );
+    let table = Card::new()
+        .header(CardHeader::new("Captain Quality and Leveling").description(
+            "Each bonus gain is rolled once at recruitment and stays fixed as the captain levels.",
+        ))
         .child(
             div()
                 .id("captains-table")
-                .min_h_0()
-                .overflow_hidden()
-                .p_3()
-                .child(table),
+                .h(table::data_height(view.count, 33.0, table_height))
+                .child(DataTable::new(&state.sailing_controls.captains_table)),
         )
         .child(
-            div()
-                .px_3()
-                .pb_2()
-                .text_size(px(11.0))
-                .text_color(cx.theme().colors.fg_muted)
-                .child(
-                    "Quality reads the roll inside its recruitment range for that rarity; the badge shows the bonus the captain actually gives at their level. The boat column follows the selected assignment.",
-                ),
-        )
+            Caption::new(
+                "Quality reads the roll inside its recruitment range for that rarity; the tag shows the bonus the captain actually gives at their level. The boat column follows the selected assignment. EXP needs the trip rate and the island's captain EXP; account multipliers outside the save model are excluded.",
+            )
+            .text_color(muted),
+        );
+    v_flex()
+        .id("captains-body")
+        .gap_3()
+        .child(flags)
+        .child(kpis)
+        .child(table)
         .into_any_element()
 }
 
-/// One bonus slot: its name, the roll's quality and the total it provides.
-fn bonus_cell(state: &AppState, captain: usize, quality: RollQuality, slot: usize) -> AnyElement {
+/// Read the crew once and fill the table.
+fn build(state: &AppState, cx: &mut App) -> View {
+    let plan = state.fleet_plan(state.sailing_state.island, state.sailing_state.goal);
+    let rows: Vec<Row> = (0..state.fleet.captains.len())
+        .map(|captain| row(state, &plan, captain))
+        .collect();
+    let assigned = plan
+        .routes
+        .iter()
+        .filter(|route| route.captain.is_some())
+        .count();
+    let boats: Vec<usize> = state
+        .fleet
+        .boats
+        .iter()
+        .enumerate()
+        .filter_map(|(boat, entry)| {
+            let captain = entry.captain?;
+            (captain >= state.fleet.captains.len()).then_some(boat)
+        })
+        .collect();
+    let sailing: Vec<usize> = plan
+        .routes
+        .iter()
+        .filter_map(|route| route.captain)
+        .collect();
+    let idle: Vec<usize> = (0..state.fleet.captains.len())
+        .filter(|captain| !sailing.contains(captain))
+        .collect();
+
+    let mut parts = Vec::new();
+    if !boats.is_empty() {
+        parts.push(format!(
+            "{} boat(s) point at a captain the save does not have",
+            boats.len()
+        ));
+    }
+    if !idle.is_empty() {
+        parts.push(format!("{} captain(s) sail no boat", idle.len()));
+    }
+    let flagged = !parts.is_empty();
+    let summary = if flagged {
+        parts.join(" · ")
+    } else {
+        "Every boat has a captain and every captain sails a boat.".into()
+    };
+    let mode = state.sailing_state.mode.label().to_lowercase();
+    let lines = boats
+        .iter()
+        .map(|boat| {
+            format!(
+                "Boat {} · captain {} is missing from the save",
+                boat + 1,
+                state.fleet.boats[*boat].captain.unwrap_or(0)
+            )
+            .into()
+        })
+        .chain(idle.iter().map(|captain| {
+            format!(
+                "Captain {} · sails no boat in the {mode} assignment",
+                captain_code(*captain)
+            )
+            .into()
+        }))
+        .collect();
+    let view = View {
+        count: rows.len(),
+        assigned,
+        unassigned: idle.len(),
+        summary: summary.into(),
+        flagged,
+        lines,
+        boats_missing: !boats.is_empty(),
+    };
+    table::set_rows(&state.sailing_controls.captains_table, rows, cx);
+    view
+}
+
+fn row(state: &AppState, plan: &FleetPlan, captain: usize) -> Row {
+    let boat = plan
+        .routes
+        .iter()
+        .find(|route| route.captain == Some(captain))
+        .map(|route| route.boat);
+    let time = boat.map(|boat| {
+        level_time(
+            &state.fleet,
+            captain,
+            boat,
+            state.sailing_state.island,
+            &state.sailing,
+        )
+    });
+    let fastest = boat.and_then(|boat| {
+        let available = state.fleet.available_islands().max(1);
+        (0..available)
+            .map(|island| {
+                (
+                    island,
+                    level_time(&state.fleet, captain, boat, island, &state.sailing).hours,
+                )
+            })
+            .min_by(|left, right| left.1.total_cmp(&right.1))
+    });
+    let entry = &state.fleet.captains[captain];
+    let progress = time.map_or(0.0, |time| {
+        if time.requirement > 0.0 {
+            (time.progress / time.requirement).clamp(0.0, 1.0)
+        } else {
+            0.0
+        }
+    });
+    Row {
+        captain,
+        code: format!("Captain {}", captain_code(captain)).into(),
+        boat: match boat {
+            Some(boat) => format!("Boat {}", boat + 1),
+            None => "not assigned".to_string(),
+        }
+        .into(),
+        level: entry.level.to_string().into(),
+        bonuses: [0, 1].map(|slot| bonus(state, captain, roll_quality(entry, slot), slot)),
+        exp: match time {
+            Some(time) => format!(
+                "{} / {} ({}%)",
+                format::rate(time.progress),
+                format::rate(time.requirement),
+                (progress * 100.0 * 10.0).round() / 10.0
+            ),
+            None => "—".into(),
+        }
+        .into(),
+        exp_rate: time
+            .map_or_else(|| "—".into(), |time| format::rate(time.exp_per_hour))
+            .into(),
+        eta: time
+            .map_or_else(|| "—".into(), |time| hours_or_ready(time.hours))
+            .into(),
+        fastest: fastest
+            .and_then(|(island, hours)| {
+                hours
+                    .is_finite()
+                    .then(|| format!("Island {} · {}", island + 1, hours_or_ready(hours)))
+            })
+            .unwrap_or_else(|| "—".into())
+            .into(),
+    }
+}
+
+/// One bonus slot, or `None` when the captain rolled nothing there.
+fn bonus(state: &AppState, captain: usize, quality: RollQuality, slot: usize) -> Option<Bonus> {
     if quality.bonus_type < 0 {
-        return div().child("—").into_any_element();
+        return None;
     }
     let name = captain_bonus_name(quality.bonus_type);
     let total = captain_bonus(&state.fleet, Some(captain), quality.bonus_type);
-    let share = quality.quality as f32;
-    div()
-        .id(format!("captain-bonus-{captain}-{slot}"))
-        .tooltip(Tooltip::text(format!(
-            "{name}\nGain per level: +{}%\nPossible rolls: +{}% to +{}%\nQuality: {}%",
+    let percent = (quality.quality * 100.0).round();
+    Some(Bonus {
+        id: format!("captain-bonus-{captain}-{slot}").into(),
+        meter: format!("captain-quality-{captain}-{slot}").into(),
+        name: name.clone().into(),
+        total: format!("+{}%", format::value(total)).into(),
+        tip: format!(
+            "{name}\nGain per level: +{}%\nPossible rolls: +{}% to +{}%\nQuality: {percent}%",
             format::value(quality.roll),
             format::value(quality.min),
             format::value(quality.max),
-            (quality.quality * 100.0).round()
-        )))
-        .flex()
-        .flex_col()
-        .gap_1()
-        .w(px(170.0))
+        )
+        .into(),
+        quality: quality.quality as f32,
+        quality_text: format!("{percent}%").into(),
+    })
+}
+
+/// A bonus cell: the name, the total it gives and the roll's quality bar.
+fn bonus_cell(bonus: Option<&Bonus>, cx: &App) -> AnyElement {
+    let Some(bonus) = bonus else {
+        return div().child("—").into_any_element();
+    };
+    let muted = cx.theme().muted_foreground;
+    let body = h_flex()
+        .gap_2()
+        .child(Caption::new(bonus.name.clone()))
+        .child(table::tag(bonus.total.clone(), Tone::Accent))
         .child(
             div()
-                .flex()
-                .items_center()
-                .gap_2()
-                .child(Caption::new(name))
-                .child(Badge::new(format!("+{}%", format::value(total))).tone(Tone::Accent)),
+                .w(px(48.0))
+                .child(Progress::new(bonus.meter.clone()).value(bonus.quality * 100.0)),
         )
-        .child(
-            Meter::new(format!("captain-quality-{captain}-{slot}"), "", share)
-                .thresholds(1.0, 1.0)
-                .detail(format!("{}%", (quality.quality * 100.0).round())),
+        .child(Caption::new(bonus.quality_text.clone()).text_color(muted));
+    table::tip(bonus.id.clone(), bonus.tip.clone(), body)
+}
+
+fn bonus_text(bonus: Option<&Bonus>) -> SharedString {
+    match bonus {
+        Some(bonus) => format!(
+            "{} {} · quality {}",
+            bonus.name, bonus.total, bonus.quality_text
         )
-        .into_any_element()
+        .into(),
+        None => "—".into(),
+    }
 }

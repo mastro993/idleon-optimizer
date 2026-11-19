@@ -3,13 +3,12 @@
 use crate::sections::sailing::Tab as SailingTab;
 use crate::sections::sailing::simulation::RunInputs as SailingSimInputs;
 use crate::state::AppState;
-use gpui::{App, Context};
+use gpui::Context;
 use idleon_sailing::{
     AssignmentMode, DEFAULT_HOURS, DEFAULT_SEED, FleetComparison, FleetPlan, Goal, MAX_HOURS,
-    MAX_TRIALS, MIN_HOURS, MIN_TRIALS, SimConfig, SimOptions as SailingSimOptions, SimResult,
-    compare, optimize, saved, simulate,
+    MAX_TRIALS, MIN_HOURS, MIN_TRIALS, SimConfig, SimOptions as SailingSimOptions, compare,
+    optimize, saved, simulate,
 };
-use idleon_ui::runner::TaskState;
 
 impl AppState {
     /// The sailing fleet comparison for the section's current island and goal.
@@ -71,11 +70,6 @@ impl AppState {
     pub(crate) fn set_fleet_minimum_tier(&mut self, tier: u32, cx: &mut Context<Self>) {
         self.sailing.minimum_tier = tier.min(5);
         cx.notify();
-    }
-
-    /// The stored pile simulation and whether its inputs changed since the run.
-    pub(crate) fn sailing_simulation(&self, cx: &App) -> TaskState<SimResult> {
-        self.sailing_sim.read(cx).state(&self.sailing_sim_inputs())
     }
 
     /// The inputs a simulation started now would read.

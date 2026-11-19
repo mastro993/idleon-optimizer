@@ -2156,13 +2156,14 @@ const INTERACTIONS = {
     // The best row applies to the toolbar; a best that is already selected has
     // no button to press. The ranking sits below the fold, so scroll it into
     // view before the real pointer click.
+    // The page's tables scroll on their own, so wheel on the page's scrollbar.
+    const scrollTo = async (id) => {
+      await bringIntoView(lane, id, await wheelPoint(lane, 'fishing-scroll'));
+      await waitForNode(lane, id, `fishing: ${id} scrolls into view`);
+    };
     const useBest = ranked.find((node) => node.id === 'fishing-use-best');
     if (useBest) {
-      const y = useBest.bounds?.y ?? 0;
-      if (y > 600) {
-        await lane.call('scroll', { x: 700, y: 500, delta_y: Math.ceil(y - 300) });
-        await waitForNode(lane, 'fishing-use-best', 'fishing: the ranking scrolls into view');
-      }
+      await scrollTo('fishing-use-best');
       await lane.call('click_element', { id: 'fishing-use-best' });
       await waitFor(
         lane,
@@ -2196,14 +2197,6 @@ const INTERACTIONS = {
     if (!team.startsWith('ETA with 1 helper(s)')) {
       throw new Error(`fishing: the team ETA reads ${team}`);
     }
-    const scrollTo = async (id) => {
-      const node = (await lane.tree()).find((entry) => entry.id === id);
-      const y = node?.bounds?.y ?? 0;
-      if (y > 600) {
-        await lane.call('scroll', { x: 700, y: 500, delta_y: Math.ceil(y - 300) });
-        await waitForNode(lane, id, `fishing: ${id} scrolls into view`);
-      }
-    };
     // An unticked helper drops out of the team, and ticking it back adds it.
     await scrollTo('fishing-trench-helper-1');
     await lane.call('click_element', { id: 'fishing-trench-helper-1' });
@@ -2220,7 +2213,10 @@ const INTERACTIONS = {
     );
     // The depth selector reprojects: 5 is the default, 10 is the next choice.
     await scrollTo('fishing-trench-depths');
+    // The first Down opens the kit select on the current choice; the second
+    // moves to the next one.
     await lane.call('focus_element', { id: 'fishing-trench-depths' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(

@@ -13,32 +13,34 @@ mod actions;
 mod artifacts;
 mod breakdowns;
 mod captains;
+mod controls;
 mod fleet;
 mod odds;
 mod replacements;
 mod ships;
 pub(crate) mod simulation;
+mod table;
+
+pub(crate) use controls::Controls;
 
 use crate::state::AppState;
 use crate::ui::{formula_tree, layout};
-use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, App, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
+use gpui::{AnyElement, App, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{
+    Button, ButtonVariant, ButtonVariants as _, Toggle, ToggleGroup, ToggleVariants as _,
 };
-use idleon_sailing::{
-    AssignmentMode, DEFAULT_HOURS, DEFAULT_TRIALS, Goal, captain_bonus_name, island_artifact_count,
-    island_distance,
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 };
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
+use idleon_sailing::{AssignmentMode, DEFAULT_HOURS, DEFAULT_TRIALS, Goal, captain_bonus_name};
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, PANEL_PADDING, Tone};
+use std::rc::Rc;
 
 /// The section's own state, kept across dashboard visits.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -158,10 +160,6 @@ impl Tab {
             Tab::Breakdowns => "Breakdowns",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// The sailing section: header, fleet controls, the tab strip and the active tab.
@@ -179,30 +177,31 @@ pub(crate) fn view(
         Tab::Fleet => fleet::fleet_tab(state, table_height, cx),
         Tab::Ships => ships::ships_tab(state, table_height, cx),
         Tab::Captains => captains::captains_tab(state, table_height, cx),
-        Tab::Replacements => replacements::replacements_tab(state, table_height, cx),
+        Tab::Replacements => replacements::replacements_tab(state, table_height, window, cx),
         Tab::ChestOdds => odds::odds_tab(state, table_height, cx),
-        Tab::Simulation => simulation::simulation_tab(state, table_height, cx),
+        Tab::Simulation => simulation::simulation_tab(state, window, cx),
         Tab::Artifacts => artifacts::artifacts_tab(state, table_height, cx),
-        Tab::Breakdowns => breakdowns::breakdowns_tab(state, table_height, cx),
+        Tab::Breakdowns => breakdowns::breakdowns_tab(state, window, cx),
     };
-    div()
+    let header = header(state, cx);
+    let controls = controls(state, window, cx);
+    v_flex()
         .id("sailing-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
         .gap_3()
-        .child(header(state, cx))
-        .child(controls(state, cx))
+        .child(header)
+        .child(controls)
         .child(tabs(state, cx))
         .child(
             div()
-                .id(("sailing-pane", tab as usize))
                 .flex()
                 .flex_col()
                 .flex_1()
                 .min_h_0()
-                .child(body),
+                .child(body)
+                .overflow_y_scrollbar()
+                .id(("sailing-pane", tab as usize)),
         )
         .into_any_element()
 }
@@ -210,20 +209,19 @@ pub(crate) fn view(
 /// The tab strip, driven by the state's own tab.
 fn tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
     let entity = cx.entity();
-    let mut tabs =
-        TabBar::new("sailing-tabs").selected(SharedString::from(state.sailing_state.tab.id()));
-    for tab in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
-    }
-    tabs.on_select(move |id, _window, cx| {
-        if let Some(tab) = Tab::from_id(id.as_ref()) {
-            entity.update(cx, |state, cx| state.set_sailing_tab(tab, cx));
-        }
-    })
+    let tab = state.sailing_state.tab;
+    layout::tab_bar(
+        "sailing-tabs",
+        Tab::ALL.map(|tab| (tab.id().into(), tab.label().into())),
+        Tab::ALL.iter().position(|entry| *entry == tab).unwrap_or(0),
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| state.set_sailing_tab(Tab::ALL[index], cx));
+        },
+    )
 }
 
 fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let island = state.sailing_state.island;
     let summary = format!(
         "Island {} · {} boats · {} captains",
@@ -231,13 +229,11 @@ fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         state.fleet.boats.len(),
         state.fleet.captains.len()
     );
-    div()
+    h_flex()
         .id("sailing-header")
-        .flex()
         .flex_none()
-        .items_center()
         .gap_3()
-        .child(Badge::new("Sailing").tone(Tone::Accent))
+        .child(table::tag("Sailing", Tone::Accent))
         .child(
             Caption::new("Chest outcomes, artifacts and breakdowns from the save fleet.")
                 .text_color(muted),
@@ -253,90 +249,124 @@ fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
+/// The destinations the save can reach, as both island selects list them.
+pub(super) fn islands(state: &mut AppState, cx: &mut App) -> Rc<Vec<Choice<usize>>> {
+    let available = state.fleet.available_islands().max(1);
+    controls::cached(
+        state,
+        |controls| &mut controls.islands,
+        available,
+        cx,
+        |_, _| controls::island_choices(available),
+    )
+}
+
+/// A label over a control, as each field of a controls row reads.
+pub(super) fn field(label: &'static str, control: impl IntoElement) -> AnyElement {
+    v_flex()
+        .flex_none()
+        .gap_1()
+        .child(Caption::new(label))
+        .child(control)
+        .into_any_element()
+}
+
+/// A small button, primary while `active`.
+pub(super) fn choice_button(id: impl Into<gpui::ElementId>, label: &str, active: bool) -> Button {
+    Button::new(id)
+        .label(label.to_string())
+        .small()
+        .with_variant(if active {
+            ButtonVariant::Primary
+        } else {
+            ButtonVariant::Secondary
+        })
+}
+
 /// The shared fleet controls: everything below reads them.
-fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+fn controls(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let mode = state.sailing_state.mode;
     let optimized = entity.clone();
     let saved = entity.clone();
-    let mode_control = div()
+    let mode_control = h_flex()
         .id("fleet-mode-control")
-        .flex()
-        .items_center()
         .gap_1()
         .child(
-            Button::new("fleet-mode-optimized", "Optimized")
-                .variant(if mode == AssignmentMode::Optimized {
-                    ButtonVariant::Primary
-                } else {
-                    ButtonVariant::Subtle
-                })
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    optimized.update(cx, |state, cx| {
-                        state.set_fleet_mode(AssignmentMode::Optimized, cx);
-                    });
-                }),
+            choice_button(
+                "fleet-mode-optimized",
+                "Optimized",
+                mode == AssignmentMode::Optimized,
+            )
+            .on_click(move |_event, _window, cx| {
+                optimized.update(cx, |state, cx| {
+                    state.set_fleet_mode(AssignmentMode::Optimized, cx);
+                });
+            }),
         )
         .child(
-            Button::new("fleet-mode-saved", "Current save")
-                .variant(if mode == AssignmentMode::Saved {
-                    ButtonVariant::Primary
-                } else {
-                    ButtonVariant::Subtle
-                })
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    saved.update(cx, |state, cx| {
-                        state.set_fleet_mode(AssignmentMode::Saved, cx);
-                    });
-                }),
+            choice_button(
+                "fleet-mode-saved",
+                "Current save",
+                mode == AssignmentMode::Saved,
+            )
+            .on_click(move |_event, _window, cx| {
+                saved.update(cx, |state, cx| {
+                    state.set_fleet_mode(AssignmentMode::Saved, cx);
+                });
+            }),
         );
 
-    let island_entity = entity.clone();
-    let available = state.fleet.available_islands().max(1);
-    let islands: Vec<Choice> = (0..available)
-        .map(|island| {
-            Choice::new(
-                island.to_string(),
-                format!("Island {} · {} dist", island + 1, island_distance(island)),
-            )
-            .note(format!("{} artifacts", island_artifact_count(island)))
-        })
-        .collect();
-    let island_select = Select::new("fleet-island", islands)
-        .label("Fleet destination")
-        .selected(state.sailing_state.island.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(island) = value.parse::<usize>() {
-                island_entity.update(cx, |state, cx| state.set_fleet_island(island, cx));
-            }
-        });
+    let islands = islands(state, cx);
+    let controls = &state.sailing_controls;
+    controls.island.show(
+        (*islands).clone(),
+        Some(&state.sailing_state.island),
+        window,
+        cx,
+    );
+    controls.minimum_tier.show(
+        controls::tier_choices(),
+        Some(&state.sailing.minimum_tier),
+        window,
+        cx,
+    );
+    let island_select = div().w(px(260.0)).child(
+        Select::new(controls.island.state())
+            .id("fleet-island")
+            .accessibility_label("Fleet destination")
+            .small(),
+    );
+    let tier_select = div().w(px(140.0)).child(
+        Select::new(controls.minimum_tier.state())
+            .id("fleet-min-tier")
+            .accessibility_label("Minimum chest")
+            .small(),
+    );
 
-    let goal_entity = entity.clone();
-    let goal_control = SegmentedControl::new("fleet-goal", state.sailing_state.goal.id())
-        .size(ControlSize::Sm)
-        .segment("treasure", "Loot value", None)
-        .segment("artifact", "Artifacts", None)
-        .segment("chests", "Chest rate", None)
-        .on_change(move |value, _window, cx| {
-            if let Some(goal) = Goal::from_id(value.as_ref()) {
-                goal_entity.update(cx, |state, cx| state.set_fleet_goal(goal, cx));
-            }
-        });
-
-    let tier_entity = entity.clone();
-    let tiers: Vec<Choice> = (0..5)
-        .map(|tier| Choice::new(tier.to_string(), format!("Tier {tier}+")))
-        .collect();
-    let tier_select = Select::new("fleet-min-tier", tiers)
-        .label("Minimum chest")
-        .selected(state.sailing.minimum_tier.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(tier) = value.parse::<u32>() {
-                tier_entity.update(cx, |state, cx| state.set_fleet_minimum_tier(tier, cx));
+    let goal = state.sailing_state.goal;
+    let goals = [
+        (Goal::Treasure, "Loot value"),
+        (Goal::Artifact, "Artifacts"),
+        (Goal::Chests, "Chest rate"),
+    ];
+    let goal_control = ToggleGroup::new("fleet-goal")
+        .segmented()
+        .single()
+        .outline()
+        .small()
+        .children(goals.iter().map(|(value, label)| {
+            Toggle::new(gpui::SharedString::from(format!(
+                "fleet-goal-{}",
+                value.id()
+            )))
+            .label(*label)
+            .checked(*value == goal)
+        }))
+        .on_click(move |checked, _window, cx| {
+            if let Some(ix) = checked.iter().position(|checked| *checked) {
+                let goal = goals[ix].0;
+                entity.update(cx, |state, cx| state.set_fleet_goal(goal, cx));
             }
         });
 
@@ -345,47 +375,14 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             "The selected island applies to every pairing. Current save keeps each boat's captain, not its stored destination.",
         ))
         .child(
-            div()
+            h_flex()
                 .id("fleet-controls-row")
-                .flex()
-                .flex_wrap()
                 .items_end()
                 .gap_4()
-                .p_3()
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Fleet assignment"))
-                        .child(mode_control),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .min_w(gpui::px(220.0))
-                        .child(Caption::new("Fleet destination"))
-                        .child(island_select),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Optimize for"))
-                        .child(goal_control),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .min_w(gpui::px(140.0))
-                        .child(Caption::new("Minimum chest"))
-                        .child(tier_select),
-                ),
+                .child(field("Fleet assignment", mode_control))
+                .child(field("Fleet destination", island_select))
+                .child(field("Optimize for", goal_control))
+                .child(field("Minimum chest", tier_select)),
         )
         .into_any_element()
 }
@@ -393,46 +390,44 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 /// A save without boats has no fleet: say so and offer the shared import.
 fn empty(cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    Card::new()
-        .header(CardHeader::new("Fleet assignment"))
+    let muted = cx.theme().muted_foreground;
+    v_flex()
+        .id("sailing-section")
+        .size_full()
+        .min_h_0()
+        .p(PANEL_PADDING)
         .child(
-            EmptyState::new("fleet-empty", IconName::Map, "No sailing fleet loaded")
-                .body(
-                    "Import a save with boats and captains to compare the current pairings with \
-                     the optimizer.",
-                )
-                .action(
-                    Button::new("fleet-import", "Import a save")
-                        .icon(IconName::Upload)
-                        .on_click(move |_event, window, cx| {
-                            entity.update(cx, |state, cx| state.open_import(window, cx));
-                        }),
+            Card::new()
+                .header(CardHeader::new("Fleet assignment"))
+                .child(
+                    div().id("fleet-empty").child(
+                        Empty::new()
+                            .header(
+                                EmptyHeader::new()
+                                    .media(
+                                        EmptyMedia::new()
+                                            .child(Icon::new(IconName::Map).text_color(muted)),
+                                    )
+                                    .title(EmptyTitle::new().child("No sailing fleet loaded"))
+                                    .description(EmptyDescription::new().child(
+                                        "Import a save with boats and captains to compare the \
+                                     current pairings with the optimizer.",
+                                    )),
+                            )
+                            .content(
+                                EmptyContent::new().child(
+                                    Button::new("fleet-import")
+                                        .label("Import a save")
+                                        .icon(IconName::Upload)
+                                        .on_click(move |_event, window, cx| {
+                                            entity.update(cx, |state, cx| {
+                                                state.open_import(window, cx)
+                                            });
+                                        }),
+                                ),
+                            ),
+                    ),
                 ),
-        )
-        .into_any_element()
-}
-
-/// One card holding a string value beside its label and caption.
-pub(super) fn text_kpi(
-    id: &'static str,
-    label: &'static str,
-    value: &str,
-    caption: &str,
-    muted: gpui::Hsla,
-) -> AnyElement {
-    Card::new()
-        .child(
-            div()
-                .id(id)
-                .role(gpui::Role::Label)
-                .aria_label(value.to_string())
-                .flex()
-                .flex_col()
-                .gap_1()
-                .p_3()
-                .child(Caption::new(label).text_color(muted))
-                .child(div().text_size(gpui::px(20.0)).child(value.to_string()))
-                .child(Caption::new(caption.to_string()).text_color(muted)),
         )
         .into_any_element()
 }
@@ -603,13 +598,6 @@ mod tests {
         assert_eq!(chest_odds(0.05525), "5.53%");
         assert_eq!(chest_odds(0.0003737), "0.037%");
         assert_eq!(chest_odds(0.00000001625), "1 in 61.54M");
-    }
-
-    #[test]
-    fn tabs_round_trip_through_their_ids() {
-        for tab in Tab::ALL {
-            assert_eq!(Tab::from_id(tab.id()), Some(tab));
-        }
     }
 
     #[test]
