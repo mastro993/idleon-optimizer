@@ -68,7 +68,7 @@ Shell (`ui/shell.rs`):
   clicking it does nothing. Each section item shows the section's game sprite (the registry's `art`,
   `assets/game/sections/<section>.png`) in a 20 px box, or its emoji in the same box when the file
   is missing; Home shows the kit's `IconName::House`. The sidebar scrolls with no scrollbar, which would cover the rail's
-  icons; a fade into the ground at each edge with more items beyond it shows there is more. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
+  icons; a fade into the ground at each edge with more items beyond it shows there is more. The toggle folds the sidebar from 228 px to the 56 px rail (icons, title
   in a tooltip, group headings shortened to "Gen", "W2" … "W7", "Tools") and back; the fold is saved in the session file as
   `"shell": {"sidebar": "expanded" | "rail"}` and a session without it opens expanded.
 - Rendering: `AppState` is the root view. The header, the sidebar, Home, the status line and each
@@ -299,11 +299,11 @@ cannot start, the window opens without it.
   the formula again. It draws with GPUI Kit (`crates/ui/src/formula.rs`).
 - One shared header (sidebar toggle, history arrows, save status, Export, Import), one
   sidebar and one tab strip; a section owns its tab strip and the shell owns the header and sidebar.
-- Palette and spacing follow one dark theme: `#1a1a2e` ground, `#16213e` surfaces, `#0f3460`
-  borders, `#00d4ff` accent; world badges use per-world colours. The kit theme
-  (`crates/app/data/theme.json`) carries the same colors. The GPUI Kit migration replaces it
-  with the Console design in [`ui-kit/design.md`](ui-kit/design.md) (dark and light) once #360
-  applies it.
+- Palette, type and spacing follow the Console design in [`ui-kit/design.md`](ui-kit/design.md):
+  a near-black graphite ground (light mode: near-white), one violet accent, hairline borders and
+  JetBrains Mono for numbers; world badges use per-world colours. The kit theme
+  (`crates/app/data/theme.json`) holds its dark and light modes, and the app follows the
+  system's appearance.
 - When the workspace (the window minus the sidebar) is narrower than 1180 px, the fixed side rails
   stack under their main pane; data tables scroll inside a
   height that shrinks with the window, so the 1080×680 minimum stays usable.
@@ -341,7 +341,8 @@ crates/ui                           GPUI building blocks: TaskRunner, run chrome
                                     (`widgets`, see docs/ui-kit/display.md) and the kit table's
                                     `RowsDelegate` (docs/ui-kit/data.md)
 crates/app                          GPUI binary (Ely and GPUI Kit during the migration)
-  data/theme.json                   the GPUI Kit theme
+  data/theme.json                   the GPUI Kit theme (Console, dark and light)
+  fonts/                            JetBrains Mono, bundled under the SIL OFL 1.1
   sections/                         the registry and one module per section
     mod.rs                          id, title, group, icon, art, spec, status, factory, keys, cards
     <section>/state.rs              the section's own state, import step and project config

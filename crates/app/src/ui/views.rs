@@ -261,13 +261,8 @@ fn home_reads(state: &AppState, cx: &App) -> HomeReads {
 }
 
 fn draw_home(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
-    div()
-        .id("pane-dashboard")
-        .size_full()
-        .p(dashboard::PADDING)
-        .min_h_0()
-        .child(dashboard::dashboard_pane(state, window, cx))
-        .into_any_element()
+    let pane = dashboard::dashboard_pane(state, window, cx);
+    section::page("pane-dashboard", pane)
 }
 
 fn status_reads(state: &AppState, _: &App) -> StatusReads {

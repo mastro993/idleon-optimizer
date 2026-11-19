@@ -308,14 +308,14 @@ mod tests {
     fn the_breakpoint_measures_the_workspace_beside_the_sidebar() {
         // (window width, sidebar width, expected room)
         let rows = [
-            (1440.0, 240.0, Breakpoint::Regular),
+            (1440.0, 228.0, Breakpoint::Regular),
             (1440.0, 56.0, Breakpoint::Regular),
-            (1420.0, 240.0, Breakpoint::Regular),
-            (1419.0, 240.0, Breakpoint::Compact),
+            (1408.0, 228.0, Breakpoint::Regular),
+            (1407.0, 228.0, Breakpoint::Compact),
             (1236.0, 56.0, Breakpoint::Regular),
             (1235.0, 56.0, Breakpoint::Compact),
             (1080.0, 56.0, Breakpoint::Compact),
-            (1080.0, 240.0, Breakpoint::Compact),
+            (1080.0, 228.0, Breakpoint::Compact),
         ];
         for (window, sidebar, expected) in rows {
             assert_eq!(

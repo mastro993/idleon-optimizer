@@ -22,7 +22,7 @@ use idleon_ui::widgets::{Card, CardHeader, Tone};
 
 /// The Console page gutter (`docs/ui-kit/design.md` § Density and shape):
 /// the page frame owns it, so a section never sets its own.
-const GUTTER_X: Pixels = px(20.0);
+pub(crate) const GUTTER_X: Pixels = px(20.0);
 const GUTTER_Y: Pixels = px(16.0);
 
 /// The page every place in the workspace renders into, inside the gutter.

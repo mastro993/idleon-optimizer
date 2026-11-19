@@ -5,6 +5,7 @@ use crate::sections::{self, Group, Section};
 use crate::state::{AppState, Route};
 use crate::ui::assets::section_icon;
 use crate::ui::layout::{Breakpoint, workspace_width};
+use crate::ui::section::GUTTER_X;
 use crate::ui::theme::WorldBadge;
 use gpui::Focusable as _;
 use gpui::prelude::*;
@@ -19,12 +20,10 @@ use gpui_kit::component::empty::{
 };
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
-use idleon_ui::widgets::{Card, TEXT_BODY, TEXT_CAPTION, TEXT_TITLE, search_input};
+use idleon_ui::widgets::{Card, PANEL_GAP, TEXT_BODY, TEXT_CAPTION, TEXT_TITLE, search_input};
 
-/// Padding around Home, inside the workspace.
-pub(crate) const PADDING: Pixels = px(24.0);
-/// Space between cards, both ways.
-const GAP: Pixels = px(16.0);
+/// Space between cards, both ways: the Console gap between panels.
+const GAP: Pixels = PANEL_GAP;
 
 /// The searchable dashboard, grouped General, World 2-7.
 pub(crate) fn dashboard_pane(
@@ -33,7 +32,7 @@ pub(crate) fn dashboard_pane(
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
     let columns = columns(
-        workspace_width(window, cx) - 2.0 * f32::from(PADDING),
+        workspace_width(window, cx) - 2.0 * f32::from(GUTTER_X),
         Breakpoint::of(window, cx).card_min(),
     );
     let query = state.search.read(cx).value().trim().to_string();
@@ -41,9 +40,12 @@ pub(crate) fn dashboard_pane(
     let search_focus = state.search.focus_handle(cx);
     let clear = entity.clone();
     let resume = state.last_section.and_then(sections::find);
-    let muted = cx.theme().muted_foreground;
+    let (muted, subtle) = (
+        cx.theme().muted_foreground,
+        cx.theme().table_head_foreground,
+    );
 
-    let mut groups = v_flex().gap_6();
+    let mut groups = v_flex().gap_4();
     let mut matches = 0;
     for group in Group::ALL {
         let cards: Vec<&'static Section> = sections::cards()
@@ -67,16 +69,16 @@ pub(crate) fn dashboard_pane(
         groups = groups.child(
             v_flex()
                 .id(format!("dashboard-group-{id}"))
-                .gap_3()
+                .gap_2()
                 .child(
                     div()
                         .id(format!("dashboard-group-title-{id}"))
                         .role(Role::Heading)
                         .aria_label(group.label())
                         .text_size(TEXT_CAPTION)
-                        .font_weight(FontWeight::SEMIBOLD)
-                        .text_color(muted)
-                        .child(group.label()),
+                        .font_weight(FontWeight::MEDIUM)
+                        .text_color(subtle)
+                        .child(group.label().to_uppercase()),
                 )
                 .child(grid),
         );
@@ -93,7 +95,7 @@ pub(crate) fn dashboard_pane(
         }))
         .size_full()
         .min_h_0()
-        .gap_4()
+        .gap_3()
         .child(
             h_flex()
                 .id("dashboard-header")
@@ -137,7 +139,7 @@ pub(crate) fn dashboard_pane(
                 .min_h_0()
                 .child(
                     v_flex()
-                        .gap_6()
+                        .gap_4()
                         .pb_4()
                         .when_some(resume, |body, resume| {
                             let entity = entity.clone();
@@ -195,6 +197,9 @@ fn columns(width: f32, min: Pixels) -> u16 {
     ((width + gap) / (min + gap)).floor().max(1.0) as u16
 }
 
+/// A card's game sprite (`docs/ui-kit/design.md` § Density and shape).
+const SPRITE: Pixels = px(16.0);
+
 /// One clickable card: game sprite, title, world badge and one-line description.
 ///
 /// The grid stretches every card in a row to the row's height. The pointer
@@ -240,8 +245,8 @@ fn section_card(
             Card::new().flex_1().min_w_0().child(
                 h_flex()
                     .items_start()
-                    .gap_3()
-                    .child(section_icon(section, manifest, px(32.0)))
+                    .gap_2()
+                    .child(section_icon(section, manifest, SPRITE))
                     .child(
                         v_flex()
                             .flex_1()
@@ -280,9 +285,9 @@ mod tests {
         let min = px(300.0);
         assert_eq!(columns(0.0, min), 1);
         assert_eq!(columns(299.0, min), 1);
-        assert_eq!(columns(616.0, min), 2);
-        assert_eq!(columns(931.0, min), 2);
-        assert_eq!(columns(932.0, min), 3);
-        assert_eq!(columns(1920.0 - 228.0 - 48.0, min), 5);
+        assert_eq!(columns(608.0, min), 2);
+        assert_eq!(columns(915.0, min), 2);
+        assert_eq!(columns(916.0, min), 3);
+        assert_eq!(columns(1920.0 - 228.0 - 40.0, min), 5);
     }
 }

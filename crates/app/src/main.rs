@@ -104,8 +104,8 @@ fn open_window(
         titlebar: Some(TitlebarOptions {
             title: Some("Idleon Research Optimizer".into()),
             appears_transparent: true,
-            // 14 px lights centred in the 48 px header, level with the sidebar toggle.
-            traffic_light_position: Some(point(px(16.0), px(17.0))),
+            // 14 px lights centred in the 44 px header, level with the sidebar toggle.
+            traffic_light_position: Some(point(px(16.0), px(15.0))),
         }),
         window_min_size: Some(size(px(ui::layout::MIN_WIDTH), px(ui::layout::MIN_HEIGHT))),
         ..Default::default()
@@ -113,6 +113,7 @@ fn open_window(
     // The kit's Root wraps the app's view and hosts the kit's dialogs, sheets,
     // notifications and popovers above it.
     gpui_kit::open_window(options, cx, move |window, cx| {
+        ui::theme::follow_system(window);
         cx.new(move |cx| AppState::new(window, endpoint, initial, state_dir, import, cx))
     })
     .context("window failed to open")?;

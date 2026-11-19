@@ -26,13 +26,13 @@ use std::rc::Rc;
 use std::time::Duration;
 
 /// The sidebar's width expanded, with icon and title.
-const WIDE: Pixels = px(240.0);
+const WIDE: Pixels = px(228.0);
 /// The sidebar's width folded to the rail of icons.
 const RAIL: Pixels = px(56.0);
 /// How long the sidebar animates its width when it folds or unfolds.
 pub(crate) const FOLD_TIME: Duration = Duration::from_millis(200);
 /// An item's height.
-const ROW: Pixels = px(28.0);
+const ROW: Pixels = px(26.0);
 /// A group heading's height.
 const HEADING: Pixels = px(24.0);
 
@@ -202,8 +202,8 @@ fn edge_fades(scroll: &ScrollHandle, ground: Hsla) -> impl IntoElement {
     .size_full()
 }
 
-/// A group's title, which does not fold; the rail shows its short form at the
-/// same left edge.
+/// A group's title in the subtle uppercase of a table head, which does not
+/// fold; the rail shows its short form at the same left edge.
 fn heading(group: Group, rail: bool, cx: &App) -> impl IntoElement {
     div()
         .id(SharedString::from(format!(
@@ -218,13 +218,16 @@ fn heading(group: Group, rail: bool, cx: &App) -> impl IntoElement {
         .px_2()
         .text_size(TEXT_CAPTION)
         .font_weight(FontWeight::MEDIUM)
-        .text_color(cx.theme().muted_foreground)
+        .text_color(cx.theme().table_head_foreground)
         .whitespace_nowrap()
-        .child(if rail {
-            rail_label(group)
-        } else {
-            group.label()
-        })
+        .child(
+            if rail {
+                rail_label(group)
+            } else {
+                group.label()
+            }
+            .to_uppercase(),
+        )
 }
 
 /// A group's heading in the rail, short enough for its 56 px.
@@ -237,7 +240,7 @@ fn rail_label(group: Group) -> &'static str {
 }
 
 /// The icon slot every item shares.
-const ICON: Pixels = px(20.0);
+const ICON: Pixels = px(16.0);
 
 /// A vector icon in the slot.
 fn glyph(icon: Icon) -> AnyElement {
