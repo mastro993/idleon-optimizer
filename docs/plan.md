@@ -457,6 +457,9 @@ an hour, lists the nine Scurge upgrades with their unlock levels, and refuses a 
 menu is not bought or whose saved upgrades overspend its level, while the import names every
 missing `Menagerie` row. The rates multiply the row's EXP per kill by the character's
 kills-per-hour stand-in, because the shared simulator does not run Clam Work.
+The section draws with GPUI Kit: the multikill total, the budget and the claim and Scurge entries
+are number fields that take typed values, and the shown levels, the pearl value tree and the Scurge
+comparison are rebuilt only when the save, the applied plan or an input changes.
 Details: [`docs/sections/clamworks.md`](sections/clamworks.md).
 
 The Killroy section implements KL-01 to KL-03: the weekly forecast with every character's three
@@ -698,6 +701,8 @@ villager, a warning while the typed total leaves the save's, the lowest count an
 what it earns today, with a reset back to the save's own split. `idleon_opal::Simulation` carries that
 arithmetic, so the simulator reads a distribution the optimizer planned exactly as the plan does;
 the manual counts live in `sections.opal` in the project document, so an export carries them.
+The section draws with GPUI Kit: the target, the total and the manual counts are kit controls owned
+by the section state, and the formula tree is re-rooted only when the save or the villager changes.
 Details: [`docs/sections/opal.md`](sections/opal.md).
 
 The Sneaking section has its loadout, inventory, formula breakdown, charm optimizer and floor
@@ -814,7 +819,9 @@ crop prices every remaining depth — the chance any eligible plot rolls it, the
 cycle, and the expected, median, p90 and p95 attempts — and the tab shows the evolution cards, the
 "Hardest Remaining Steps" table (the twenty slowest stages), the overgrowth stopping cards for the
 selected plot and the evolution assignment. Every plot's long-run overgrowth curve, with the plot
-selection switching it, sits on that tab too. Details:
+selection switching it, sits on that tab too. The section draws with GPUI Kit: the crop target is
+a number field that takes typed values, the field's figures, curves and tables are read from the
+farm once per save, and the evolution chain once per crop target, not on every frame. Details:
 [`docs/sections/farming.md`](sections/farming.md).
 
 The Cooking Mastery section's Mastery EXP tab is built (CK-01): the mastery rank, the free points,

@@ -6,48 +6,37 @@
 //! progress and cancel chrome come from `idleon_ui::run_chrome`, and a result
 //! whose budget or multikill changed is marked stale instead of dropped.
 
-use super::kpi;
+use super::table::{Col, note, table, tag, text};
 use super::upgrades::{effect, money};
+use super::{kpi, pane};
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::Stepper;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Styled, Window, div};
+use gpui::{AnyElement, App, Context, FontWeight, IntoElement, ParentElement, Styled, Window, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, h_flex, v_flex};
 use idleon_clamworks::Clamworks;
 use idleon_clamworks::{Category, Plan, PlanStep, UpgradeRank};
 use idleon_ui::format;
-
-/// The largest budget the control offers, so the stepper stays finite.
-const MAX_BUDGET: f64 = 1e18;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Tone, show_number};
 
 pub(crate) fn optimizer_pane(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let clamworks = state.clamworks_view();
+    let clamworks = state.clamworks_shown();
     let multikill = state.clamworks_multikill;
     let task = state.clamworks_task(cx);
-    let muted = cx.theme().colors.fg_muted;
-    let mut body = div()
+    let mut body = v_flex()
         .id("clamworks-optimizer")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
-        .child(plan_controls(state, cx))
-        .child(
-            Caption::new(
-                "Each purchase is the best marginal pearls-per-kill gain the budget can afford at the levels the plan has reached, so cost reductions from earlier purchases are already priced in.",
-            )
-            .text_color(muted),
-        );
+        .gap(PANEL_GAP)
+        .child(plan_controls(state, task.running, window, cx))
+        .child(note(
+            "Each purchase is the best marginal pearls-per-kill gain the budget can afford at the levels the plan has reached, so cost reductions from earlier purchases are already priced in.",
+            cx,
+        ));
     if task.running
         && let Some(progress) = task.progress.clone()
     {
@@ -68,50 +57,42 @@ pub(crate) fn optimizer_pane(
             task.result.is_some(),
         ));
     }
-    if let Some(plan) = task.result.clone() {
-        body = body.child(plan_card(&plan, task.stale, cx));
+    if let Some(plan) = task.result.as_ref() {
+        body = body.child(plan_card(plan, task.stale, cx));
     }
-    let body = body.child(priority_card(&clamworks, multikill));
-    ScrollArea::new("clamworks-optimizer-scroll")
-        .vertical()
-        .flex_1()
-        .min_h_0()
-        .child(body)
-        .into_any_element()
+    let body = body.child(priority_card(&clamworks, multikill, cx));
+    pane("clamworks-optimizer-scroll", body)
 }
 
 /// The budget, how to run the plan, and what running does.
-fn plan_controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+fn plan_controls(
+    state: &mut AppState,
+    running: bool,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let budget = state.clamworks_budget;
     let balance = state.clamworks.pearl_balance;
-    let running = state.clamworks_task(cx).running;
     let hint = if budget <= 0.0 {
         "no budget yet: import a save or raise it above zero"
     } else {
         "the plan never spends more than the budget"
     };
-    let budget_entity = cx.entity();
-    let budget_control = Stepper::new("clamworks-budget", budget)
-        .range(0.0, MAX_BUDGET)
-        .step(1_000_000.0)
-        .precision(0)
-        .on_change(move |value, _window, cx| {
-            budget_entity.update(cx, |state, cx| state.set_clamworks_budget(value, cx));
-        });
+    let field = &state.clamworks_controls.budget;
+    show_number(field, budget, 0, window, cx);
     let run_entity = cx.entity();
-    let run = Button::new(
-        "run-clamworks-plan",
-        if running { "Optimizing…" } else { "Optimize" },
-    )
-    .primary()
-    .icon(IconName::Play)
-    .disabled(running || budget <= 0.0)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.run_clamworks_plan(cx));
-    });
+    let run = Button::new("run-clamworks-plan")
+        .label(if running { "Optimizing…" } else { "Optimize" })
+        .primary()
+        .icon(IconName::Play)
+        .disabled(running || budget <= 0.0)
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.run_clamworks_plan(cx));
+        });
     let reset_entity = cx.entity();
-    let reset = Button::new("reset-clamworks-budget", "Use saved balance")
+    let reset = Button::new("reset-clamworks-budget")
+        .label("Use saved balance")
         .icon(IconName::RotateCcw)
         .disabled(budget == balance)
         .on_click(move |_event, _window, cx| {
@@ -124,39 +105,28 @@ fn plan_controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement
             ),
         )
         .child(
-            div()
-                .p_3()
-                .flex()
-                .flex_col()
+            h_flex()
+                .id("clamworks-budget-row")
                 .gap_3()
+                .child(Caption::new("Budget").text_color(muted))
+                .child(ui::number_field("clamworks-budget", field, "Budget").w(gpui::px(160.0)))
+                .child(Caption::new("pearls").text_color(muted))
+                .child(reset)
                 .child(
-                    div()
-                        .id("clamworks-budget-row")
-                        .flex()
-                        .flex_wrap()
-                        .items_center()
-                        .gap_3()
-                        .child(Caption::new("Budget").text_color(muted))
-                        .child(budget_control)
-                        .child(Caption::new("pearls").text_color(muted))
-                        .child(reset)
-                        .child(
-                            Caption::new(format!("Saved balance {} · {hint}", format::rate(balance)))
-                                .text_color(muted),
-                        ),
-                )
-                .child(run),
+                    Caption::new(format!("Saved balance {} · {hint}", format::rate(balance)))
+                        .text_color(muted),
+                ),
         )
+        .child(div().child(run))
         .into_any_element()
 }
 
 /// The stored plan: what it spends, the purchases it makes and the actions.
 fn plan_card(plan: &Plan, stale: bool, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
     let spent = format::scale(plan.spent);
     let remaining = format::scale(plan.remaining());
     let value_after = plan.pearl_value_after();
-    let rows = purchases(&plan.steps);
+    let bought = purchases(&plan.steps);
     let entity = cx.entity();
     let apply = entity.clone();
     let dismiss = entity;
@@ -174,109 +144,104 @@ fn plan_card(plan: &Plan, stale: bool, cx: &mut Context<AppState>) -> AnyElement
     if stale {
         card = card.child(idleon_ui::run_chrome::stale_banner("clamworks-plan"));
     }
-    let summary = div()
-        .id("clamworks-plan-result")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(kpi(
-            "clamworks-plan-purchases",
-            "Purchases",
-            plan.steps.len() as f64,
-            0,
-            None,
-            "One level each",
-        ))
-        .child(kpi(
-            "clamworks-plan-spent",
-            "Spent",
-            spent.0,
-            2,
-            Some(spent.1),
-            "Sum of every purchase",
-        ))
-        .child(kpi(
-            "clamworks-plan-remaining",
-            "Remaining",
-            remaining.0,
-            2,
-            Some(remaining.1),
-            "Left after the last purchase",
-        ))
-        .child(kpi(
-            "clamworks-plan-ppk",
-            "Pearls / Kill",
-            plan.pearls_per_kill_after(),
-            4,
-            None,
-            &format!(
-                "+{:.2}% from {}",
-                plan.gain() * 100.0,
-                format::rate(plan.pearls_per_kill_before())
-            ),
-        ))
-        .child(kpi(
-            "clamworks-plan-value",
-            "Pearl Value",
-            value_after,
-            2,
-            Some("×"),
-            &format!("Was ×{:.2}", plan.pearl_value_before()),
-        ));
-    let mut table = Table::new(["Upgrade", "Purchases", "Levels", "Pearls", "Pearls / Kill"]);
-    for row in &rows {
+    let summary = div().id("clamworks-plan-result").child(
+        KpiStrip::new()
+            .child(kpi(
+                "clamworks-plan-purchases",
+                "Purchases",
+                plan.steps.len() as f64,
+                0,
+                None,
+                "One level each",
+            ))
+            .child(kpi(
+                "clamworks-plan-spent",
+                "Spent",
+                spent.0,
+                2,
+                Some(spent.1),
+                "Sum of every purchase",
+            ))
+            .child(kpi(
+                "clamworks-plan-remaining",
+                "Remaining",
+                remaining.0,
+                2,
+                Some(remaining.1),
+                "Left after the last purchase",
+            ))
+            .child(kpi(
+                "clamworks-plan-ppk",
+                "Pearls / Kill",
+                plan.pearls_per_kill_after(),
+                4,
+                None,
+                &format!(
+                    "+{:.2}% from {}",
+                    plan.gain() * 100.0,
+                    format::rate(plan.pearls_per_kill_before())
+                ),
+            ))
+            .child(kpi(
+                "clamworks-plan-value",
+                "Pearl Value",
+                value_after,
+                2,
+                Some("×"),
+                &format!("Was ×{:.2}", plan.pearl_value_before()),
+            )),
+    );
+    let rows = bought.iter().map(|row| {
         let name = idleon_clamworks::data::clamworks().upgrades[row.index]
             .name
             .clone();
-        table = table.row([
+        [
             div()
                 .id(("clamworks-plan-upgrade", row.index))
                 .child(name)
                 .into_any_element(),
-            div().child(row.count.to_string()).into_any_element(),
-            div()
-                .child(format!("{} → {}", row.first_level, row.last_level))
-                .into_any_element(),
-            div().child(money(row.spent)).into_any_element(),
-            div()
-                .child(format!("+{:.2}%", row.gain * 100.0))
-                .into_any_element(),
-        ]);
-    }
-    card.child(
-        div()
-            .flex()
-            .flex_col()
-            .gap_3()
-            .p_3()
-            .child(summary)
-            .child(
-                div()
-                    .id("clamworks-plan-purchases-table")
-                    .min_w_0()
-                    .child(table),
-            )
-            .child(Caption::new(plan.stop_reason()).text_color(muted))
-            .child(
-                div()
-                    .flex()
-                    .gap_2()
-                    .child(
-                        Button::new("apply-clamworks-plan", "Apply plan")
-                            .primary()
-                            .disabled(stale)
-                            .on_click(move |_event, _window, cx| {
-                                apply.update(cx, |state, cx| state.apply_clamworks_plan(cx));
-                            }),
-                    )
-                    .child(Button::new("dismiss-clamworks-plan", "Dismiss").on_click(
-                        move |_event, _window, cx| {
+            text(row.count.to_string()),
+            text(format!("{} → {}", row.first_level, row.last_level)),
+            text(money(row.spent)),
+            text(format!("+{:.2}%", row.gain * 100.0)),
+        ]
+    });
+    let table = table(
+        "clamworks-plan-purchases",
+        &[
+            Col::Text("Upgrade"),
+            Col::Number("Purchases"),
+            Col::Number("Levels"),
+            Col::Number("Pearls"),
+            Col::Number("Pearls / Kill"),
+        ],
+        rows,
+        cx,
+    );
+    card.child(summary)
+        .child(table)
+        .child(note(plan.stop_reason(), cx))
+        .child(
+            h_flex()
+                .gap_2()
+                .child(
+                    Button::new("apply-clamworks-plan")
+                        .label("Apply plan")
+                        .primary()
+                        .disabled(stale)
+                        .on_click(move |_event, _window, cx| {
+                            apply.update(cx, |state, cx| state.apply_clamworks_plan(cx));
+                        }),
+                )
+                .child(
+                    Button::new("dismiss-clamworks-plan")
+                        .label("Dismiss")
+                        .on_click(move |_event, _window, cx| {
                             dismiss.update(cx, |state, cx| state.dismiss_clamworks_plan(cx));
-                        },
-                    )),
-            ),
-    )
-    .into_any_element()
+                        }),
+                ),
+        )
+        .into_any_element()
 }
 
 /// One row per upgrade the plan buys, in the order it first buys it.
@@ -313,31 +278,17 @@ fn purchases(steps: &[PlanStep]) -> Vec<Bought> {
 }
 
 /// The rank table: pearl upgrades first, then the utility upgrades.
-fn priority_card(clamworks: &Clamworks, multikill: f64) -> AnyElement {
+fn priority_card(clamworks: &Clamworks, multikill: f64, cx: &App) -> AnyElement {
     let ranks = clamworks.priority(multikill);
-    let mut table = Table::new([
-        "#",
-        "Upgrade",
-        "Lv",
-        "Next Cost",
-        "Pearls/Kill Gain",
-        "Per Cost",
-    ]);
-    let mut position = 0;
-    for rank in ranks.iter().filter(|rank| rank.is_pearl_upgrade) {
-        position += 1;
-        table = table.row(priority_row(
-            clamworks,
-            multikill,
-            rank,
-            Some(position),
-            position == 1,
-            false,
-        ));
-    }
+    let mut rows: Vec<[AnyElement; 6]> = ranks
+        .iter()
+        .filter(|rank| rank.is_pearl_upgrade)
+        .enumerate()
+        .map(|(index, rank)| priority_row(clamworks, multikill, rank, Some(index + 1), false))
+        .collect();
     let utility: Vec<&UpgradeRank> = ranks.iter().filter(|rank| !rank.is_pearl_upgrade).collect();
     if !utility.is_empty() {
-        table = table.row([
+        rows.push([
             div().into_any_element(),
             div()
                 .font_weight(FontWeight::SEMIBOLD)
@@ -348,9 +299,11 @@ fn priority_card(clamworks: &Clamworks, multikill: f64) -> AnyElement {
             div().into_any_element(),
             div().into_any_element(),
         ]);
-        for rank in utility {
-            table = table.row(priority_row(clamworks, multikill, rank, None, false, true));
-        }
+        rows.extend(
+            utility
+                .into_iter()
+                .map(|rank| priority_row(clamworks, multikill, rank, None, true)),
+        );
     }
     Card::new()
         .header(
@@ -358,64 +311,68 @@ fn priority_card(clamworks: &Clamworks, multikill: f64) -> AnyElement {
                 "Ranked by marginal pearls-per-kill improvement per unit cost at the levels above. Utility upgrades are listed separately.",
             ),
         )
-        .child(div().p_3().child(div().min_w_0().child(table)))
+        .child(table(
+            "clamworks-priority",
+            &[
+                Col::Number("#"),
+                Col::Text("Upgrade"),
+                Col::Number("Lv"),
+                Col::Number("Next Cost"),
+                Col::Number("Pearls/Kill Gain"),
+                Col::Number("Per Cost"),
+            ],
+            rows,
+            cx,
+        ))
         .into_any_element()
 }
 
+/// One ranked upgrade; `position` 1 is the best pearl upgrade.
 fn priority_row(
     clamworks: &Clamworks,
     multikill: f64,
     rank: &UpgradeRank,
     position: Option<usize>,
-    best: bool,
     utility: bool,
 ) -> [AnyElement; 6] {
-    let mut name = div()
+    let category = match rank.category {
+        Category::Cost => Some(("Cost", Tone::Info)),
+        Category::Clams => Some(("Clams", Tone::Accent)),
+        Category::Black => Some(("Pure Pearl", Tone::Neutral)),
+        Category::Pearl => None,
+    };
+    let name = h_flex()
         .id(("clamworks-priority", rank.index))
-        .flex()
-        .items_center()
         .gap_2()
-        .child(effect(clamworks, rank.index, multikill));
-    if best {
-        name = name.child(Badge::new("Best").tone(Tone::Success));
-    }
-    if utility {
-        let category = match rank.category {
-            Category::Cost => Some(("Cost", Tone::Info)),
-            Category::Clams => Some(("Clams", Tone::Accent)),
-            Category::Black => Some(("Pure Pearl", Tone::Neutral)),
-            Category::Pearl => None,
-        };
-        if let Some((label, tone)) = category {
-            name = name.child(Badge::new(label).tone(tone));
-        }
-    }
+        .child(
+            div()
+                .min_w_0()
+                .child(effect(clamworks, rank.index, multikill)),
+        )
+        .when(position == Some(1), |name| {
+            name.child(tag("Best", Tone::Success))
+        })
+        .when_some(category.filter(|_| utility), |name, (label, tone)| {
+            name.child(tag(label, tone))
+        });
     let gain = if rank.cost_save > 0.0 {
-        div()
-            .child(format!("-{:.2}% cost", rank.cost_save * 100.0))
-            .into_any_element()
+        format!("-{:.2}% cost", rank.cost_save * 100.0)
     } else if rank.ppk_gain > 0.0 {
-        div()
-            .child(format!("+{:.4}%", rank.ppk_gain * 100.0))
-            .into_any_element()
+        format!("+{:.4}%", rank.ppk_gain * 100.0)
     } else {
-        div().child("—").into_any_element()
+        "—".to_string()
     };
     [
-        div()
-            .child(position.map_or_else(String::new, |position| position.to_string()))
-            .into_any_element(),
+        text(position.map_or_else(String::new, |position| position.to_string())),
         name.into_any_element(),
-        div().child(rank.level.to_string()).into_any_element(),
-        div().child(money(rank.next_cost)).into_any_element(),
-        gain,
-        div()
-            .child(if utility {
-                "—".to_string()
-            } else {
-                format!("{:.2e}", rank.efficiency)
-            })
-            .into_any_element(),
+        text(rank.level.to_string()),
+        text(money(rank.next_cost)),
+        text(gain),
+        text(if utility {
+            "—".to_string()
+        } else {
+            format!("{:.2e}", rank.efficiency)
+        }),
     ]
 }
 

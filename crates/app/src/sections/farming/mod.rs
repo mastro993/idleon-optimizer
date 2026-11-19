@@ -18,29 +18,29 @@
 mod actions;
 
 use crate::state::AppState;
-use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::forms::{Choice, Select, Stepper};
-use ely_gpui_component::layout::ScrollArea;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui::{self, layout};
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
-};
-use idleon_farming::{self as farming, Assignment, Farm, Mode, Objective, PlotMetrics, Snapshot};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
+use idleon_farming::{self as farming, Assignment, Farm, Mode, Objective};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, PANEL_GAP, show_number};
 
 mod allocation;
 mod assignment;
 mod comparison;
+mod controls;
 mod curves;
 mod detail;
 mod evolution;
 mod field;
 mod overview;
 mod presets;
+mod table;
 
+pub(crate) use controls::Controls;
 pub(crate) use presets::CustomPreset;
 
 /// The farming page's tabs, in order.
@@ -73,10 +73,6 @@ impl Tab {
             Tab::Plots => "Full Plot Grid",
             Tab::Evolution => "Evolution & OG",
         }
-    }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
@@ -184,82 +180,80 @@ pub(crate) fn view(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let snapshot = state.farm.snapshot();
-    let header = section_header(state, &snapshot, cx);
+    let header = section_header(state, window, cx);
     let tabs = tabs(state, cx);
     let pane = match state.farming.tab {
         Tab::Overview => overview::overview(state, cx),
         Tab::Evolution => evolution::evolution(state, cx),
-        Tab::Plots => {
-            let breakpoint = Breakpoint::of(window, cx);
-            let plots: Vec<PlotMetrics> = (0..farming::PLOTS)
-                .map(|index| state.farm.plot_metrics_with(index, &snapshot))
-                .collect();
-            let selected = state.farming.selected_plot.min(farming::PLOTS - 1);
-            let field = field::field_card(
-                &plots,
-                selected,
-                state.farm.has_plots(),
-                &state.farming.assignment,
-                cx,
-            );
-            let detail = detail::detail_pane(state, &plots[selected], &snapshot, cx);
-            let assignment = assignment::assignment_card(&state.farming.assignment, cx);
-            let presets = presets::presets_card(state, cx);
-            let allocation = allocation::allocation_card(state, cx);
-            let comparison = comparison::comparison_card(state, cx);
-            let body = div()
-                .flex()
-                .flex_col()
-                .gap_3()
-                .child(layout::split_pane(
-                    "farming-body",
-                    breakpoint,
-                    field,
-                    detail,
-                    px(360.0),
-                ))
-                .child(assignment)
-                .child(presets)
-                .child(allocation)
-                .child(comparison);
-            ScrollArea::new("farming-scroll")
-                .vertical()
-                .flex_1()
-                .min_h_0()
-                .child(body)
-                .into_any_element()
-        }
+        Tab::Plots => plots(state, window, cx),
     };
 
-    div()
+    v_flex()
         .id("farming-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(header)
         .child(tabs)
         .child(pane)
         .into_any_element()
 }
 
+/// The Full Plot Grid tab: the field beside the plot detail, then the
+/// assignment, the presets, the allocator and the comparison.
+fn plots(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let breakpoint = layout::Breakpoint::of(window, cx);
+    let field = state.farming_field();
+    let selected = state.farming.selected_plot.min(farming::PLOTS - 1);
+    let grid = field::field_card(
+        &field.plots,
+        selected,
+        state.farm.has_plots(),
+        &state.farming.assignment,
+        cx,
+    );
+    let detail = detail::detail_pane(state, &field.plots[selected], &field.snapshot, cx);
+    let assignment = assignment::assignment_card(&state.farming.assignment, cx);
+    let presets = presets::presets_card(state, cx);
+    let allocation = allocation::allocation_card(state, cx);
+    let comparison = comparison::comparison_card(state, cx);
+    let body = v_flex()
+        .gap(PANEL_GAP)
+        .child(layout::split_pane(
+            "farming-body",
+            breakpoint,
+            grid,
+            detail,
+            px(360.0),
+        ))
+        .child(assignment)
+        .child(presets)
+        .child(allocation)
+        .child(comparison);
+    div()
+        .flex_1()
+        .min_h_0()
+        .child(body)
+        .overflow_y_scrollbar()
+        .id("farming-scroll")
+        .into_any_element()
+}
+
 /// The tab strip, driven by the state's own tab.
 fn tabs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    let mut strip =
-        TabBar::new("farming-tabs").selected(SharedString::from(state.farming.tab.id()));
-    for tab in Tab::ALL {
-        strip = strip.tab(WindowTab::new(tab.id(), tab.label()));
-    }
-    strip
-        .on_select(move |id, _window, cx| {
-            if let Some(tab) = Tab::from_id(id.as_ref()) {
-                entity.update(cx, |state, cx| state.set_farming_tab(tab, cx));
-            }
-        })
-        .into_any_element()
+    layout::tab_bar(
+        "farming-tabs",
+        Tab::ALL.map(|tab| (tab.id().into(), tab.label().into())),
+        Tab::ALL
+            .iter()
+            .position(|tab| *tab == state.farming.tab)
+            .unwrap_or(0),
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| state.set_farming_tab(Tab::ALL[index], cx));
+        },
+    )
+    .into_any_element()
 }
 
 /// The inputs a comparison run captures, so a later edit marks its table stale.
@@ -282,53 +276,45 @@ pub(crate) struct RunInputs {
 /// The crops, growth rate, points, objective and crop target above the tabs.
 fn section_header(
     state: &mut AppState,
-    snapshot: &Snapshot,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = &cx.theme().colors;
-    let (accent, muted) = (colors.accent, colors.fg_muted);
+    let (accent, muted) = (cx.theme().primary, cx.theme().muted_foreground);
+    let growth = state.farming_field().snapshot.growth_rate;
     let points = state.farm.land_rank_points_left();
     let summary = format!(
         "{} plots · {} crops · {} growth · {} rank point(s) unspent",
         farming::PLOTS,
         format::number(f64::from(state.farm.crop_count)),
-        format::number(snapshot.growth_rate),
+        format::number(growth),
         points
     );
-    let entity = cx.entity();
-    let target = f64::from(state.farming.target_crop);
-    let objectives: Vec<Choice> = Objective::ALL
-        .into_iter()
-        .map(|objective| Choice::new(objective.id(), objective.label()))
-        .collect();
-    let objective_entity = entity.clone();
-    let objective = Select::new("farming-objective", objectives)
-        .label("Objective")
-        .selected(state.farming.objective.id())
-        .on_change(move |value, _window, cx| {
-            if let Some(objective) = Objective::from_id(value.as_ref()) {
-                objective_entity.update(cx, |state, cx| state.set_farming_objective(objective, cx));
-            }
-        });
-    div()
+    let target = state.farming.target_crop;
+    let controls = &state.farming_controls;
+    // Values flow section state -> control; edits come back through the
+    // subscriptions in `Controls::new`.
+    controls.objective.show(
+        controls::objective_choices(),
+        Some(&state.farming.objective),
+        window,
+        cx,
+    );
+    show_number(&controls.target, f64::from(target), 0, window, cx);
+    h_flex()
         .id("farming-header")
-        .flex()
-        .flex_wrap()
-        .items_end()
+        .flex_none()
         .gap_3()
         .child(
-            div()
+            h_flex()
                 .id("farming-summary")
                 .role(gpui::Role::Label)
-                .aria_label(summary.clone())
-                .flex()
-                .items_center()
+                .aria_label(summary)
                 .gap_4()
                 .child(Caption::new(format!("{} crops", state.farm.crop_count)).text_color(accent))
                 .child(
                     Caption::new(format!(
                         "{} growth · {} unspent",
-                        format::number(snapshot.growth_rate),
+                        format::number(growth),
                         points
                     ))
                     .text_color(muted),
@@ -336,32 +322,31 @@ fn section_header(
         )
         .child(div().flex_1())
         .child(
-            div()
+            h_flex()
                 .id("farming-objective-field")
-                .flex()
-                .items_center()
                 .gap_2()
                 .child(Caption::new("Objective").text_color(muted))
-                .child(div().w(px(170.0)).child(objective)),
+                .child(
+                    div().flex_none().w(px(170.0)).child(
+                        Select::new(controls.objective.state())
+                            .id("farming-objective")
+                            .accessibility_label("Objective")
+                            .small(),
+                    ),
+                ),
         )
         .child(
-            div()
+            h_flex()
                 .id("farming-crop-selection")
                 .role(gpui::Role::Group)
-                .aria_label(format!("Crop selection: target crop {target:.0}"))
-                .flex()
-                .items_center()
+                .aria_label(format!("Crop selection: target crop {target}"))
                 .gap_2()
                 .child(Caption::new("Target crop").text_color(muted))
-                .child(
-                    Stepper::new("farming-target", target)
-                        .range(1.0, 329.0)
-                        .step(1.0)
-                        .precision(0)
-                        .on_change(move |value, _window, cx| {
-                            entity.update(cx, |state, cx| state.set_target_crop(value, cx));
-                        }),
-                ),
+                .child(ui::number_field(
+                    "farming-target",
+                    &controls.target,
+                    "Target crop",
+                )),
         )
         .into_any_element()
 }
@@ -391,19 +376,16 @@ mod tests {
     }
 
     #[test]
-    fn the_tab_strip_opens_on_the_overview_and_round_trips_its_ids() {
+    fn the_tab_strip_opens_on_the_overview_and_keeps_its_ids() {
         let mut state = State::default();
         assert_eq!(state.tab, Tab::Overview);
         assert_eq!(
             Tab::ALL.map(Tab::label),
             ["Overview", "Full Plot Grid", "Evolution & OG"]
         );
-        for tab in Tab::ALL {
-            assert_eq!(Tab::from_id(tab.id()), Some(tab));
-        }
+        assert_eq!(Tab::ALL.map(Tab::id), ["overview", "plots", "evolution"]);
         state.set_tab(Tab::Plots);
-        assert_eq!(Tab::from_id("plots"), Some(state.tab));
-        assert_eq!(Tab::from_id("rank"), None);
+        assert_eq!(state.tab, Tab::Plots);
     }
 
     #[test]

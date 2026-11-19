@@ -1,22 +1,19 @@
 //! The current opal state: the six overview cards and the villagers table.
 
+use super::table::{Col, figure, note, table, tag, text};
 use crate::state::AppState;
-use crate::ui::layout;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div};
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::{Sizable as _, h_flex, v_flex};
 use idleon_opal::Opal;
 use idleon_opal::{NAMES, VILLAGERS};
 use idleon_ui::format;
+use idleon_ui::widgets::{Card, CardHeader, KpiStrip, PANEL_GAP, Tone};
 
 /// The overview row: unlocked villagers, the opal totals and the two cosmo
 /// bonuses, then the total EXP the save earns.
-pub(crate) fn current_state(opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn current_state(opal: &Opal) -> AnyElement {
     let opals = opal.opals();
     let total_opals = opal.total_opals();
     let min_opals = opal.min_opals(&opals);
@@ -30,11 +27,9 @@ pub(crate) fn current_state(opal: &Opal, cx: &mut Context<AppState>) -> AnyEleme
         format::percent(spread / 100.0),
         format::rate(total)
     );
-    div()
+    v_flex()
         .id("opal-current")
-        .flex()
-        .flex_col()
-        .gap_2()
+        .gap(PANEL_GAP)
         .child(
             div()
                 .id("opal-current-line")
@@ -42,53 +37,51 @@ pub(crate) fn current_state(opal: &Opal, cx: &mut Context<AppState>) -> AnyEleme
                 .aria_label(label),
         )
         .child(
-            div()
+            v_flex()
                 .id("opal-current-row")
-                .flex()
-                .flex_wrap()
-                .gap_3()
-                .child(layout::figure(
-                    "opal-kpi-unlocked",
-                    "Unlocked",
-                    opal.unlocked_count().to_string(),
-                    "Villagers at level 1 or above",
-                    cx,
-                ))
-                .child(layout::figure(
-                    "opal-kpi-total-opals",
-                    "Total Opals",
-                    format::value(total_opals),
-                    "Invested across the villagers",
-                    cx,
-                ))
-                .child(layout::figure(
-                    "opal-kpi-min-opals",
-                    "Min Opals",
-                    format::value(min_opals),
-                    "The lowest unlocked villager",
-                    cx,
-                ))
-                .child(layout::figure(
-                    "opal-kpi-equal-spread",
-                    "Equal Spread Bonus",
-                    format::percent(spread / 100.0),
-                    format!("Cosmo Lv {}", opal.cosmo_level(1, 5) as i64),
-                    cx,
-                ))
-                .child(layout::figure(
-                    "opal-kpi-enthusiasm",
-                    "Opal Enthusiasm",
-                    format::percent(opal.ext.enthusiasm / 100.0),
-                    format!("per 10 opals · Cosmo Lv {}", opal.cosmo_level(1, 0) as i64),
-                    cx,
-                ))
-                .child(layout::figure(
-                    "opal-kpi-total",
-                    "Total EXP/hr",
-                    format::rate(total),
-                    "Every unlocked villager, added",
-                    cx,
-                )),
+                .gap(PANEL_GAP)
+                .child(
+                    KpiStrip::new()
+                        .child(figure(
+                            "opal-kpi-unlocked",
+                            "Unlocked",
+                            opal.unlocked_count().to_string(),
+                            "Villagers at level 1 or above",
+                        ))
+                        .child(figure(
+                            "opal-kpi-total-opals",
+                            "Total Opals",
+                            format::value(total_opals),
+                            "Invested across the villagers",
+                        ))
+                        .child(figure(
+                            "opal-kpi-min-opals",
+                            "Min Opals",
+                            format::value(min_opals),
+                            "The lowest unlocked villager",
+                        )),
+                )
+                .child(
+                    KpiStrip::new()
+                        .child(figure(
+                            "opal-kpi-equal-spread",
+                            "Equal Spread Bonus",
+                            format::percent(spread / 100.0),
+                            format!("Cosmo Lv {}", opal.cosmo_level(1, 5) as i64),
+                        ))
+                        .child(figure(
+                            "opal-kpi-enthusiasm",
+                            "Opal Enthusiasm",
+                            format::percent(opal.ext.enthusiasm / 100.0),
+                            format!("per 10 opals · Cosmo Lv {}", opal.cosmo_level(1, 0) as i64),
+                        ))
+                        .child(figure(
+                            "opal-kpi-total",
+                            "Total EXP/hr",
+                            format::rate(total),
+                            "Every unlocked villager, added",
+                        )),
+                ),
         )
         .into_any_element()
 }
@@ -98,97 +91,93 @@ pub(crate) fn current_state(opal: &Opal, cx: &mut Context<AppState>) -> AnyEleme
 /// An unlocked villager's row switches the breakdown to that villager; the
 /// card's action switches it back to the total.
 pub(crate) fn villagers(state: &AppState, opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
     let opals = opal.opals();
     let total = opal.total_exp_rate(&opals);
-    let mut table = Table::new([
-        "Villager",
-        "Level",
-        "Stars",
-        "Opals",
-        "EXP/hr",
-        "% of Total",
-    ]);
-    for (villager, name) in NAMES.iter().enumerate().take(VILLAGERS) {
-        let saved = opal.villagers[villager];
-        let rate = opal.exp_rate(villager, &opals);
-        let share = opal.share(villager);
-        let selected = state.opal.selected == Some(villager);
-        let mut label = div().child(*name);
-        if !opal.unlocked(villager) {
-            label = label.child(div().pl_2().child(Badge::new("Locked").tone(Tone::Neutral)));
-        }
-        if selected {
-            label = label.child(div().pl_2().child(Badge::new("Breakdown").tone(Tone::Info)));
-        }
-        let label: AnyElement = if opal.unlocked(villager) {
-            let entity = cx.entity();
-            div()
-                .id(format!("opal-villager-{villager}"))
-                .role(Role::Button)
-                .aria_label(format!("{}: break the tree down for this villager", name))
-                .cursor_pointer()
-                .on_click(move |_event, _window, cx| {
-                    entity.update(cx, |state, cx| state.opal.set_villager(Some(villager), cx));
-                })
-                .flex()
-                .items_center()
-                .child(label)
-                .into_any_element()
-        } else {
-            label.into_any_element()
-        };
-        table = table.row([
-            label,
-            div().child(format::value(saved.level)).into_any_element(),
-            div()
-                .child(format!("★{}", saved.stars as i64))
-                .into_any_element(),
-            div().child(format::value(saved.opals)).into_any_element(),
-            div().child(format::rate(rate)).into_any_element(),
-            div()
-                .child(if total > 0.0 {
-                    format::percent(share)
+    let entity = cx.entity();
+    let rows = NAMES
+        .iter()
+        .enumerate()
+        .take(VILLAGERS)
+        .map(|(villager, name)| {
+            let saved = opal.villagers[villager];
+            let unlocked = opal.unlocked(villager);
+            let label = h_flex()
+                .gap_2()
+                .child(*name)
+                .when(!unlocked, |label| label.child(tag("Locked", Tone::Neutral)))
+                .when(state.opal.selected == Some(villager), |label| {
+                    label.child(tag("Breakdown", Tone::Info))
+                });
+            let label: AnyElement = if unlocked {
+                let entity = entity.clone();
+                div()
+                    .id(format!("opal-villager-{villager}"))
+                    .role(Role::Button)
+                    .aria_label(format!("{}: break the tree down for this villager", name))
+                    .cursor_pointer()
+                    .on_click(move |_event, _window, cx| {
+                        entity.update(cx, |state, cx| state.opal.set_villager(Some(villager), cx));
+                    })
+                    .child(label)
+                    .into_any_element()
+            } else {
+                label.into_any_element()
+            };
+            [
+                label,
+                text(format::value(saved.level)),
+                text(format!("★{}", saved.stars as i64)),
+                text(format::value(saved.opals)),
+                text(format::rate(opal.exp_rate(villager, &opals))),
+                text(if total > 0.0 {
+                    format::percent(opal.share(villager))
                 } else {
                     "-".to_owned()
-                })
-                .into_any_element(),
-        ]);
-    }
-    let entity = cx.entity();
-    let total_control = CardHeader::new("Villagers")
+                }),
+            ]
+        });
+    let table = table(
+        "opal-villagers",
+        &[
+            Col::Text("Villager"),
+            Col::Number("Level"),
+            Col::Number("Stars"),
+            Col::Number("Opals"),
+            Col::Number("EXP/hr"),
+            Col::Number("% of Total"),
+        ],
+        rows,
+        cx,
+    );
+    let show_total = entity.clone();
+    let header = CardHeader::new("Villagers")
         .description("Level, stars and invested opals from the save, with the rate each one earns")
         .action(
-            Button::new("opal-villager-all", "Show total")
-                .size(ControlSize::Sm)
-                .variant(if state.opal.selected.is_some() {
-                    ButtonVariant::Secondary
-                } else {
-                    ButtonVariant::Ghost
-                })
+            Button::new("opal-villager-all")
+                .label("Show total")
+                .small()
+                .when(state.opal.selected.is_none(), |button| button.ghost())
                 .on_click(move |_event, _window, cx| {
-                    entity.update(cx, |state, cx| state.opal.set_villager(None, cx));
+                    show_total.update(cx, |state, cx| state.opal.set_villager(None, cx));
                 }),
         );
     Card::new()
-        .header(total_control)
+        .header(header)
         .child(
-            div()
+            v_flex()
                 .id("opal-villagers")
-                .flex()
-                .flex_col()
                 .gap_2()
                 .child(table)
-                .child(
-                    Caption::new(format!(
+                .child(note(
+                    format!(
                         "Press a villager to break its own rate down; the total adds them up. \
                          A villager earns nothing without opals, every star doubles its EXP, and \
                          the lowest unlocked villager is at {} opals. Showing: {}.",
                         format::value(opal.min_opals(&opals)),
                         selection(state)
-                    ))
-                    .text_color(muted),
-                ),
+                    ),
+                    cx,
+                )),
         )
         .into_any_element()
 }

@@ -4,72 +4,71 @@
 //! payback the extra pearls of one claim imply.
 
 use super::claim::quantity;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::typography::Caption;
+use super::table::{Col, note, table, tag, text};
 use gpui::prelude::*;
-use gpui::{AnyElement, Hsla, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
+use gpui::{AnyElement, App, IntoElement, ParentElement, Role, SharedString, Styled, div};
+use gpui_kit::component::{h_flex, v_flex};
 use idleon_clamworks::afk::{ClaimError, Compare, CompareRow, Phase};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone};
 
 /// The comparison: every unlocked `+1` beside the current claim.
 pub(crate) fn compare_card(
     outcome: Result<&Compare, &ClaimError>,
     phase: Phase,
-    muted: Hsla,
+    cx: &App,
 ) -> AnyElement {
     let card = Card::new().header(CardHeader::new("Compare +1 upgrades").description(
         "Each unlocked pearl upgrade's claim beside the current one, at the same hours and kills.",
     ));
     let Ok(compare) = outcome else {
         return card
-            .child(div().p_3().child(Caption::new(
+            .child(Caption::new(
                 "The comparison needs a claim the game would credit.",
-            )))
+            ))
             .into_any_element();
     };
     let best = compare.best().and_then(|row| row.index);
-    let mut table = Table::new([
-        "Upgrade",
-        "Pearls / claim",
-        "Pure chance",
-        "Gain / claim",
-        "Cost",
-        "Payback",
-    ]);
-    for row in &compare.rows {
-        table = table.row(compare_row(row, best));
-    }
-    card.child(div().p_3().child(div().id("clamworks-compare").child(table)))
-        .child(
-            div()
-                .id("clamworks-compare-notes")
-                .flex()
-                .flex_col()
-                .gap_1()
-                .px_3()
-                .pb_3()
-                .text_size(px(11.0))
-                .text_color(muted)
-                .child(format!(
+    let rows = compare.rows.iter().map(|row| compare_row(row, best));
+    card.child(div().id("clamworks-compare").child(table(
+        "clamworks-compare",
+        &[
+            Col::Text("Upgrade"),
+            Col::Number("Pearls / claim"),
+            Col::Number("Pure chance"),
+            Col::Number("Gain / claim"),
+            Col::Number("Cost"),
+            Col::Number("Payback"),
+        ],
+        rows,
+        cx,
+    )))
+    .child(
+        v_flex()
+            .id("clamworks-compare-notes")
+            .gap_1()
+            .child(note(
+                format!(
                     "The {} pearl table, at the selected character's kills and drop rate. Cost is the saved \
                      level's purchase price; payback divides it by the extra pearls one claim earns.",
                     phase.label().to_lowercase()
-                ))
-                .child(
-                    "Extra clams do not change the claim, the cost reducers stay analytical and no purchase is \
-                     applied.",
-                )
-                .children(compare.warnings.iter().enumerate().map(|(index, warning)| {
-                    div()
-                        .id(("clamworks-compare-warning", index))
-                        .role(Role::Label)
-                        .aria_label(warning.clone())
-                        .child(warning.clone())
-                })),
-        )
-        .into_any_element()
+                ),
+                cx,
+            ))
+            .child(note(
+                "Extra clams do not change the claim, the cost reducers stay analytical and no purchase is \
+                 applied.",
+                cx,
+            ))
+            .children(compare.warnings.iter().enumerate().map(|(index, warning)| {
+                div()
+                    .id(("clamworks-compare-warning", index))
+                    .role(Role::Label)
+                    .aria_label(warning.clone())
+                    .child(note(warning.clone(), cx))
+            })),
+    )
+    .into_any_element()
 }
 
 fn compare_row(row: &CompareRow, best: Option<usize>) -> [AnyElement; 6] {
@@ -80,8 +79,7 @@ fn compare_row(row: &CompareRow, best: Option<usize>) -> [AnyElement; 6] {
     };
     let gain = match row.gain {
         Some(gain) if gain > 0.0 => format!("+{}", quantity(gain)),
-        Some(_) => "—".to_string(),
-        None => "—".to_string(),
+        _ => "—".to_string(),
     };
     let payback = match (row.payback_claims, row.payback_hours) {
         (Some(claims), Some(hours)) => {
@@ -89,7 +87,12 @@ fn compare_row(row: &CompareRow, best: Option<usize>) -> [AnyElement; 6] {
         }
         _ => "—".to_string(),
     };
-    let mut name = div()
+    let level = if row.index.is_some() {
+        format!("Lv {} → {}", row.level, row.next_level)
+    } else {
+        "Baseline".to_string()
+    };
+    let name = v_flex()
         .id(id)
         .role(Role::Label)
         .aria_label(format!(
@@ -97,39 +100,29 @@ fn compare_row(row: &CompareRow, best: Option<usize>) -> [AnyElement; 6] {
             row.name,
             quantity(row.claim.expected_pearls)
         ))
-        .flex()
-        .flex_wrap()
-        .items_center()
-        .gap_2()
-        .child(SharedString::from(row.name.clone()));
-    if best == row.index && row.index.is_some() {
-        name = name.child(
-            div()
-                .id(("clamworks-compare-best", key))
-                .child(Badge::new("Best payback").tone(Tone::Success)),
+        .gap_0p5()
+        .child(SharedString::from(row.name.clone()))
+        .child(
+            h_flex()
+                .gap_2()
+                .child(div().text_size(TEXT_CAPTION).child(level))
+                .when(best == row.index && row.index.is_some(), |line| {
+                    line.child(
+                        div()
+                            .id(("clamworks-compare-best", key))
+                            .child(tag("Best payback", Tone::Success)),
+                    )
+                })
+                .when(!row.affordable, |line| {
+                    line.child(tag("Not yet affordable", Tone::Warning))
+                }),
         );
-    }
-    let level = if row.index.is_some() {
-        format!("Lv {} → {}", row.level, row.next_level)
-    } else {
-        "Baseline".to_string()
-    };
-    let mut name = name.child(div().text_size(px(11.0)).child(level));
-    if !row.affordable {
-        name = name.child(Badge::new("Not yet affordable").tone(Tone::Warning));
-    }
     [
         name.into_any_element(),
-        div()
-            .child(quantity(row.claim.expected_pearls))
-            .into_any_element(),
-        div()
-            .child(format::chance(row.claim.pure.chance))
-            .into_any_element(),
-        div().child(gain).into_any_element(),
-        div()
-            .child(row.cost.map_or_else(|| "—".to_string(), quantity))
-            .into_any_element(),
-        div().child(payback).into_any_element(),
+        text(quantity(row.claim.expected_pearls)),
+        text(format::chance(row.claim.pure.chance)),
+        text(gain),
+        text(row.cost.map_or_else(|| "—".to_string(), quantity)),
+        text(payback),
     ]
 }

@@ -8,16 +8,14 @@
 
 use crate::sections::presets;
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
-use gpui_kit::component::Sizable as _;
+use gpui_kit::component::button::Button;
 use gpui_kit::component::input::Input;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_farming::{Mode, Objective, data};
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, TEXT_CAPTION};
 
 /// One named preset: the goal, the baseline and the crop target.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -106,13 +104,13 @@ fn clamp_crop(crop: u32) -> u32 {
 
 /// The preset bar: the name field, Save, and one row per stored preset.
 pub(super) fn presets_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let name_focus = state.farming_name.focus_handle(cx);
     let presets = state.farming.presets.clone();
     let entity = cx.entity();
     let save = entity.clone();
 
-    let mut rows = div().id("farming-preset-list").flex().flex_col().gap_1();
+    let mut rows = v_flex().id("farming-preset-list").gap_1();
     if presets.is_empty() {
         rows = rows.child(
             div()
@@ -132,47 +130,41 @@ pub(super) fn presets_card(state: &mut AppState, cx: &mut Context<AppState>) -> 
         let delete = entity.clone();
         let detail = preset.detail();
         rows = rows.child(
-            div()
+            h_flex()
                 .id(SharedString::from(format!("farming-preset-{index}")))
                 .role(Role::Label)
                 .aria_label(format!("{}: {detail}", preset.name))
-                .flex()
-                .items_center()
                 .gap_2()
                 .h(px(26.0))
                 .child(
                     div()
                         .flex_1()
                         .min_w_0()
-                        .text_size(px(12.0))
+                        .text_size(TEXT_BODY)
                         .child(preset.name.clone()),
                 )
                 .child(
                     div()
                         .flex_none()
-                        .text_size(px(11.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(detail),
                 )
                 .child(
-                    Button::new(
-                        SharedString::from(format!("farming-preset-apply-{index}")),
-                        "Apply",
-                    )
-                    .size(ControlSize::Sm)
-                    .on_click(move |_event, _window, cx| {
-                        apply.update(cx, |state, cx| state.apply_farming_preset(index, cx));
-                    }),
+                    Button::new(SharedString::from(format!("farming-preset-apply-{index}")))
+                        .label("Apply")
+                        .small()
+                        .on_click(move |_event, _window, cx| {
+                            apply.update(cx, |state, cx| state.apply_farming_preset(index, cx));
+                        }),
                 )
                 .child(
-                    Button::new(
-                        SharedString::from(format!("farming-preset-delete-{index}")),
-                        "Delete",
-                    )
-                    .size(ControlSize::Sm)
-                    .on_click(move |_event, _window, cx| {
-                        delete.update(cx, |state, cx| state.delete_farming_preset(index, cx));
-                    }),
+                    Button::new(SharedString::from(format!("farming-preset-delete-{index}")))
+                        .label("Delete")
+                        .small()
+                        .on_click(move |_event, _window, cx| {
+                            delete.update(cx, |state, cx| state.delete_farming_preset(index, cx));
+                        }),
                 ),
         );
     }
@@ -183,18 +175,13 @@ pub(super) fn presets_card(state: &mut AppState, cx: &mut Context<AppState>) -> 
                 .description("Named goals kept in the project JSON"),
         )
         .child(
-            div()
+            v_flex()
                 .id("farming-presets")
                 .role(Role::Group)
                 .aria_label("Farming presets")
-                .flex()
-                .flex_col()
                 .gap_2()
-                .p_3()
                 .child(
-                    div()
-                        .flex()
-                        .items_end()
+                    h_flex()
                         .gap_2()
                         .child(
                             div()
@@ -206,8 +193,9 @@ pub(super) fn presets_card(state: &mut AppState, cx: &mut Context<AppState>) -> 
                                 .child(Input::new(&state.farming_name).aria_label("Preset name").small()),
                         )
                         .child(
-                            Button::new("farming-preset-save", "Save preset")
-                                .size(ControlSize::Sm)
+                            Button::new("farming-preset-save")
+                                .label("Save preset")
+                                .small()
                                 .on_click(move |_event, window, cx| {
                                     save.update(cx, |state, cx| state.save_farming_preset(window, cx));
                                 }),
@@ -216,7 +204,7 @@ pub(super) fn presets_card(state: &mut AppState, cx: &mut Context<AppState>) -> 
                 .child(rows)
                 .child(
                     div()
-                        .text_size(px(11.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(
                             "A preset keeps the objective, the Land Rank baseline and the target crop. The seven built-in goals stay in the objective selector.",

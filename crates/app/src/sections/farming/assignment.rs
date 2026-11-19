@@ -1,43 +1,46 @@
 //! The plot assignment: the crop each plot should grow for the objective.
 
 use super::field::family_name;
+use super::table::{Col, note, table, tag, text};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled};
+use gpui_kit::component::{ActiveTheme as _, v_flex};
 use idleon_farming::{self as farming, Assignment};
+use idleon_ui::widgets::{Caption, Card, CardHeader, Tone};
 
 /// The plot assignment: every plot's target crop, with the plots that differ.
 pub(super) fn assignment_card(assignment: &Assignment, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let objective = assignment.objective;
     let changes = assignment.changes();
-    let mut table = Table::new(["Plot", "Current", "Target", "Seed", "Change"]);
-    for row in &assignment.rows {
-        let current = crop_label(row.current_crop);
-        let target = crop_label(row.target_crop);
+    let rows = assignment.rows.iter().map(|row| {
         let change = if row.change_needed() {
-            Badge::new("Change").tone(Tone::Accent)
+            tag("Change", Tone::Accent)
         } else {
-            Badge::new("Keep").tone(Tone::Success)
+            tag("Keep", Tone::Success)
         };
-        table = table.row([
-            div()
-                .child(format!("Plot {}", row.plot + 1))
-                .into_any_element(),
-            div().child(current).into_any_element(),
-            div().child(target).into_any_element(),
-            div()
-                .child(family_name(row.target_family))
-                .into_any_element(),
-            div().child(change).into_any_element(),
-        ]);
-    }
-    let note = match assignment.target_crop {
+        [
+            text(format!("Plot {}", row.plot + 1)),
+            text(crop_label(row.current_crop)),
+            text(crop_label(row.target_crop)),
+            text(family_name(row.target_family)),
+            change.into_any_element(),
+        ]
+    });
+    let table = table(
+        "farming-assignment",
+        &[
+            Col::Text("Plot"),
+            Col::Text("Current"),
+            Col::Text("Target"),
+            Col::Text("Seed"),
+            Col::Text("Change"),
+        ],
+        rows,
+        cx,
+    );
+    let note_text = match assignment.target_crop {
         Some(target) => format!(
             "Crop Evolution plants crop #{target} on every plot: that is the crop whose growth rolls crop #{}.",
             target + 1
@@ -48,26 +51,18 @@ pub(super) fn assignment_card(assignment: &Assignment, cx: &mut Context<AppState
         ),
     };
     Card::new()
-        .header(
-            CardHeader::new(format!("Plot assignment · {}", objective.label())).description(
-                format!(
-                    "{changes} of {} plots differ from the target",
-                    farming::PLOTS
-                ),
-            ),
-        )
+        .header(CardHeader::new(format!(
+            "Plot assignment · {}",
+            objective.label()
+        )))
         .child(
-            div()
+            v_flex()
                 .id("farming-assignment")
                 .role(gpui::Role::Group)
                 .aria_label(format!("Plot assignment: {}", objective.label()))
-                .flex()
-                .flex_col()
                 .gap_2()
-                .px_4()
-                .pb_4()
                 .child(
-                    div()
+                    gpui::div()
                         .id("farming-assignment-summary")
                         .role(gpui::Role::Label)
                         .aria_label(format!("{changes} of {} plots differ", farming::PLOTS))
@@ -80,7 +75,7 @@ pub(super) fn assignment_card(assignment: &Assignment, cx: &mut Context<AppState
                         ),
                 )
                 .child(table)
-                .child(div().text_size(px(11.0)).text_color(muted).child(note)),
+                .child(note(note_text, cx)),
         )
         .into_any_element()
 }

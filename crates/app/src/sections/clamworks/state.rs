@@ -7,8 +7,8 @@
 //! credited range is rejected instead of clamped.
 
 use crate::state::AppState;
-use ely_gpui_component::forms::TextInput;
-use gpui::{App, AppContext as _, Context, Entity, Window};
+use gpui::{App, Context, Entity, Window};
+use gpui_kit::component::input::InputState;
 use idleon_clamworks::afk::{ClaimError, Compare, Inputs, Phase};
 use std::collections::BTreeMap;
 
@@ -44,26 +44,23 @@ pub(crate) struct State {
     /// Why the claim refused the committed entry, or `None` when it accepted it.
     pub(crate) error: Option<ClaimError>,
     /// The hours field, read when the claim is calculated.
-    pub(crate) hours_field: Entity<TextInput>,
+    pub(crate) hours_field: Entity<InputState>,
+    /// Text the field takes on its next render: the committed hours after a
+    /// project import, which has no window to write it with.
+    seed: Option<String>,
 }
 
 impl State {
     pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
         let default = Inputs::default();
-        let hours_field = cx.new(|cx| {
-            let mut input = TextInput::new(window, cx)
-                .placeholder("Hours away")
-                .label("Hours away");
-            input.set_text(default.hours.to_string(), cx);
-            input
-        });
         Self {
             character: 0,
             stand_ins: BTreeMap::new(),
             hours: default.hours,
             phase: default.phase,
             error: None,
-            hours_field,
+            hours_field: crate::ui::input_state("Hours away", window, cx),
+            seed: Some(default.hours.to_string()),
         }
     }
 
@@ -97,7 +94,7 @@ impl State {
 
     /// The hours field's text.
     pub(crate) fn hours_text(&self, cx: &App) -> String {
-        self.hours_field.read(cx).text().trim().to_string()
+        self.hours_field.read(cx).value().trim().to_string()
     }
 
     /// Commit the typed hours. Text that is not a number is the one entry the
@@ -144,7 +141,6 @@ impl State {
         hours: f64,
         phase: Phase,
         count: usize,
-        cx: &mut Context<AppState>,
     ) {
         self.stand_ins = stand_ins
             .into_iter()
@@ -161,7 +157,7 @@ impl State {
         self.hours = non_negative(hours, Inputs::default().hours);
         self.phase = phase;
         self.set_character(character, count);
-        self.seed_hours(cx);
+        self.seed = Some(self.hours.to_string());
         self.error = None;
     }
 
@@ -170,11 +166,12 @@ impl State {
         self.set_character(self.character, count);
     }
 
-    /// Put the committed hours back in the field, as a project import does.
-    fn seed_hours(&self, cx: &mut Context<AppState>) {
-        let text = self.hours.to_string();
-        self.hours_field
-            .update(cx, |input, cx| input.set_text(text, cx));
+    /// Write a pending seed into the field; render calls it.
+    pub(crate) fn show_seed(&mut self, window: &mut Window, cx: &mut App) {
+        if let Some(text) = self.seed.take() {
+            self.hours_field
+                .update(cx, |input, cx| input.set_value(text, window, cx));
+        }
     }
 }
 

@@ -953,7 +953,6 @@ pub(crate) fn assign(
                 config.hours,
                 config.phase,
                 count,
-                cx,
             );
             state.clamworks_scurge = ScurgeInputs {
                 mode: config.scurge_mode,

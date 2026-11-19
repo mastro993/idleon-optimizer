@@ -70,8 +70,9 @@ control's own state. The rule:
 
 ### Worked example
 
-The Opal Optimizer's target `Select` and one villager's opal `NumberInput`, converted. It is not
-committed to `sections/opal` (#357 converts that section); it compiles and runs as
+The Opal Optimizer's target `Select` and one villager's opal `NumberInput`, converted. The section
+itself (`sections/opal/state.rs`) follows it with a few more controls; this trimmed version compiles
+and runs as
 [`crates/ui/tests/form_state.rs`](../../crates/ui/tests/form_state.rs), whose regions this page
 quotes verbatim (`the_doc_quotes_this_example` fails when they drift). `AppState` there stands in for
 the app's window state.

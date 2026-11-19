@@ -4,102 +4,55 @@
 //! The bean trade card and its callout belong to the markets tab and are not
 //! built here; every plot's overgrowth curve belongs to the Evolution & OG tab.
 
-use crate::sections::farming::field::family_name;
+use super::controls::Field;
+use super::field::family_name;
+use super::table::{Col, figure, note, table, tag, text};
 use crate::state::AppState;
-use ely_gpui_component::data_display::Badge;
-use ely_gpui_component::feedback::Callout;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
-use idleon_farming::{CropScientistUnit, Diagnostics, Farm, GrowthBreakpoint, Snapshot, data};
+use gpui::{AnyElement, App, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
+use idleon_farming::{CropScientistUnit, Diagnostics, Farm, GrowthBreakpoint, data};
 use idleon_ui::format;
+use idleon_ui::widgets::{
+    Callout, Caption, Card, CardHeader, KpiStrip, PANEL_GAP, TEXT_BODY, Tone,
+};
 
 /// The overview tab's scrolling body.
 pub(super) fn overview(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let snapshot = state.farm.snapshot();
-    let diagnostics = state.farm.diagnostics(&snapshot);
-    let muted = cx.theme().colors.fg_muted;
-    let body = div()
+    let field = state.farming_field();
+    let body = v_flex()
         .id("farming-overview")
         .role(gpui::Role::Group)
         .aria_label("Farming overview")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
-        .child(cards(&state.farm, &snapshot, &diagnostics, cx))
-        .child(signals(&diagnostics, cx))
+        .gap(PANEL_GAP)
+        .child(cards(&state.farm, &field))
+        .child(signals(&field.diagnostics, cx))
         .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .gap_3()
-                .child(account_multipliers(&snapshot, cx))
-                .child(gmo_thresholds(&diagnostics, cx)),
+            h_flex()
+                .items_start()
+                .gap(PANEL_GAP)
+                .child(account_multipliers(&field, cx))
+                .child(gmo_thresholds(&field.diagnostics, cx)),
         )
-        .child(crop_scientist(&state.farm, cx))
-        .child(growth_breakpoints(&state.farm, &snapshot))
-        .child(
-            Caption::new(
-                "Chances and values use the multipliers this save carries; account systems outside it are not applied.",
-            )
-            .text_color(muted),
-        );
-    ScrollArea::new("farming-overview-scroll")
-        .vertical()
+        .child(crop_scientist(&field, cx))
+        .child(growth_breakpoints(&field.breakpoints, cx))
+        .child(note(
+            "Chances and values use the multipliers this save carries; account systems outside it are not applied.",
+            cx,
+        ));
+    div()
         .flex_1()
         .min_h_0()
         .child(body)
-        .into_any_element()
-}
-
-/// A card whose headline is a formatted figure: the cards show scaled
-/// numbers, which the numeric statistic cannot.
-pub(super) fn stat_card(
-    id: &'static str,
-    title: &'static str,
-    value: String,
-    caption: String,
-    cx: &Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    div()
-        .id(id)
-        .role(gpui::Role::Label)
-        .aria_label(format!("{title}: {value} · {caption}"))
-        .flex_1()
-        .min_w(px(150.0))
-        .child(
-            Card::new().header(CardHeader::new(title)).child(
-                div()
-                    .px_4()
-                    .pb_3()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .child(
-                        div()
-                            .text_size(px(20.0))
-                            .font_weight(gpui::FontWeight::BOLD)
-                            .child(value),
-                    )
-                    .child(Caption::new(SharedString::from(caption)).text_color(muted)),
-            ),
-        )
+        .overflow_y_scrollbar()
+        .id("farming-overview-scroll")
         .into_any_element()
 }
 
 /// The five figures the overview leads with.
-fn cards(
-    farm: &Farm,
-    snapshot: &Snapshot,
-    diagnostics: &Diagnostics,
-    cx: &Context<AppState>,
-) -> AnyElement {
+fn cards(farm: &Farm, field: &Field) -> AnyElement {
+    let (snapshot, diagnostics) = (&field.snapshot, &field.diagnostics);
     let highest = farm
         .crop_quantities
         .keys()
@@ -108,135 +61,144 @@ fn cards(
     let max = data().seeds.last().map_or(0, |seed| seed.end as u32 + 1);
     div()
         .id("farming-cards")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(stat_card(
-            "farming-card-crops",
-            "Crops discovered",
-            format!(
-                "{} / {}",
-                format::number(f64::from(diagnostics.crop_count)),
-                format::number(f64::from(max))
-            ),
-            format!("Highest crop #{highest}"),
-            cx,
-        ))
-        .child(stat_card(
-            "farming-card-growth",
-            "Growth rate",
-            format!("{}x", format::number(snapshot.growth_rate)),
-            if diagnostics.ordinary_growth_at_active_cap {
-                "All ordinary seeds at the active floor".into()
-            } else {
-                "Some ordinary seeds still benefit".into()
-            },
-            cx,
-        ))
-        .child(stat_card(
-            "farming-card-cap",
-            "Crop value cap",
-            format::number(diagnostics.crop_value_cap),
-            format!(
-                "{} / {} plots capped",
-                diagnostics.capped_plots,
-                idleon_farming::PLOTS
-            ),
-            cx,
-        ))
-        .child(stat_card(
-            "farming-card-evolution",
-            "Crop evolution",
-            format!("{}x", format::number(snapshot.next_crop_common)),
-            "Global multiplier before plot rank".into(),
-            cx,
-        ))
-        .child(stat_card(
-            "farming-card-points",
-            "Unspent rank points",
-            format::number(f64::from(diagnostics.unspent_rank_points)),
-            format!("5th-column max level {}", diagnostics.fifth_column_max),
-            cx,
-        ))
+        .child(
+            KpiStrip::new()
+                .child(figure(
+                    "farming-card-crops",
+                    "Crops discovered",
+                    format!(
+                        "{} / {}",
+                        format::number(f64::from(diagnostics.crop_count)),
+                        format::number(f64::from(max))
+                    ),
+                    format!("Highest crop #{highest}"),
+                ))
+                .child(figure(
+                    "farming-card-growth",
+                    "Growth rate",
+                    format!("{}x", format::number(snapshot.growth_rate)),
+                    if diagnostics.ordinary_growth_at_active_cap {
+                        "All ordinary seeds at the active floor"
+                    } else {
+                        "Some ordinary seeds still benefit"
+                    },
+                ))
+                .child(figure(
+                    "farming-card-cap",
+                    "Crop value cap",
+                    format::number(diagnostics.crop_value_cap),
+                    format!(
+                        "{} / {} plots capped",
+                        diagnostics.capped_plots,
+                        idleon_farming::PLOTS
+                    ),
+                ))
+                .child(figure(
+                    "farming-card-evolution",
+                    "Crop evolution",
+                    format!("{}x", format::number(snapshot.next_crop_common)),
+                    "Global multiplier before plot rank",
+                ))
+                .child(figure(
+                    "farming-card-points",
+                    "Unspent rank points",
+                    format::number(f64::from(diagnostics.unspent_rank_points)),
+                    format!("5th-column max level {}", diagnostics.fifth_column_max),
+                )),
+        )
         .into_any_element()
 }
 
 /// The four callouts, each shown only while it fires.
-fn signals(diagnostics: &Diagnostics, cx: &mut Context<AppState>) -> AnyElement {
-    let mut list = div().id("farming-signals").flex().flex_col().gap_2();
+fn signals(diagnostics: &Diagnostics, cx: &App) -> AnyElement {
+    let signal = |id: &'static str, tone: Tone, title: String, body: &'static str| {
+        div()
+            .id(id)
+            .child(Callout::new(tone, title).child(Caption::new(body)))
+    };
+    let mut list = v_flex().id("farming-signals").gap_2();
     let mut fired = 0;
     if diagnostics.all_plots_capped {
         fired += 1;
-        list = list.child(
-            div().id("farming-signal-capped").child(
-                Callout::new(Severity::Warning).title("Every plot is at the crop-value cap").child(
-                    Caption::new(
-                        "Production Rank points and value upgrades have no current output gain until the cap rises.",
-                    ),
-                ),
-            ),
-        );
+        list = list.child(signal(
+            "farming-signal-capped",
+            Tone::Warning,
+            "Every plot is at the crop-value cap".into(),
+            "Production Rank points and value upgrades have no current output gain until the cap rises.",
+        ));
     }
     if diagnostics.ordinary_growth_at_active_cap {
         fired += 1;
-        list = list.child(
-            div().id("farming-signal-floor").child(
-                Callout::new(Severity::Info)
-                    .title("Ordinary seeds are at the one-second active floor")
-                    .child(Caption::new(
-                        "More speed adds offline overflow, but not more active evolution checks.",
-                    )),
-            ),
-        );
+        list = list.child(signal(
+            "farming-signal-floor",
+            Tone::Info,
+            "Ordinary seeds are at the one-second active floor".into(),
+            "More speed adds offline overflow, but not more active evolution checks.",
+        ));
     }
     if diagnostics.medal_plot_count > 0 {
         fired += 1;
-        list = list.child(
-            div().id("farming-signal-medal").child(
-                Callout::new(Severity::Info)
-                    .title(format!(
-                        "{} Medal plot(s) use a fixed seven-hour cycle",
-                        diagnostics.medal_plot_count
-                    ))
-                    .child(Caption::new(
-                        "Growth Rate scales the Medal requirement, so it cancels out of Medal growth time.",
-                    )),
+        list = list.child(signal(
+            "farming-signal-medal",
+            Tone::Info,
+            format!(
+                "{} Medal plot(s) use a fixed seven-hour cycle",
+                diagnostics.medal_plot_count
             ),
-        );
+            "Growth Rate scales the Medal requirement, so it cancels out of Medal growth time.",
+        ));
     }
     if diagnostics.unspent_rank_points > 0 {
         fired += 1;
-        list = list.child(
-            div().id("farming-signal-points").child(
-                Callout::new(Severity::Success)
-                    .title(format!(
-                        "{} Land Rank point(s) are available",
-                        diagnostics.unspent_rank_points
-                    ))
-                    .child(Caption::new(
-                        "The Land Rank upgrades spend them; the 5th column is capped by the table below.",
-                    )),
+        list = list.child(signal(
+            "farming-signal-points",
+            Tone::Success,
+            format!(
+                "{} Land Rank point(s) are available",
+                diagnostics.unspent_rank_points
             ),
-        );
+            "The Land Rank upgrades spend them; the 5th column is capped by the table below.",
+        ));
     }
     if fired == 0 {
-        list = list.child(
-            Caption::new("No priority signal fires with this save.")
-                .text_color(cx.theme().colors.fg_muted),
-        );
+        list = list.child(note("No priority signal fires with this save.", cx));
     }
     Card::new()
         .header(
             CardHeader::new("Priority signals")
                 .description("What the loaded field is telling the player right now"),
         )
-        .child(div().px_4().pb_3().child(list))
+        .child(list)
+        .into_any_element()
+}
+
+/// One labelled figure in a stat list, split from the next by a hairline.
+fn stat_line(id: impl Into<gpui::ElementId>, label: String, value: String, cx: &App) -> AnyElement {
+    let theme = cx.theme();
+    h_flex()
+        .id(id)
+        .role(gpui::Role::Label)
+        .aria_label(format!("{label}: {value}"))
+        .justify_between()
+        .gap_3()
+        .py_1p5()
+        .border_b_1()
+        .border_color(theme.border)
+        .child(Caption::new(label).text_color(theme.muted_foreground))
+        .child(
+            div()
+                .font_family(theme.mono_font_family.clone())
+                .text_size(TEXT_BODY)
+                .text_color(theme.primary)
+                .child(value),
+        )
         .into_any_element()
 }
 
 /// Farming EXP, the bean multiplier, the plot rank, the common overgrowth and
 /// the expected vines, as stat lines.
-fn account_multipliers(snapshot: &Snapshot, cx: &Context<AppState>) -> AnyElement {
+fn account_multipliers(field: &Field, cx: &App) -> AnyElement {
+    let snapshot = &field.snapshot;
     let rows = [
         (
             "farming-account-farming-exp",
@@ -264,66 +226,34 @@ fn account_multipliers(snapshot: &Snapshot, cx: &Context<AppState>) -> AnyElemen
             format::number(snapshot.expected_vines),
         ),
     ];
-    let muted = cx.theme().colors.fg_muted;
-    let accent = cx.theme().colors.accent;
-    let mut list = div().flex().flex_col();
-    for (id, label, value) in rows {
-        list = list.child(
-            div()
-                .id(id)
-                .role(gpui::Role::Label)
-                .aria_label(format!("{label}: {value}"))
-                .flex()
-                .items_center()
-                .justify_between()
-                .gap_3()
-                .py_1p5()
-                .border_b_1()
-                .border_color(muted.opacity(0.15))
-                .child(Caption::new(label).text_color(muted))
-                .child(div().text_size(px(13.0)).text_color(accent).child(value)),
-        );
-    }
     div()
         .flex_1()
         .min_w(px(280.0))
         .child(
             Card::new()
                 .header(CardHeader::new("Account multipliers"))
-                .child(div().id("farming-account").px_4().pb_3().child(list)),
+                .child(v_flex().id("farming-account").children(
+                    rows.map(|(id, label, value)| stat_line(id, label.into(), value, cx)),
+                )),
         )
         .into_any_element()
 }
 
 /// The five GMO thresholds and how many crops sit at each one.
-fn gmo_thresholds(diagnostics: &Diagnostics, cx: &Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let accent = cx.theme().colors.accent;
-    let mut list = div().flex().flex_col();
-    for (index, threshold) in data().gmo_thresholds.iter().enumerate() {
-        let count = diagnostics.gmo_counts[index];
-        let label = format!("{} crops", format::number(*threshold));
-        list = list.child(
-            div()
-                .id(("farming-gmo", index))
-                .role(gpui::Role::Label)
-                .aria_label(format!("GMO {label}: {count}"))
-                .flex()
-                .items_center()
-                .justify_between()
-                .gap_3()
-                .py_1p5()
-                .border_b_1()
-                .border_color(muted.opacity(0.15))
-                .child(Caption::new(label).text_color(muted))
-                .child(
-                    div()
-                        .text_size(px(13.0))
-                        .text_color(accent)
-                        .child(format::number(count)),
-                ),
-        );
-    }
+fn gmo_thresholds(diagnostics: &Diagnostics, cx: &App) -> AnyElement {
+    let lines = data()
+        .gmo_thresholds
+        .iter()
+        .enumerate()
+        .map(|(index, threshold)| {
+            let label = format!("{} crops", format::number(*threshold));
+            stat_line(
+                ("farming-gmo", index),
+                label,
+                format::number(diagnostics.gmo_counts[index]),
+                cx,
+            )
+        });
     div()
         .flex_1()
         .min_w(px(220.0))
@@ -333,100 +263,95 @@ fn gmo_thresholds(diagnostics: &Diagnostics, cx: &Context<AppState>) -> AnyEleme
                     CardHeader::new("GMO thresholds")
                         .description("Crop ids at or above each threshold"),
                 )
-                .child(div().id("farming-gmo").px_4().pb_3().child(list)),
+                .child(v_flex().id("farming-gmo").children(lines)),
         )
         .into_any_element()
 }
 
 /// The ten permanent Crop Scientist bonuses.
-fn crop_scientist(farm: &Farm, cx: &Context<AppState>) -> AnyElement {
-    let table = farm.crop_scientist();
-    let muted = cx.theme().colors.fg_muted;
-    let mut rows = Table::new(["Permanent bonus", "Value", "Applies to"]);
-    for bonus in &table.rows {
+fn crop_scientist(field: &Field, cx: &App) -> AnyElement {
+    let bonuses = &field.crop_scientist;
+    let multiplier = field.crop_scientist_multiplier;
+    let unlocked = bonuses.iter().filter(|bonus| bonus.unlocked).count();
+    let rows = bonuses.iter().map(|bonus| {
         let value = match bonus.unit {
             CropScientistUnit::Multiplier => format!("{}x", format::number(bonus.display_value())),
             CropScientistUnit::Percent => format!("+{}%", format::number(bonus.display_value())),
             CropScientistUnit::Flat => format!("+{}", format::number(bonus.display_value())),
         };
-        rows = rows.row([
+        [
             div()
                 .id(("farming-crop-scientist", bonus.id))
                 .role(gpui::Role::Label)
                 .aria_label(format!("{}: {value}", bonus.name))
                 .child(SharedString::from(bonus.name))
                 .into_any_element(),
-            div().child(value).into_any_element(),
-            div()
-                .child(SharedString::from(bonus.applies_to))
-                .into_any_element(),
-        ]);
-    }
-    let description = if table.unlocked() == table.rows.len() {
+            text(value),
+            text(bonus.applies_to),
+        ]
+    });
+    let description = if unlocked == bonuses.len() {
         format!(
             "All {} emporium items owned · account multiplier {}x",
-            table.rows.len(),
-            format::number(table.multiplier)
+            bonuses.len(),
+            format::number(multiplier)
         )
     } else {
         format!(
-            "{} of {} emporium items owned · account multiplier {}x",
-            table.unlocked(),
-            table.rows.len(),
-            format::number(table.multiplier)
+            "{unlocked} of {} emporium items owned · account multiplier {}x",
+            bonuses.len(),
+            format::number(multiplier)
         )
     };
     Card::new()
         .header(CardHeader::new("Crop Scientist bonuses").description(description))
-        .child(div().id("farming-crop-scientist-table").p_3().child(rows))
-        .child(
-            div()
-                .px_4()
-                .pb_3()
-                .text_size(px(11.0))
-                .text_color(muted)
-                .child(
-                    "Each row is gated behind one emporium item in Ninja[102][9]. The multiplier adds Grimoire 22, exotic 40 and Vault 79; the lab mainframe term is not modelled.",
-                ),
-        )
+        .child(table(
+            "farming-crop-scientist",
+            &[
+                Col::Text("Permanent bonus"),
+                Col::Number("Value"),
+                Col::Text("Applies to"),
+            ],
+            rows,
+            cx,
+        ))
+        .child(note(
+            "Each row is gated behind one emporium item in Ninja[102][9]. The multiplier adds Grimoire 22, exotic 40 and Vault 79; the lab mainframe term is not modelled.",
+            cx,
+        ))
         .into_any_element()
 }
 
 /// The seven seed families' raw and active growth cycles.
-fn growth_breakpoints(farm: &Farm, snapshot: &Snapshot) -> AnyElement {
-    let mut table = Table::new([
-        "Seed",
-        "Raw cycle",
-        "Active cycle",
-        "One-second threshold",
-        "State",
-    ]);
-    for row in farm.growth_breakpoints(snapshot) {
-        table = table.row(growth_row(&row));
-    }
+fn growth_breakpoints(breakpoints: &[GrowthBreakpoint], cx: &App) -> AnyElement {
     Card::new()
         .header(
             CardHeader::new("Growth breakpoints")
                 .description("The one-second active scheduler floor, per seed family"),
         )
-        .child(div().id("farming-growth-table").p_3().child(table))
+        .child(table(
+            "farming-growth",
+            &[
+                Col::Text("Seed"),
+                Col::Number("Raw cycle"),
+                Col::Number("Active cycle"),
+                Col::Number("One-second threshold"),
+                Col::Text("State"),
+            ],
+            breakpoints.iter().map(growth_row),
+            cx,
+        ))
         .into_any_element()
 }
 
 /// One breakpoint row.
 fn growth_row(row: &GrowthBreakpoint) -> [AnyElement; 5] {
     let state = if row.medal_fixed {
-        Badge::new("Fixed 7h")
-            .tone(ely_gpui_component::data_display::Tone::Warning)
-            .into_any_element()
+        tag("Fixed 7h", Tone::Warning)
     } else if row.at_active_cap {
-        Badge::new("Active cap")
-            .tone(ely_gpui_component::data_display::Tone::Success)
-            .into_any_element()
+        tag("Active cap", Tone::Success)
     } else {
-        Badge::new("Benefits")
-            .tone(ely_gpui_component::data_display::Tone::Info)
-            .into_any_element()
+        tag("Benefits", Tone::Info)
     };
     [
         div()
@@ -440,19 +365,13 @@ fn growth_row(row: &GrowthBreakpoint) -> [AnyElement; 5] {
             ))
             .child(SharedString::from(family_name(row.family as i64)))
             .into_any_element(),
-        div()
-            .child(format::duration(row.raw_seconds))
-            .into_any_element(),
-        div()
-            .child(format::duration(row.active_seconds))
-            .into_any_element(),
-        div()
-            .child(if row.medal_fixed {
-                "Not applicable".to_string()
-            } else {
-                format!("{}x", format::number(row.one_second_rate))
-            })
-            .into_any_element(),
-        state,
+        text(format::duration(row.raw_seconds)),
+        text(format::duration(row.active_seconds)),
+        text(if row.medal_fixed {
+            "Not applicable".to_string()
+        } else {
+            format!("{}x", format::number(row.one_second_rate))
+        }),
+        state.into_any_element(),
     ]
 }
