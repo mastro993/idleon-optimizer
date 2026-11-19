@@ -1,5 +1,5 @@
 //! The Coin Multiplier Calculator section: the character selector, the current
-//! calculation cards, the partial state and the formula tree behind the total.
+//! calculation strips, the partial state and the formula tree behind the total.
 //!
 //! The cards read the save through [`idleon_coin_multi`], which resolves all 23
 //! groups for a full save and names any group it cannot resolve, so a partial
