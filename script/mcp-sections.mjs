@@ -1614,18 +1614,12 @@ const INTERACTIONS = {
     if (has(nodes, 'opal-manual-warning')) {
       throw new Error('opal: the saved split is already balanced');
     }
-    // The Measurer holds 15 opals: fifteen presses empty it, and a sixteenth
-    // is refused because the count never goes below zero.
-    for (let press = 0; press < 15; press += 1) {
-      await lane.call('click_element', { id: 'opal-manual-3-down' });
+    // The Measurer holds 15 opals: fifteen Down presses empty it, and a
+    // sixteenth stays at zero because the field never steps below it.
+    await lane.call('click_element', { id: 'opal-manual-3' });
+    for (let press = 0; press < 16; press += 1) {
+      await lane.call('keyboard', { keystroke: 'down' });
     }
-    let refused = false;
-    try {
-      await lane.call('click_element', { id: 'opal-manual-3-down' });
-    } catch {
-      refused = true;
-    }
-    if (!refused) throw new Error('opal: the count still steps below zero');
     await waitFor(
       lane,
       (nodes) =>
@@ -2007,9 +2001,11 @@ const INTERACTIONS = {
 
     // With a real field the chain has a step to price: crop target 1 is where
     // the first plot stands, so two steps up leaves one evolution roll.
+    // The kit number field steps with Up; its own buttons carry no unique id.
     await lane.call('click_element', { id: 'evolution' });
-    await lane.call('click_element', { id: 'farming-target-more' });
-    await lane.call('click_element', { id: 'farming-target-more' });
+    await lane.call('click_element', { id: 'farming-target' });
+    await lane.call('keyboard', { keystroke: 'up' });
+    await lane.call('keyboard', { keystroke: 'up' });
     await waitFor(
       lane,
       (nodes) =>
@@ -4678,7 +4674,8 @@ const INTERACTIONS = {
     if (!summary.includes('5.00M')) {
       throw new Error(`clamworks: the imported balance reads ${summary}`);
     }
-    await lane.call('click_element', { id: 'clamworks-multikill-more' });
+    await lane.call('click_element', { id: 'clamworks-multikill' });
+    await lane.call('keyboard', { keystroke: 'up' });
     await lane.call('click_element', { id: 'upgrades' });
     await waitForNode(lane, 'clamworks-upgrades', 'clamworks: the upgrades tab opens');
     // The AFK claim tab: an entry outside the credited range is refused with a

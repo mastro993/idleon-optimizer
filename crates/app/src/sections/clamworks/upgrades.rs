@@ -1,50 +1,34 @@
 //! The Clamworks upgrades: every pearl upgrade in the game's order.
 
+use super::pane;
+use super::table::{Col, note, table, text};
 use crate::state::AppState;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
+use gpui::{AnyElement, App, Context, IntoElement, ParentElement, SharedString, Styled, div};
+use gpui_kit::component::v_flex;
 use idleon_clamworks::Clamworks;
 use idleon_ui::format;
+use idleon_ui::widgets::{Card, CardHeader, PANEL_GAP};
 
-pub(crate) fn upgrades_pane(
-    state: &mut AppState,
-    _window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let clamworks = state.clamworks_view();
+pub(crate) fn upgrades_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let clamworks = state.clamworks_shown();
     let multikill = state.clamworks_multikill;
-    let muted = cx.theme().colors.fg_muted;
-    let body = div()
+    let body = v_flex()
         .id("clamworks-upgrades")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
-        .child(all_upgrades_card(&clamworks, multikill))
-        .child(
-            Caption::new(
-                "Next Cost is Clam_Cost at the next level, with FRUGALITY, ANTI INFLATION and the Scurge cost reductions applied. The Optimizer tab spends a budget with these costs.",
-            )
-            .text_color(muted),
-        );
-    ScrollArea::new("clamworks-upgrades-scroll")
-        .vertical()
-        .flex_1()
-        .min_h_0()
-        .child(body)
-        .into_any_element()
+        .gap(PANEL_GAP)
+        .child(all_upgrades_card(&clamworks, multikill, cx))
+        .child(note(
+            "Next Cost is Clam_Cost at the next level, with FRUGALITY, ANTI INFLATION and the Scurge cost reductions applied. The Optimizer tab spends a budget with these costs.",
+            cx,
+        ));
+    pane("clamworks-upgrades-scroll", body)
 }
 
 /// Every upgrade with its level, saved bonus, per-level value and next cost.
-fn all_upgrades_card(clamworks: &Clamworks, multikill: f64) -> AnyElement {
+fn all_upgrades_card(clamworks: &Clamworks, multikill: f64, cx: &App) -> AnyElement {
     let data = idleon_clamworks::data::clamworks();
-    let mut table = Table::new(["Upgrade", "Effect", "Lv", "Bonus", "Per Lv", "Next Cost"]);
-    for (index, upgrade) in data.upgrades.iter().enumerate() {
-        table = table.row([
+    let rows = data.upgrades.iter().enumerate().map(|(index, upgrade)| {
+        [
             div()
                 .id(("clamworks-upgrade", index))
                 .child(SharedString::from(upgrade.name.clone()))
@@ -54,24 +38,30 @@ fn all_upgrades_card(clamworks: &Clamworks, multikill: f64) -> AnyElement {
                 .min_w_0()
                 .child(effect(clamworks, index, multikill))
                 .into_any_element(),
-            div()
-                .child(clamworks.upgrades[index].to_string())
-                .into_any_element(),
-            div()
-                .child(money(clamworks.upgrade_bonus(index, multikill).round()))
-                .into_any_element(),
-            div().child(money(upgrade.per_lv)).into_any_element(),
-            div()
-                .child(money(clamworks.next_upgrade_cost(index)))
-                .into_any_element(),
-        ]);
-    }
+            text(clamworks.upgrades[index].to_string()),
+            text(money(clamworks.upgrade_bonus(index, multikill).round())),
+            text(money(upgrade.per_lv)),
+            text(money(clamworks.next_upgrade_cost(index))),
+        ]
+    });
     Card::new()
         .header(
             CardHeader::new("All upgrades")
                 .description("The nine pearl upgrades, in the game's order, at the saved levels."),
         )
-        .child(div().p_3().child(div().min_w_0().child(table)))
+        .child(table(
+            "clamworks-upgrades",
+            &[
+                Col::Text("Upgrade"),
+                Col::Text("Effect"),
+                Col::Number("Lv"),
+                Col::Number("Bonus"),
+                Col::Number("Per Lv"),
+                Col::Number("Next Cost"),
+            ],
+            rows,
+            cx,
+        ))
         .into_any_element()
 }
 

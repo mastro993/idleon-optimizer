@@ -17,21 +17,23 @@ mod optimizer;
 mod overview;
 mod simulate;
 mod state;
+mod table;
 
 pub(crate) use state::{Config, State};
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::layout::ScrollArea;
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::shell::{TabBar, WindowTab};
+use crate::ui::layout;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 };
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::{ActiveTheme as _, Icon, v_flex};
 use idleon_opal::Opal;
-use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::PANEL_GAP;
 
 /// The largest opal count a manual or planned input takes; a save above it
 /// raises the ceiling.
@@ -68,10 +70,6 @@ impl Tab {
             Tab::Manual => "Manual simulator",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// The section: the tab strip and the selected pane under it.
@@ -83,94 +81,90 @@ pub(crate) fn view(
     let Some(opal) = state.opal.save.clone() else {
         return prompt(cx);
     };
+    state.opal.sync_tree(state.save_revision, cx);
     let tab = state.opal.tab;
-    let tree = state.opal.breakdown.clone();
-    tree.update(cx, |tree, cx| {
-        tree.set_root(opal.breakdown(state.opal.selected), cx)
-    });
     let entity = cx.entity();
-    let mut tabs = TabBar::new("opal-tabs").selected(SharedString::from(tab.id()));
-    for entry in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(entry.id(), entry.label()));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        if let Some(tab) = Tab::from_id(id.as_ref()) {
-            entity.update(cx, |state, cx| state.opal.set_tab(tab, cx));
-        }
-    });
-    div()
+    let tabs = layout::tab_bar(
+        "opal-tabs",
+        Tab::ALL.map(|tab| (tab.id().into(), tab.label().into())),
+        Tab::ALL.iter().position(|entry| *entry == tab).unwrap_or(0),
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| state.opal.set_tab(Tab::ALL[index], cx));
+        },
+    );
+    v_flex()
         .id("opal-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
-        .child(
-            div()
-                .id("opal-header")
-                .flex()
-                .flex_none()
-                .items_center()
-                .gap_3()
-                .px_3()
-                .pt_2()
-                .child(tabs),
-        )
+        .gap(PANEL_GAP)
+        .child(div().id("opal-header").flex_none().child(tabs))
         .child(match tab {
-            Tab::Current => current_pane(state, &opal, tree, cx),
+            Tab::Current => current_pane(state, &opal, cx),
             Tab::Optimizer => optimizer::optimizer_pane(state, window, cx),
             Tab::Manual => simulate::pane(state, window, cx),
         })
         .into_any_element()
 }
 
-/// The current state pane: the overview, the villagers, the terms and the tree.
-fn current_pane(
-    state: &AppState,
-    opal: &Opal,
-    tree: Entity<FormulaTree>,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    ScrollArea::new("opal-pane")
-        .vertical()
+/// A tab's body in its own vertical scroll area.
+fn pane(id: &'static str, body: impl IntoElement) -> AnyElement {
+    div()
         .flex_1()
         .min_h_0()
-        .child(
-            div()
-                .id("opal-overview")
-                .flex()
-                .flex_col()
-                .gap_3()
-                .p_3()
-                .child(overview::current_state(opal, cx))
-                .child(overview::villagers(state, opal, cx))
-                .child(bonuses::terms(opal, cx))
-                .child(bonuses::formula(state, tree)),
-        )
+        .child(body)
+        .overflow_y_scrollbar()
+        .id(id)
         .into_any_element()
+}
+
+/// The current state pane: the overview, the villagers, the terms and the tree.
+fn current_pane(state: &AppState, opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
+    pane(
+        "opal-pane",
+        v_flex()
+            .id("opal-overview")
+            .gap(PANEL_GAP)
+            .child(overview::current_state(opal))
+            .child(overview::villagers(state, opal, cx))
+            .child(bonuses::terms(opal, cx))
+            .child(bonuses::formula(state)),
+    )
 }
 
 /// A save without `Holes` has no villagers: say so and offer the import.
 fn prompt(cx: &mut Context<AppState>) -> AnyElement {
     let import = cx.entity();
-    div()
+    let muted = cx.theme().muted_foreground;
+    v_flex()
         .id("opal-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
         .child(
-            EmptyState::new("opal-empty", IconName::Map, "No villager state")
-                .body(
-                    "The opal optimizer reads the five villagers, their levels and their invested \
-                     opals from a save. Import one to see the EXP rates and every bonus term.",
-                )
-                .action(
-                    Button::new("opal-import", "Import save")
-                        .icon(IconName::Upload)
-                        .on_click(move |_event, window, cx| {
-                            import.update(cx, |state, cx| state.open_import(window, cx));
-                        }),
-                ),
+            div().id("opal-empty").child(
+                Empty::new()
+                    .header(
+                        EmptyHeader::new()
+                            .media(
+                                EmptyMedia::new().child(Icon::new(IconName::Map).text_color(muted)),
+                            )
+                            .title(EmptyTitle::new().child("No villager state"))
+                            .description(EmptyDescription::new().child(
+                                "The opal optimizer reads the five villagers, their levels and their \
+                                 invested opals from a save. Import one to see the EXP rates and every \
+                                 bonus term.",
+                            )),
+                    )
+                    .content(
+                        EmptyContent::new().child(
+                            Button::new("opal-import")
+                                .label("Import save")
+                                .icon(IconName::Upload)
+                                .on_click(move |_event, window, cx| {
+                                    import.update(cx, |state, cx| state.open_import(window, cx));
+                                }),
+                        ),
+                    ),
+            ),
         )
         .into_any_element()
 }
@@ -181,9 +175,9 @@ mod tests {
 
     #[test]
     fn the_tab_ids_match_the_strip() {
-        for tab in Tab::ALL {
-            assert_eq!(Tab::from_id(tab.id()), Some(tab));
-        }
-        assert_eq!(Tab::from_id("optimizer"), None);
+        assert_eq!(
+            Tab::ALL.map(Tab::id),
+            ["opal-tab-current", "opal-tab-optimizer", "opal-tab-manual"]
+        );
     }
 }

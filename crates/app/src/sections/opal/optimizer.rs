@@ -5,49 +5,46 @@
 //! rate each villager earns and the copyable text the section writes to the
 //! clipboard.
 
+use super::pane;
+use super::state::target_choices;
+use super::table::{Col, figure, note, table, tag, text};
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select, Stepper};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
+use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use idleon_opal::Opal;
 use idleon_opal::{NAMES, Plan, PlanTarget, VILLAGERS};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Tone, show_number};
 
 /// The optimizer pane: the run controls, the progress chrome and the plan.
 pub(crate) fn optimizer_pane(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let Some(opal) = state.opal.save.clone() else {
         return div().into_any_element();
     };
     let task = state.opal.task(cx);
-    let muted = cx.theme().colors.fg_muted;
     let target = plan_target(state, &opal);
-    let mut body = div()
+    let mut body = v_flex()
         .id("opal-optimizer")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
-        .child(controls(state, &opal, cx))
-        .child(
-            Caption::new(format!(
+        .gap(PANEL_GAP)
+        .child(controls(state, &opal, task.running, window, cx))
+        .child(note(
+            format!(
                 "Maximizes {} for the selected total. The search checks every lowest count and \
                  both placements a villager can profitably take, so the plan is never worse than \
                  the saved split.",
                 objective_label(target)
-            ))
-            .text_color(muted),
-        );
+            ),
+            cx,
+        ));
     if task.running
         && let Some(progress) = task.progress.clone()
     {
@@ -68,15 +65,10 @@ pub(crate) fn optimizer_pane(
             task.result.is_some(),
         ));
     }
-    if let Some(plan) = task.result.clone() {
-        body = body.child(plan_card(&opal, &plan, task.stale, cx));
+    if let Some(plan) = task.result.as_ref() {
+        body = body.child(plan_card(&opal, plan, task.stale, cx));
     }
-    ScrollArea::new("opal-optimizer-scroll")
-        .vertical()
-        .flex_1()
-        .min_h_0()
-        .child(body)
-        .into_any_element()
+    pane("opal-optimizer-scroll", body)
 }
 
 /// Which rate the current selection maximizes.
@@ -109,11 +101,16 @@ fn signed(value: f64) -> String {
 }
 
 /// The target picker, the total, the saved-total reset and the run action.
-fn controls(state: &mut AppState, opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+fn controls(
+    state: &mut AppState,
+    opal: &Opal,
+    running: bool,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let total = state.opal.total;
     let saved = opal.total_opals();
-    let running = state.opal.task(cx).running;
     let hint = if opal.unlocked_count() == 0 {
         "no villager is unlocked: import a save first"
     } else if total <= 0.0 {
@@ -121,57 +118,31 @@ fn controls(state: &mut AppState, opal: &Opal, cx: &mut Context<AppState>) -> An
     } else {
         "the plan never spends more than this total"
     };
-
-    let selected = match plan_target(state, opal) {
-        PlanTarget::Villager(villager) => villager.to_string(),
-        PlanTarget::Total => "-1".to_owned(),
+    let target = match plan_target(state, opal) {
+        PlanTarget::Villager(villager) => Some(villager),
+        PlanTarget::Total => None,
     };
-    let choices = std::iter::once(Choice::new("-1", "All villagers (total EXP)")).chain(
-        (0..VILLAGERS)
-            .filter(|villager| opal.unlocked(*villager))
-            .map(|villager| {
-                Choice::new(
-                    villager.to_string(),
-                    format!(
-                        "{} (★{})",
-                        NAMES[villager], opal.villagers[villager].stars as i64
-                    ),
-                )
-            }),
-    );
-    let target_entity = cx.entity();
-    let select = Select::new("opal-target", choices)
-        .label("Target")
-        .selected(selected)
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            let target = value
-                .parse::<usize>()
-                .ok()
-                .filter(|villager| *villager < VILLAGERS);
-            target_entity.update(cx, |state, cx| state.opal.set_target(target, cx));
-        });
-
-    let total_entity = cx.entity();
-    let stepper = Stepper::new("opal-total", total)
-        .range(0.0, super::MAX_OPALS.max(total))
-        .step(1.0)
-        .precision(0)
-        .on_change(move |value, _window, cx| {
-            total_entity.update(cx, |state, cx| state.opal.set_total(value, cx));
-        });
+    // Values flow section value -> control; edits come back through the
+    // subscriptions in `State::new`.
+    let section = &state.opal;
+    section
+        .target_select
+        .show(target_choices(Some(opal)), Some(&target), window, cx);
+    show_number(&section.total_field, total, 0, window, cx);
 
     let reset_entity = cx.entity();
-    let reset = Button::new("opal-total-saved", "Use saved total")
+    let reset = Button::new("opal-total-saved")
+        .label("Use saved total")
         .icon(IconName::RotateCcw)
-        .size(ControlSize::Sm)
+        .small()
         .disabled(total == saved)
         .on_click(move |_event, _window, cx| {
             reset_entity.update(cx, |state, cx| state.opal.use_saved_total(cx));
         });
 
     let run_entity = cx.entity();
-    let run = Button::new("opal-run", if running { "Optimizing…" } else { "Optimize" })
+    let run = Button::new("opal-run")
+        .label(if running { "Optimizing…" } else { "Optimize" })
         .primary()
         .icon(IconName::Play)
         .disabled(running || total <= 0.0 || opal.unlocked_count() == 0)
@@ -184,40 +155,40 @@ fn controls(state: &mut AppState, opal: &Opal, cx: &mut Context<AppState>) -> An
             "Picks which rate to grow and how many opals to split across the unlocked villagers.",
         ))
         .child(
-            div()
-                .p_3()
-                .flex()
-                .flex_col()
+            h_flex()
+                .id("opal-plan-controls")
                 .gap_3()
                 .child(
-                    div()
-                        .id("opal-plan-controls")
-                        .flex()
-                        .flex_wrap()
-                        .items_center()
-                        .gap_3()
-                        .child(select)
-                        .child(Caption::new("Total").text_color(muted))
-                        .child(stepper)
-                        .child(Caption::new("opals").text_color(muted))
-                        .child(reset)
-                        .child(
-                            Caption::new(format!(
-                                "Saved total {} · {hint}",
-                                format::count(saved as u64)
-                            ))
-                            .text_color(muted),
-                        ),
+                    div().flex_none().w(px(220.0)).child(
+                        Select::new(section.target_select.state())
+                            .id("opal-target")
+                            .accessibility_label("Target")
+                            .small(),
+                    ),
                 )
-                .child(run),
+                .child(Caption::new("Total").text_color(muted))
+                .child(ui::number_field(
+                    "opal-total",
+                    &section.total_field,
+                    "Total opals",
+                ))
+                .child(Caption::new("opals").text_color(muted))
+                .child(reset)
+                .child(
+                    Caption::new(format!(
+                        "Saved total {} · {hint}",
+                        format::count(saved as u64)
+                    ))
+                    .text_color(muted),
+                ),
         )
+        .child(div().child(run))
         .into_any_element()
 }
 
 /// The stored plan: what it earns against the save, the distribution and the copy
 /// action.
 fn plan_card(opal: &Opal, plan: &Plan, stale: bool, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
     let improvement = plan.improvement(opal);
     let improvement_text = improvement.map_or_else(|| "—".to_owned(), format::percent);
     let summary = format!(
@@ -242,41 +213,39 @@ fn plan_card(opal: &Opal, plan: &Plan, stale: bool, cx: &mut Context<AppState>) 
         card = card.child(idleon_ui::run_chrome::stale_banner("opal-plan"));
     }
 
-    let mut table = Table::new([
-        "Villager",
-        "Stars",
-        "Current Opals",
-        "Planned",
-        "Change",
-        "Current EXP/hr",
-        "Planned EXP/hr",
-    ]);
-    for villager in (0..VILLAGERS).filter(|villager| opal.unlocked(*villager)) {
-        let mut label = div().flex().items_center().gap_2().child(NAMES[villager]);
-        if plan.target == PlanTarget::Villager(villager) {
-            label = label.child(Badge::new("Target").tone(Tone::Info));
-        }
-        let change = signed(plan.change(villager));
-        table = table.row([
-            label.into_any_element(),
-            div()
-                .child(format!("★{}", opal.villagers[villager].stars as i64))
-                .into_any_element(),
-            div()
-                .child(format::count(plan.current[villager] as u64))
-                .into_any_element(),
-            div()
-                .child(format::count(plan.opals[villager] as u64))
-                .into_any_element(),
-            div().child(change).into_any_element(),
-            div()
-                .child(format::rate(opal.exp_rate(villager, &plan.current)))
-                .into_any_element(),
-            div()
-                .child(format::rate(opal.exp_rate(villager, &plan.opals)))
-                .into_any_element(),
-        ]);
-    }
+    let rows = (0..VILLAGERS)
+        .filter(|villager| opal.unlocked(*villager))
+        .map(|villager| {
+            let label = h_flex()
+                .gap_2()
+                .child(NAMES[villager])
+                .when(plan.target == PlanTarget::Villager(villager), |label| {
+                    label.child(tag("Target", Tone::Info))
+                });
+            [
+                label.into_any_element(),
+                text(format!("★{}", opal.villagers[villager].stars as i64)),
+                text(format::count(plan.current[villager] as u64)),
+                text(format::count(plan.opals[villager] as u64)),
+                text(signed(plan.change(villager))),
+                text(format::rate(opal.exp_rate(villager, &plan.current))),
+                text(format::rate(opal.exp_rate(villager, &plan.opals))),
+            ]
+        });
+    let table = table(
+        "opal-plan",
+        &[
+            Col::Text("Villager"),
+            Col::Number("Stars"),
+            Col::Number("Current Opals"),
+            Col::Number("Planned"),
+            Col::Number("Change"),
+            Col::Number("Current EXP/hr"),
+            Col::Number("Planned EXP/hr"),
+        ],
+        rows,
+        cx,
+    );
 
     let mut totals = format!(
         "The plan spends {} of {} opals; the save holds {}.",
@@ -291,12 +260,9 @@ fn plan_card(opal: &Opal, plan: &Plan, stale: bool, cx: &mut Context<AppState>) 
     }
     let copy = cx.entity();
     card.child(
-        div()
+        v_flex()
             .id("opal-plan-result")
-            .flex()
-            .flex_col()
             .gap_3()
-            .p_3()
             .child(
                 div()
                     .id("opal-plan-summary")
@@ -304,48 +270,45 @@ fn plan_card(opal: &Opal, plan: &Plan, stale: bool, cx: &mut Context<AppState>) 
                     .aria_label(summary),
             )
             .child(
-                div()
-                    .id("opal-plan-figures")
-                    .flex()
-                    .flex_wrap()
-                    .gap_3()
-                    .child(crate::ui::layout::figure(
-                        "opal-plan-current",
-                        "Current EXP/hr",
-                        format::rate(plan.saved_rate(opal)),
-                        "The saved split, for the same target",
-                        cx,
-                    ))
-                    .child(crate::ui::layout::figure(
-                        "opal-plan-rate",
-                        "Planned EXP/hr",
-                        format::rate(plan.rate(opal)),
-                        "The best split of the total",
-                        cx,
-                    ))
-                    .child(crate::ui::layout::figure(
-                        "opal-plan-improvement",
-                        "Improvement",
-                        improvement_text.clone(),
-                        "Planned over the saved split",
-                        cx,
-                    ))
-                    .child(crate::ui::layout::figure(
-                        "opal-plan-lowest",
-                        "Lowest Villager",
-                        format::count(opal.min_opals(&plan.opals) as u64),
-                        "What Equal Spread scales with",
-                        cx,
-                    )),
+                div().id("opal-plan-figures").child(
+                    KpiStrip::new()
+                        .child(figure(
+                            "opal-plan-current",
+                            "Current EXP/hr",
+                            format::rate(plan.saved_rate(opal)),
+                            "The saved split, for the same target",
+                        ))
+                        .child(figure(
+                            "opal-plan-rate",
+                            "Planned EXP/hr",
+                            format::rate(plan.rate(opal)),
+                            "The best split of the total",
+                        ))
+                        .child(figure(
+                            "opal-plan-improvement",
+                            "Improvement",
+                            improvement_text,
+                            "Planned over the saved split",
+                        ))
+                        .child(figure(
+                            "opal-plan-lowest",
+                            "Lowest Villager",
+                            format::count(opal.min_opals(&plan.opals) as u64),
+                            "What Equal Spread scales with",
+                        )),
+                ),
             )
-            .child(div().id("opal-plan-table").min_w_0().child(table))
-            .child(Caption::new(totals).text_color(muted))
+            .child(table)
+            .child(note(totals, cx))
             .child(
-                Button::new("opal-plan-copy", "Copy plan")
-                    .icon(IconName::Copy)
-                    .on_click(move |_event, _window, cx| {
-                        copy.update(cx, |state, cx| state.copy_opal_plan(cx));
-                    }),
+                div().child(
+                    Button::new("opal-plan-copy")
+                        .label("Copy plan")
+                        .icon(IconName::Copy)
+                        .on_click(move |_event, _window, cx| {
+                            copy.update(cx, |state, cx| state.copy_opal_plan(cx));
+                        }),
+                ),
             ),
     )
     .into_any_element()

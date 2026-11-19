@@ -1,17 +1,16 @@
 //! The selected plot's saved row, its rolls and its per-harvest rewards.
 
 use super::field::family_name;
+use super::table::{note, tag};
 use crate::state::AppState;
-use ely_gpui_component::data_display::Badge;
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, SharedString, Styled, div, px};
+use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, SharedString, Styled, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::empty::{Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle};
+use gpui_kit::component::{ActiveTheme as _, Icon, h_flex, v_flex};
 use idleon_farming::{self as farming, PlotMetrics, Snapshot};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, TEXT_CAPTION, Tone};
 
 /// The selected plot's saved row and formulas.
 pub(super) fn detail_pane(
@@ -20,8 +19,16 @@ pub(super) fn detail_pane(
     snapshot: &Snapshot,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = &cx.theme().colors;
-    let (muted, accent) = (colors.fg_muted, colors.accent);
+    let (muted, accent) = (cx.theme().muted_foreground, cx.theme().primary);
+    let footnote = note(
+        format!(
+            "Crop evo ×{} · overgrowth ×{} · growth ×{}",
+            format::number(snapshot.next_crop_common),
+            format::number(snapshot.overgrowth_common),
+            format::number(snapshot.growth_rate)
+        ),
+        cx,
+    );
     let family = family_name(metric.seed_family);
     let title = format!("Plot {}", metric.plot + 1);
     let loaded = state.farm.has_plots();
@@ -33,22 +40,26 @@ pub(super) fn detail_pane(
                 } else {
                     "No crop planted".into()
                 })
-                .action(Badge::new(family)),
+                .action(tag(family, Tone::Neutral)),
         )
         .child(
-            div()
+            v_flex()
                 .id("plot-detail-body")
-                .flex()
-                .flex_col()
-                .gap_0()
-                .px_4()
-                .pb_4()
                 .when(!loaded, |body| {
                     body.child(
-                        EmptyState::new("farming-empty", IconName::Map, "No planted plots")
-                            .body(
-                                "This save has no planted plots. Import one with FarmPlot or farmPlotData to read its crops, ranks and growth.",
+                        div().id("farming-empty").child(
+                            Empty::new().header(
+                                EmptyHeader::new()
+                                    .media(
+                                        EmptyMedia::new()
+                                            .child(Icon::new(IconName::Map).text_color(muted)),
+                                    )
+                                    .title(EmptyTitle::new().child("No planted plots"))
+                                    .description(EmptyDescription::new().child(
+                                        "This save has no planted plots. Import one with FarmPlot or farmPlotData to read its crops, ranks and growth.",
+                                    )),
                             ),
+                        ),
                     )
                 })
                 .when(loaded, |body| {
@@ -184,26 +195,13 @@ pub(super) fn detail_pane(
                         muted,
                         accent,
                     ))
-                    .child(
-                        div()
-                            .pt_2()
-                            .text_size(px(11.0))
-                            .text_color(muted)
-                            .child(format!(
-                                "Crop evo ×{} · overgrowth ×{} · growth ×{}",
-                                format::number(snapshot.next_crop_common),
-                                format::number(snapshot.overgrowth_common),
-                                format::number(snapshot.growth_rate)
-                            )),
-                    )
+                    .child(div().pt_2().child(footnote))
                 }),
         );
-    div()
+    v_flex()
         .id("plot-detail")
         .role(gpui::Role::Group)
         .aria_label(title)
-        .flex()
-        .flex_col()
         .min_h_0()
         .child(card)
         .into_any_element()
@@ -218,25 +216,21 @@ fn stat_row(
     muted: Hsla,
     accent: Hsla,
 ) -> AnyElement {
-    div()
+    h_flex()
         .id(id)
         .role(gpui::Role::Label)
         .aria_label(format!("{label}: {value} · {detail}"))
-        .flex()
-        .items_center()
         .justify_between()
         .gap_3()
         .py_2()
         .child(Caption::new(label).text_color(muted))
         .child(
-            div()
-                .flex()
-                .flex_col()
+            v_flex()
                 .items_end()
-                .child(div().text_size(px(13.0)).text_color(accent).child(value))
+                .child(div().text_size(TEXT_BODY).text_color(accent).child(value))
                 .child(
                     div()
-                        .text_size(px(10.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(SharedString::from(detail)),
                 ),

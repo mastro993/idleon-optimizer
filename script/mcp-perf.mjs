@@ -68,6 +68,7 @@ const SCROLL_TARGET = {
   ladle: 'ladle-ladles-scroll',
   jar: 'jar-pane',
   sailing: 'sailing-pane-0',
+  opal: 'opal-pane',
 };
 
 /// Cards the pointer crosses on Home.

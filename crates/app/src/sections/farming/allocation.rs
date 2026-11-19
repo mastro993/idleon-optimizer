@@ -4,34 +4,28 @@
 //! cancels without dropping the previous result, and a later objective, mode or
 //! save edit marks the stored allocation stale.
 
+use super::table::{Col, note, table, tag, text};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Styled, div};
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use idleon_farming::{self as farming, Allocation, Mode, Objective, RANK_UPGRADES};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
 
 /// The recommended allocation, its scope buttons and the twenty upgrade rows.
 pub(super) fn allocation_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let task = state.farming_task(cx);
     let running = task.running;
     let result = task.result.clone();
-    let mut body = div()
+    let mut body = v_flex()
         .id("farming-allocation")
         .role(gpui::Role::Group)
         .aria_label("Land Rank allocation")
-        .flex()
-        .flex_col()
         .gap_3()
-        .px_4()
-        .pb_4()
         .child(toolbar(state, running, cx));
 
     if running {
@@ -59,7 +53,7 @@ pub(super) fn allocation_card(state: &mut AppState, cx: &mut Context<AppState>) 
 
     match &result {
         Some(allocation) => {
-            body = body.child(summary(allocation, muted));
+            body = body.child(summary(allocation));
             if allocation.points_unused() > 0 {
                 body = body.child(
                     div()
@@ -70,16 +64,17 @@ pub(super) fn allocation_card(state: &mut AppState, cx: &mut Context<AppState>) 
                             allocation.points_unused(),
                             unused_reason(allocation)
                         ))
-                        .text_size(px(11.0))
-                        .text_color(muted)
-                        .child(format!(
-                            "{} point(s) stay unused: {}",
-                            format::number(f64::from(allocation.points_unused())),
-                            unused_reason(allocation)
+                        .child(note(
+                            format!(
+                                "{} point(s) stay unused: {}",
+                                format::number(f64::from(allocation.points_unused())),
+                                unused_reason(allocation)
+                            ),
+                            cx,
                         )),
                 );
             }
-            body = body.child(rows_table(state, allocation, muted));
+            body = body.child(rows_table(state, allocation, cx));
         }
         None => {
             body = body.child(
@@ -116,48 +111,45 @@ pub(super) fn allocation_card(state: &mut AppState, cx: &mut Context<AppState>) 
 
 /// The scope buttons and the run.
 fn toolbar(state: &mut AppState, running: bool, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
-    let mut modes = div().id("farming-mode").flex().items_center().gap_1();
+    let mut modes = h_flex().id("farming-mode").gap_1();
     for mode in Mode::ALL {
         let clicks = entity.clone();
         let selected = state.farming.mode == mode;
         modes = modes.child(
-            Button::new(format!("farming-mode-{}", mode.id()), mode.label())
-                .variant(if selected {
-                    ButtonVariant::Primary
-                } else {
-                    ButtonVariant::Subtle
-                })
-                .size(ControlSize::Sm)
+            Button::new(format!("farming-mode-{}", mode.id()))
+                .label(mode.label())
+                .when(selected, |button| button.primary())
+                .when(!selected, |button| button.secondary())
+                .small()
                 .on_click(move |_event, _window, cx| {
                     clicks.update(cx, |state, cx| state.set_farming_mode(mode, cx));
                 }),
         );
     }
     let run_entity = entity.clone();
-    let run = Button::new("farming-run", "Allocate")
-        .variant(ButtonVariant::Primary)
-        .size(ControlSize::Sm)
+    let run = Button::new("farming-run")
+        .label("Allocate")
+        .primary()
+        .small()
         .disabled(!state.save_loaded || running)
         .on_click(move |_event, _window, cx| {
             run_entity.update(cx, |state, cx| state.run_farming(cx));
         });
     let cancel_entity = entity.clone();
-    let cancel = Button::new("farming-cancel", "Cancel")
-        .size(ControlSize::Sm)
+    let cancel = Button::new("farming-cancel")
+        .label("Cancel")
+        .small()
         .disabled(!running)
         .on_click(move |_event, _window, cx| {
             cancel_entity.update(cx, |state, cx| state.cancel_farming(cx));
         });
-    div()
+    h_flex()
         .id("farming-allocation-toolbar")
-        .flex()
-        .flex_wrap()
-        .items_center()
         .gap_3()
         .child(modes)
-        .child(div().flex().items_center().gap_2().child(run).child(cancel))
+        .child(h_flex().gap_2().child(run).child(cancel))
         .child(
             div()
                 .id("farming-allocation-objective")
@@ -176,7 +168,7 @@ fn toolbar(state: &mut AppState, running: bool, cx: &mut Context<AppState>) -> A
 }
 
 /// Points available, spent, unused and the projected gain.
-fn summary(allocation: &Allocation, muted: gpui::Hsla) -> AnyElement {
+fn summary(allocation: &Allocation) -> AnyElement {
     let gain = if allocation.objective == Objective::Evolution {
         format!(
             "{} → {}",
@@ -190,127 +182,113 @@ fn summary(allocation: &Allocation, muted: gpui::Hsla) -> AnyElement {
         "Projected gain: {gain} · {} of {} points assigned",
         allocation.points_spent, allocation.points_available
     );
+    let points = |value: u32| format::number(f64::from(value));
     div()
         .id("farming-allocation-summary")
         .role(gpui::Role::Label)
-        .aria_label(aria.clone())
-        .flex()
-        .flex_wrap()
-        .gap_4()
-        .child(figure(
-            "Points available",
-            format::number(f64::from(allocation.points_available)),
-            muted,
-        ))
-        .child(figure(
-            "Points assigned",
-            format::number(f64::from(allocation.points_spent)),
-            muted,
-        ))
-        .child(figure(
-            "Points unused",
-            format::number(f64::from(allocation.points_unused())),
-            muted,
-        ))
+        .aria_label(aria)
         .child(
-            div()
-                .id("farming-allocation-gain")
-                .role(gpui::Role::Label)
-                .aria_label(format!("Projected gain: {gain}"))
-                .flex()
-                .flex_col()
-                .child(Caption::new("Projected gain").text_color(muted))
-                .child(div().text_size(px(15.0)).child(gain)),
+            KpiStrip::new()
+                .child(Statistic::new(
+                    "farming-allocation-available",
+                    "Points available",
+                    points(allocation.points_available),
+                ))
+                .child(Statistic::new(
+                    "farming-allocation-spent",
+                    "Points assigned",
+                    points(allocation.points_spent),
+                ))
+                .child(Statistic::new(
+                    "farming-allocation-unused-points",
+                    "Points unused",
+                    points(allocation.points_unused()),
+                ))
+                .child(
+                    div()
+                        .id("farming-allocation-gain")
+                        .role(gpui::Role::Label)
+                        .aria_label(format!("Projected gain: {gain}"))
+                        .child(Statistic::new(
+                            "farming-allocation-gain-value",
+                            "Projected gain",
+                            gain,
+                        )),
+                ),
         )
-        .into_any_element()
-}
-
-/// One labelled figure in the summary.
-fn figure(label: &'static str, value: String, muted: gpui::Hsla) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .child(Caption::new(label).text_color(muted))
-        .child(div().text_size(px(15.0)).child(value))
         .into_any_element()
 }
 
 /// The twenty upgrade rows: saved levels against the recommended ones.
-fn rows_table(state: &AppState, allocation: &Allocation, muted: gpui::Hsla) -> AnyElement {
+fn rows_table(state: &AppState, allocation: &Allocation, cx: &App) -> AnyElement {
     let data = farming::data();
     let total = state.farm.total_land_rank();
     let fifth_max = state.farm.fifth_column_max();
-    let mut table = Table::new([
-        "Upgrade",
-        "Unlock rank",
-        "Current Lv",
-        "Target Lv",
-        "Move",
-        "Current bonus",
-        "Target bonus",
-        "Status",
-    ]);
-    for (index, &after) in allocation.levels.iter().enumerate().take(RANK_UPGRADES) {
-        // The saved levels, not the allocation's baseline: a reallocation can
-        // take a row below what the save carries.
-        let before = state.farm.rank_levels.get(index).copied().unwrap_or(0);
-        let delta = i64::from(after) - i64::from(before);
-        let unlocked = total >= data.rank_unlocks.get(index).copied().unwrap_or(0);
-        let capped = index % 5 == 4 && after >= fifth_max;
-        let status = if !unlocked {
-            Badge::new("Locked").tone(Tone::Danger)
-        } else if capped {
-            Badge::new("Capped").tone(Tone::Warning)
-        } else {
-            Badge::new("Open").tone(Tone::Success)
-        };
-        let name = data
-            .rank_names
-            .get(index)
-            .cloned()
-            .unwrap_or_else(|| format!("Row {index}"));
-        table = table.row([
-            div()
-                .id(format!("farming-rank-row-{index}"))
-                .child(name)
-                .into_any_element(),
-            div()
-                .child(format::number(f64::from(
-                    data.rank_unlocks.get(index).copied().unwrap_or(0),
-                )))
-                .into_any_element(),
-            div().child(before.to_string()).into_any_element(),
-            div().child(after.to_string()).into_any_element(),
-            div()
-                .child(if delta > 0 {
+    let rows = allocation
+        .levels
+        .iter()
+        .enumerate()
+        .take(RANK_UPGRADES)
+        .map(|(index, &after)| {
+            // The saved levels, not the allocation's baseline: a reallocation
+            // can take a row below what the save carries.
+            let before = state.farm.rank_levels.get(index).copied().unwrap_or(0);
+            let delta = i64::from(after) - i64::from(before);
+            let unlock = data.rank_unlocks.get(index).copied().unwrap_or(0);
+            let capped = index % 5 == 4 && after >= fifth_max;
+            let status = if total < unlock {
+                tag("Locked", Tone::Danger)
+            } else if capped {
+                tag("Capped", Tone::Warning)
+            } else {
+                tag("Open", Tone::Success)
+            };
+            let name = data
+                .rank_names
+                .get(index)
+                .cloned()
+                .unwrap_or_else(|| format!("Row {index}"));
+            [
+                div()
+                    .id(format!("farming-rank-row-{index}"))
+                    .child(name)
+                    .into_any_element(),
+                text(format::number(f64::from(unlock))),
+                text(before.to_string()),
+                text(after.to_string()),
+                text(if delta > 0 {
                     format!("+{delta}")
                 } else {
                     delta.to_string()
-                })
-                .into_any_element(),
-            div()
-                .child(format::number(state.farm.rank_bonus_at(index, before)))
-                .into_any_element(),
-            div()
-                .child(format::number(state.farm.rank_bonus_at(index, after)))
-                .into_any_element(),
-            div().child(status).into_any_element(),
-        ]);
-    }
-    div()
+                }),
+                text(format::number(state.farm.rank_bonus_at(index, before))),
+                text(format::number(state.farm.rank_bonus_at(index, after))),
+                status.into_any_element(),
+            ]
+        });
+    let table = table(
+        "farming-allocation-rows",
+        &[
+            Col::Text("Upgrade"),
+            Col::Number("Unlock rank"),
+            Col::Number("Current Lv"),
+            Col::Number("Target Lv"),
+            Col::Number("Move"),
+            Col::Number("Current bonus"),
+            Col::Number("Target bonus"),
+            Col::Text("Status"),
+        ],
+        rows,
+        cx,
+    );
+    v_flex()
         .id("farming-allocation-rows")
-        .flex()
-        .flex_col()
         .gap_2()
         .child(table)
-        .child(
-            div()
-                .text_size(px(11.0))
-                .text_color(muted)
-                .child(
-                    "Every fifth row is linear and capped by the fifth Land Rank column; the others decay toward their base.",
-                ),
-        )
+        .child(note(
+            "Every fifth row is linear and capped by the fifth Land Rank column; the others decay toward their base.",
+            cx,
+        ))
         .into_any_element()
 }
 

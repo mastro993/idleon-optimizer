@@ -8,7 +8,9 @@ mod subscriptions;
 
 use crate::assets::Manifest;
 use crate::sections::cglunko::Tab as CglunkoTab;
-use crate::sections::clamworks::{State as ClamworksState, Tab as ClamworksTab};
+use crate::sections::clamworks::{
+    Controls as ClamworksControls, State as ClamworksState, Tab as ClamworksTab,
+};
 use crate::sections::cog::{
     PerfectRunInputs as CogPerfectInputs, RunInputs as CogRunInputs, State as CogState,
 };
@@ -20,7 +22,8 @@ use crate::sections::coral_god_rank::{Controls as CoralControls, State as CoralS
 use crate::sections::damage::State as DamageState;
 use crate::sections::drop_rate::State as DropRateState;
 use crate::sections::farming::{
-    CompareInputs as FarmingCompareInputs, RunInputs as FarmingRunInputs, State as FarmingState,
+    CompareInputs as FarmingCompareInputs, Controls as FarmingControls,
+    RunInputs as FarmingRunInputs, State as FarmingState,
 };
 use crate::sections::fishing::Controls as FishingControls;
 use crate::sections::fishing::State as FishingState;
@@ -265,6 +268,8 @@ pub(crate) struct AppState {
     pub(crate) farming: FarmingState,
     /// The farming preset bar's name field.
     pub(crate) farming_name: Entity<InputState>,
+    /// The farming header's kit controls and the field the tabs read.
+    pub(crate) farming_controls: FarmingControls,
     /// The fishing characters, rod and saved toolkit the last import carried.
     pub(crate) fishing_save: FishingSave,
     /// The fishing section's character, toolkit, pool and account values.
@@ -299,6 +304,8 @@ pub(crate) struct AppState {
     pub(crate) clamworks_claim: ClamworksState,
     /// The Scurge panel the section was left on.
     pub(crate) clamworks_scurge: ScurgeInputs,
+    /// The clamworks section's kit controls and cached figures.
+    pub(crate) clamworks_controls: ClamworksControls,
     /// The Jelly Operator board the last imported save carried.
     pub(crate) jelly: Option<Jelly>,
     /// The Jelly Operator section's board on screen and its palette pick.
@@ -1327,6 +1334,7 @@ impl AppState {
             farm: Farm::default(),
             farming: FarmingState::default(),
             farming_name,
+            farming_controls: FarmingControls::new(window, cx),
             fishing_save: FishingSave::default(),
             fishing: FishingState::default(),
             fishing_controls,
@@ -1344,6 +1352,7 @@ impl AppState {
             clamworks_projection: None,
             clamworks_claim: sections::clamworks::State::new(window, cx),
             clamworks_scurge: ScurgeInputs::default(),
+            clamworks_controls: ClamworksControls::new(window, cx),
             jar_tab: JarTab::default(),
             jar_tier: 0,
             jelly: None,

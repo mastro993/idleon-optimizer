@@ -6,12 +6,15 @@
 //! and the project's `configs`/`assign` call [`State::config`] and
 //! [`State::apply_config`]. See `docs/section-state.md`.
 
-use super::Tab;
+use super::{MAX_OPALS, Tab};
 use crate::state::{AppState, ProgressLine, RunStatus, report_run};
 use gpui::{App, Context, Entity, Subscription, Window};
-use idleon_opal::{Opal, Plan, PlanInput, PlanTarget, VILLAGERS};
+use gpui_kit::component::input::{InputEvent, InputState};
+use gpui_kit::component::select::SelectEvent;
+use idleon_opal::{NAMES, Opal, Plan, PlanInput, PlanTarget, VILLAGERS};
 use idleon_ui::formula::FormulaTree;
 use idleon_ui::runner::{TaskRunner, TaskState};
+use idleon_ui::widgets::{Choice, ChoiceSelect, number_state, number_value};
 
 /// The section's project config: the villager the breakdown is switched to, the
 /// optimizer's tab, target and total, and the manual simulator's counts. The
@@ -45,6 +48,13 @@ pub(crate) struct State {
     pub(crate) run: Entity<TaskRunner<Plan, PlanInput>>,
     /// The formula tree on the overview.
     pub(crate) breakdown: Entity<FormulaTree>,
+    /// The save revision and villager the tree was last rooted at.
+    tree_key: Option<(u64, Option<usize>)>,
+    /// The optimizer's target, total and the manual simulator's counts: kit
+    /// controls that show the values above and edit them through the setters.
+    pub(crate) target_select: ChoiceSelect<Option<usize>>,
+    pub(crate) total_field: Entity<InputState>,
+    pub(crate) manual_fields: [Entity<InputState>; VILLAGERS],
     _subscriptions: Vec<Subscription>,
 }
 
@@ -67,6 +77,37 @@ impl State {
                 ))
             },
         );
+        let target_select = ChoiceSelect::new(target_choices(None), Some(&None), window, cx);
+        let total_field = number_state(0.0, f64::MAX, 1.0, window, cx);
+        let manual_fields = std::array::from_fn(|_| number_state(0.0, f64::MAX, 1.0, window, cx));
+        // Edits flow control -> section value, through the section's setters.
+        subscriptions.push(cx.subscribe(
+            target_select.state(),
+            |state, _, event: &SelectEvent<Vec<Choice<Option<usize>>>>, cx| {
+                if let SelectEvent::Confirm(Some(target)) = event {
+                    state.opal.set_target(*target, cx);
+                }
+            },
+        ));
+        subscriptions.push(cx.subscribe(&total_field, |state, field, event, cx| {
+            if matches!(event, InputEvent::Change)
+                && let Some(total) = number_value(field.read(cx))
+            {
+                let total = total.min(state.opal.max_opals(state.opal.total));
+                state.opal.set_total(total, cx);
+            }
+        }));
+        for (villager, field) in manual_fields.iter().enumerate() {
+            subscriptions.push(cx.subscribe(field, move |state, field, event, cx| {
+                if matches!(event, InputEvent::Change)
+                    && let Some(opals) = number_value(field.read(cx))
+                {
+                    let saved = state.opal.saved_total();
+                    let opals = opals.min(state.opal.max_opals(saved));
+                    state.opal.set_manual(villager, opals, cx);
+                }
+            }));
+        }
         Self {
             save: None,
             selected: None,
@@ -76,8 +117,34 @@ impl State {
             manual: [0.0; VILLAGERS],
             run,
             breakdown: crate::ui::formula_tree("opal-formula", window, cx),
+            tree_key: None,
+            target_select,
+            total_field,
+            manual_fields,
             _subscriptions: subscriptions,
         }
+    }
+
+    /// The most opals a typed count takes: the static ceiling, or `current`
+    /// when a save already holds more.
+    fn max_opals(&self, current: f64) -> f64 {
+        MAX_OPALS.max(current)
+    }
+
+    /// Root the formula tree at the selected villager or the total, once per
+    /// change of the save or the selection.
+    pub(crate) fn sync_tree(&mut self, save_revision: u64, cx: &mut Context<AppState>) {
+        let key = (save_revision, self.selected);
+        if self.tree_key == Some(key) {
+            return;
+        }
+        let Some(opal) = self.save.as_ref() else {
+            return;
+        };
+        self.tree_key = Some(key);
+        let root = opal.breakdown(self.selected);
+        self.breakdown
+            .update(cx, |tree, cx| tree.set_root(root, cx));
     }
 
     /// Take a new save's villagers. The selections go back to the total, the
@@ -131,7 +198,7 @@ impl State {
         })
     }
 
-    fn saved_total(&self) -> f64 {
+    pub(crate) fn saved_total(&self) -> f64 {
         self.save.as_ref().map_or(0.0, Opal::total_opals)
     }
 
@@ -217,6 +284,26 @@ impl State {
     pub(crate) fn task(&self, cx: &App) -> TaskState<Plan> {
         self.run.read(cx).state(&self.plan_input())
     }
+}
+
+/// The optimizer's target list: the total, then each unlocked villager.
+pub(crate) fn target_choices(opal: Option<&Opal>) -> Vec<Choice<Option<usize>>> {
+    let villagers = opal.into_iter().flat_map(|opal| {
+        (0..VILLAGERS)
+            .filter(|villager| opal.unlocked(*villager))
+            .map(|villager| {
+                Choice::new(
+                    Some(villager),
+                    format!(
+                        "{} (★{})",
+                        NAMES[villager], opal.villagers[villager].stars as i64
+                    ),
+                )
+            })
+    });
+    std::iter::once(Choice::new(None, "All villagers (total EXP)"))
+        .chain(villagers)
+        .collect()
 }
 
 #[cfg(test)]

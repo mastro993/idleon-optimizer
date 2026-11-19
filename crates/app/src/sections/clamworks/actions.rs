@@ -3,7 +3,7 @@
 use crate::sections::clamworks::Tab as ClamworksTab;
 use crate::state::AppState;
 use gpui::{App, Context};
-use idleon_clamworks::scurge::{self, MAX_AFFLICTION, MAX_OTHER_PLAYERS, Mode, Plan};
+use idleon_clamworks::scurge::{MAX_AFFLICTION, MAX_OTHER_PLAYERS, Mode};
 use idleon_clamworks::{Clamworks, Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
 use idleon_ui::runner::TaskState;
 
@@ -173,14 +173,6 @@ impl AppState {
     ) {
         self.clamworks_scurge.other_players = players.min(MAX_OTHER_PLAYERS);
         cx.notify();
-    }
-
-    /// The Scurge comparison the section's current inputs ask for, or why it
-    /// cannot be built.
-    pub(crate) fn clamworks_scurge_plan(&self) -> Result<Plan, scurge::Error> {
-        // The plan previews the levels the section shows, so an applied pearl
-        // plan's projection reads through here too.
-        Plan::build(&self.clamworks_view(), self.clamworks_scurge)
     }
 
     /// The selected character's kills per hour, the stand-in the Scurge rates

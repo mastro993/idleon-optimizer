@@ -1,25 +1,27 @@
 //! The 9×4 plot field: family colours, tiles and the crop legend.
 
+use super::table::note;
 use crate::state::AppState;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, div, px, rgb};
+use gpui::{AnyElement, App, Context, Hsla, IntoElement, ParentElement, Styled, div, px};
+use gpui_kit::component::tooltip::Tooltip;
+use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use idleon_farming::{self as farming, Assignment, CropRow, PlotMetrics};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, TEXT_CAPTION};
 
-/// The 9×4 family colours.
-pub(super) fn family_color(family: i64) -> Hsla {
+/// Each seed family's colour, from the theme's named hues; an empty plot is muted.
+pub(super) fn family_color(family: i64, cx: &App) -> Hsla {
+    let theme = cx.theme();
     match family {
-        0 => rgb(0x72_c6_5d).into(),
-        1 => rgb(0xbc_8f_58).into(),
-        2 => rgb(0xd7_c6_4e).into(),
-        3 => rgb(0xef_6f_93).into(),
-        4 => rgb(0x9b_78_cc).into(),
-        5 => rgb(0x57_b6_c7).into(),
-        6 => rgb(0xd7_a9_41).into(),
-        _ => rgb(0x77_77_77).into(),
+        0 => theme.green,
+        1 => theme.red_light,
+        2 => theme.yellow,
+        3 => theme.magenta,
+        4 => theme.chart_1,
+        5 => theme.cyan,
+        6 => theme.warning,
+        _ => theme.muted_foreground,
     }
 }
 
@@ -48,18 +50,18 @@ pub(super) fn field_card(
     assignment: &Assignment,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let theme = cx.theme();
     let palette = TilePalette {
-        border: colors.border,
-        accent: colors.accent,
-        surface: colors.surface,
-        sunken: colors.sunken,
-        fg: colors.fg,
-        muted: colors.fg_muted,
+        border: theme.border,
+        accent: theme.primary,
+        surface: theme.group_box,
+        sunken: theme.muted,
+        fg: theme.foreground,
+        muted: theme.muted_foreground,
     };
-    let mut rows = div().flex().flex_col().gap_2();
+    let mut rows = v_flex().gap_2();
     for row in 0..4 {
-        let mut line = div().id(("farming-row", row)).flex().gap_2();
+        let mut line = h_flex().id(("farming-row", row)).gap_2();
         for column in 0..9 {
             let index = row * 9 + column;
             line = line.child(plot_tile(
@@ -73,26 +75,18 @@ pub(super) fn field_card(
         rows = rows.child(line);
     }
 
-    let mut legend = div()
-        .flex()
-        .flex_wrap()
-        .items_center()
-        .gap_3()
-        .px_4()
-        .pb_3();
+    let mut legend = h_flex().gap_3();
     for seed in &farming::data().seeds {
         legend = legend.child(
-            div()
-                .flex()
-                .items_center()
+            h_flex()
                 .gap_1()
                 .child(
                     div()
                         .size(px(8.0))
                         .rounded(px(2.0))
-                        .bg(family_color(seed.id as i64)),
+                        .bg(family_color(seed.id as i64, cx)),
                 )
-                .child(Caption::new(family_name(seed.id as i64)).text_color(colors.fg_muted)),
+                .child(Caption::new(family_name(seed.id as i64)).text_color(palette.muted)),
         );
     }
 
@@ -103,18 +97,12 @@ pub(super) fn field_card(
     };
     Card::new()
         .header(CardHeader::new("Full 9 × 4 field").description(description))
-        .child(div().id("farming-field").px_4().pt_3().child(rows))
+        .child(div().id("farming-field").child(rows))
         .child(legend)
-        .child(
-            div()
-                .px_4()
-                .pb_3()
-                .text_size(px(11.0))
-                .text_color(colors.fg_muted)
-                .child(
-                    "Chances and values use the multipliers this save carries; account systems outside it are not applied.",
-                ),
-        )
+        .child(note(
+            "Chances and values use the multipliers this save carries; account systems outside it are not applied.",
+            cx,
+        ))
         .into_any_element()
 }
 
@@ -147,7 +135,7 @@ fn plot_tile(
         muted,
     } = palette;
     let index = metric.plot;
-    let tint = family_color(metric.seed_family);
+    let tint = family_color(metric.seed_family, cx);
     let family = family_name(metric.seed_family);
     let empty = metric.seed_family < 0;
     let title = if empty {
@@ -201,11 +189,10 @@ fn plot_tile(
         .aria_selected(selected)
         .flex_1()
         .min_w_0()
-        .h(px(96.0))
         .flex()
         .flex_col()
         .overflow_hidden()
-        .rounded(px(6.0))
+        .rounded(cx.theme().radius)
         .bg(if selected { sunken } else { surface })
         .border_1()
         .border_color(if selected { accent } else { border })
@@ -217,31 +204,40 @@ fn plot_tile(
                 .gap_0p5()
                 .p_2()
                 .child(
-                    div()
-                        .flex()
-                        .items_center()
+                    h_flex()
                         .justify_between()
                         .gap_1()
                         .child(
                             div()
-                                .text_size(px(10.0))
+                                .text_size(TEXT_CAPTION)
                                 .text_color(muted)
                                 .child(format!("Plot {}", index + 1)),
                         )
-                        .child(div().text_size(px(10.0)).text_color(tint).child(family)),
+                        .child(
+                            div()
+                                .text_size(TEXT_CAPTION)
+                                .text_color(tint)
+                                .truncate()
+                                .child(family),
+                        ),
                 )
                 .child(
                     div()
-                        .text_size(px(15.0))
+                        .text_size(TEXT_BODY)
                         .font_weight(gpui::FontWeight::BOLD)
                         .text_color(if empty { muted } else { fg })
                         .child(crop),
                 )
-                .child(div().text_size(px(10.0)).text_color(muted).child(detail))
-                .child(div().text_size(px(10.0)).text_color(muted).child(roll))
-                .child(div().text_size(px(10.0)).text_color(tint).child(target)),
+                .child(
+                    div()
+                        .text_size(TEXT_CAPTION)
+                        .text_color(muted)
+                        .child(detail),
+                )
+                .child(div().text_size(TEXT_CAPTION).text_color(muted).child(roll))
+                .child(div().text_size(TEXT_CAPTION).text_color(tint).child(target)),
         )
-        .tooltip(ely_gpui_component::primitives::Tooltip::text(title))
+        .tooltip(move |window, cx| Tooltip::new(title.clone()).build(window, cx))
         .on_click(cx.listener(move |state, _event, window, cx| {
             state.select_plot(index, window, cx);
         }))
@@ -253,10 +249,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn families_use_their_colours_and_names() {
+    fn families_use_their_names() {
         assert_eq!(family_name(0), "Basic");
         assert_eq!(family_name(6), "Medal");
         assert_eq!(family_name(-1), "Empty");
-        assert_eq!(family_color(3), rgb(0xef_6f_93).into());
     }
 }

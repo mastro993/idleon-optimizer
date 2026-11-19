@@ -5,49 +5,43 @@
 //! it reports progress per goal, cancels without dropping the previous table,
 //! and a later baseline or crop-target edit marks the table stale.
 
+use super::table::{Col, note, table, tag, text};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Styled, div};
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_flex, v_flex};
 use idleon_farming::{Allocation, Comparison, Objective, data};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
+use idleon_ui::widgets::{Caption, Card, CardHeader, Tone};
 
 /// The compare button, the run chrome and the per-goal table.
 pub(super) fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let task = state.farming_compare_task(cx);
     let running = task.running;
     let result = task.result.clone();
     let entity = cx.entity();
     let compare = entity.clone();
     let cancel = entity.clone();
-    let toolbar = div()
+    let toolbar = h_flex()
         .id("farming-compare-toolbar")
-        .flex()
-        .flex_wrap()
-        .items_center()
         .gap_3()
         .child(
-            Button::new(
-                "farming-compare-run",
-                format!("Compare {} goals", Objective::ALL.len()),
-            )
-            .variant(ButtonVariant::Primary)
-            .size(ControlSize::Sm)
-            .disabled(!state.save_loaded || running)
-            .on_click(move |_event, _window, cx| {
-                compare.update(cx, |state, cx| state.compare_farming(cx));
-            }),
+            Button::new("farming-compare-run")
+                .label(format!("Compare {} goals", Objective::ALL.len()))
+                .primary()
+                .small()
+                .disabled(!state.save_loaded || running)
+                .on_click(move |_event, _window, cx| {
+                    compare.update(cx, |state, cx| state.compare_farming(cx));
+                }),
         )
         .child(
-            Button::new("farming-compare-cancel", "Cancel")
-                .size(ControlSize::Sm)
+            Button::new("farming-compare-cancel")
+                .label("Cancel")
+                .small()
                 .disabled(!running)
                 .on_click(move |_event, _window, cx| {
                     cancel.update(cx, |state, cx| state.cancel_farming_compare(cx));
@@ -72,15 +66,11 @@ pub(super) fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) 
                 ),
         );
 
-    let mut body = div()
+    let mut body = v_flex()
         .id("farming-comparison")
         .role(gpui::Role::Group)
         .aria_label("Preset comparison")
-        .flex()
-        .flex_col()
         .gap_3()
-        .px_4()
-        .pb_4()
         .child(toolbar);
 
     if running {
@@ -107,9 +97,7 @@ pub(super) fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) 
     }
 
     match &result {
-        Some(comparison) => {
-            body = body.child(rows_table(comparison, state.farming.objective, muted))
-        }
+        Some(comparison) => body = body.child(rows_table(comparison, state.farming.objective, cx)),
         None => {
             body = body.child(
                 div()
@@ -137,51 +125,48 @@ pub(super) fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) 
 }
 
 /// One row per goal: the gain, the points it spends and the rows it moves.
-fn rows_table(comparison: &Comparison, current: Objective, muted: gpui::Hsla) -> AnyElement {
-    let mut table = Table::new(["Goal", "Gain", "Points used", "Largest moves"]);
-    for row in &comparison.rows {
+fn rows_table(comparison: &Comparison, current: Objective, cx: &App) -> AnyElement {
+    let rows = comparison.rows.iter().map(|row| {
         let goal = row.objective.label();
         let gain = format::percent(row.relative_gain());
         let moves = largest_moves(row);
-        table = table.row([
-            div()
+        [
+            h_flex()
                 .id(format!("farming-compare-{}", row.objective.id()))
                 .role(gpui::Role::Label)
                 .aria_label(format!("{goal}: {gain} · {moves}"))
-                .flex()
-                .items_center()
                 .gap_2()
                 .child(goal)
-                .children(
-                    (row.objective == current).then(|| Badge::new("Current").tone(Tone::Accent)),
-                )
+                .children((row.objective == current).then(|| tag("Current", Tone::Accent)))
                 .into_any_element(),
-            div().child(gain).into_any_element(),
-            div()
-                .child(format!(
-                    "{} / {}",
-                    format::number(f64::from(row.points_spent)),
-                    format::number(f64::from(row.points_available))
-                ))
-                .into_any_element(),
-            div().child(moves).into_any_element(),
-        ]);
-    }
-    div()
+            text(gain),
+            text(format!(
+                "{} / {}",
+                format::number(f64::from(row.points_spent)),
+                format::number(f64::from(row.points_available))
+            )),
+            text(moves),
+        ]
+    });
+    let table = table(
+        "farming-compare",
+        &[
+            Col::Text("Goal"),
+            Col::Number("Gain"),
+            Col::Number("Points used"),
+            Col::Text("Largest moves"),
+        ],
+        rows,
+        cx,
+    );
+    v_flex()
         .id("farming-compare-rows")
-        .flex()
-        .flex_col()
         .gap_2()
         .child(table)
-        .child(
-            div()
-                .id("farming-compare-note")
-                .text_size(px(11.0))
-                .text_color(muted)
-                .child(
-                    "Gains are relative to the saved levels each goal starts from; the moves name the Land Rank rows it raises.",
-                ),
-        )
+        .child(div().id("farming-compare-note").child(note(
+            "Gains are relative to the saved levels each goal starts from; the moves name the Land Rank rows it raises.",
+            cx,
+        )))
         .into_any_element()
 }
 
