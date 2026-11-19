@@ -333,7 +333,7 @@ impl Controls {
     }
 }
 
-/// `Name · note`, as a kit option shows Ely's note.
+/// `Name · note`: a kit option has no separate note.
 fn with_note(name: &str, note: &str) -> String {
     if note.is_empty() {
         name.to_string()

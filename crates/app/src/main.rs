@@ -70,12 +70,11 @@ fn main() -> Result<()> {
         .map(PathBuf::from)
         .or_else(|| std::env::var_os(IMPORT_ENV).map(PathBuf::from));
     gpui_platform::application()
-        .with_assets(assets::source())
+        .with_assets(idleon_ui::widgets::Icons)
         // gpui keeps a windowless app alive on macOS; this app is its window, so
         // closing it quits everywhere.
         .with_quit_mode(QuitMode::LastWindowClosed)
         .run(move |cx: &mut App| {
-            ely_gpui_component::init(cx).expect("Ely failed to start");
             gpui_kit::init(cx);
             ui::shell::bind_keys(cx);
             for section in sections::SECTIONS {

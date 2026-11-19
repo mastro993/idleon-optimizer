@@ -7,7 +7,7 @@ use gpui_kit::component::button::{Toggle, ToggleGroup, ToggleVariants as _};
 /// A small segmented single choice under `id`, one segment per
 /// `(value, label)` with `current` checked.
 ///
-/// Segment `n` is `<id>.segment-<n>`, the id the bridge gave Ely's segments
+/// Segment `n` is `<id>.segment-<n>`, the id the bridge gave the segments
 /// once two controls shared a pane, which the harness clicks. A click on the
 /// checked segment keeps it: the kit clears every flag then, and `on_change`
 /// is not called.
@@ -26,7 +26,7 @@ pub(crate) fn segmented<V: Copy + PartialEq + 'static>(
     )
 }
 
-/// [`segmented`] whose segments keep Ely's bare `segment-<n>` ids, for the
+/// [`segmented`] whose segments keep the bare `segment-<n>` ids, for the
 /// one control alone on its pane (the Decision Tree's mode switch), which the
 /// harness clicks by those ids.
 pub(crate) fn segmented_bare<V: Copy + PartialEq + 'static>(

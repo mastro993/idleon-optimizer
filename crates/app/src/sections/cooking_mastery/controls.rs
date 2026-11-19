@@ -56,7 +56,7 @@ impl Controls {
         let yellow_budget = number_state(0.0, f64::MAX, 1.0, window, cx);
         let character = ChoiceSelect::new(Vec::new(), None, window, cx);
         // Edits flow control -> section value. A budget is held to the points
-        // the save grants, as the Ely stepper's range held it.
+        // the save grants.
         let subscriptions = vec![
             cx.subscribe(
                 goal.state(),

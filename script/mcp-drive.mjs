@@ -229,7 +229,7 @@ try {
   check('grid marks the selected cell', labelOf(nodes, cell) !== null);
 
   // Drag a shape by its polygon: pointer down on a covered square, move, release.
-  // A disabled Ely button keeps `enabled: true` but carries no click action.
+  // A disabled button keeps `enabled: true` but carries no click action.
   const canClick = (node) => (node?.actions ?? []).includes('click');
   const shapeAdd = (await tree()).find((node) => node.id === 'shape-add');
   if (canClick(shapeAdd)) {

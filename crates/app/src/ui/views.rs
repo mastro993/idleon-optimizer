@@ -99,7 +99,7 @@ impl Views {
     }
 
     /// Whether the sidebar is folding or unfolding to `rail` within `duration`
-    /// of the change. Ely's `Sidebar` animates its own width meanwhile, which a
+    /// of the change. The sidebar animates its own width meanwhile, which a
     /// cached view laid out at a fixed width would clip, so the shell draws it
     /// live until the animation ends.
     pub(crate) fn sidebar_folding(&mut self, rail: SidebarFold, duration: Duration) -> bool {

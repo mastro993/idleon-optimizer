@@ -294,8 +294,7 @@ pub(super) fn rows(
         .collect()
 }
 
-/// The table state over the meal rows: no selection, sorting or column moves,
-/// as the Ely table had none.
+/// The table state over the meal rows: no selection, sorting or column moves.
 pub(super) fn state(
     targets: Vec<Entity<InputState>>,
     window: &mut Window,

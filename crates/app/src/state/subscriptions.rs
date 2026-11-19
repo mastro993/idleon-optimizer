@@ -8,40 +8,14 @@ use gpui_kit::component::input::{InputEvent, InputState};
 use idleon_common::Progress;
 use idleon_ui::runner::{Ending, TaskEvent, TaskRunner};
 
-/// A text field whose edits [`redraw_on_edit`] watches: the kit's
-/// `InputState`, and Ely's `TextInput` until #361 removes Ely. A section
-/// moving its field to the kit changes the field's type, not this call.
-pub(crate) trait TextField: EventEmitter<Self::Event> {
-    type Event: 'static;
-
-    /// Whether `event` reports a change of the field's text.
-    fn is_edit(event: &Self::Event) -> bool;
-}
-
-impl TextField for InputState {
-    type Event = InputEvent;
-
-    fn is_edit(event: &InputEvent) -> bool {
-        matches!(event, InputEvent::Change)
-    }
-}
-
-impl TextField for ely_gpui_component::forms::TextInput {
-    type Event = ely_gpui_component::forms::InputEvent;
-
-    fn is_edit(event: &Self::Event) -> bool {
-        *event == ely_gpui_component::forms::InputEvent::Changed
-    }
-}
-
 /// Redraw the window on every edit of `input`, so a filter field narrows the
 /// page as the user types.
-pub(crate) fn redraw_on_edit<F: TextField>(
+pub(crate) fn redraw_on_edit(
     cx: &mut Context<AppState>,
-    input: &Entity<F>,
+    input: &Entity<InputState>,
 ) -> Subscription {
-    cx.subscribe(input, |_state, _input, event: &F::Event, cx| {
-        if F::is_edit(event) {
+    cx.subscribe(input, |_state, _input, event: &InputEvent, cx| {
+        if matches!(event, InputEvent::Change) {
             cx.notify();
         }
     })

@@ -3280,7 +3280,7 @@ const INTERACTIONS = {
     await waitForNode(lane, 'kitchens-grant-chart', 'ladle: the comparison draws the grant trend');
     await waitForNode(lane, 'kitchens-outcomes', 'ladle: the meal outcomes table renders');
     // A press on a number field focuses it, and Down steps it. The forecast list
-    // keeps the same Ely id, so the field is named through its row of controls.
+    // reuses the field's id, so the field is named through its row of controls.
     await lane.call('click_element', { id: 'kitchens-controls.kitchens-days' });
     await lane.call('keyboard', { keystroke: 'down' });
     await waitFor(

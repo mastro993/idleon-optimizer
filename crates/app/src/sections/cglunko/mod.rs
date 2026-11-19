@@ -109,7 +109,7 @@ pub(crate) fn view(
     )
     .flex_1();
     let page_entity = cx.entity();
-    // Page `n` keeps Ely's `cglunko-page-toggle-<n>` id, which the harness
+    // Page `n` keeps the `cglunko-page-toggle-<n>` id, which the harness
     // clicks. A click on the checked page clears every flag: keep the page.
     let pages = ToggleGroup::new("cglunko-page")
         .single()
@@ -189,7 +189,7 @@ pub(crate) fn view(
 }
 
 /// `value` with `decimals` places and its whole part grouped in thousands,
-/// as Ely's statistic drew it: `30,808.96`.
+/// as in `30,808.96`.
 pub(super) fn grouped(value: f64, decimals: usize) -> String {
     let text = format!("{value:.decimals$}");
     match text.split_once('.') {
@@ -209,7 +209,7 @@ pub(super) fn tag(label: impl Into<SharedString>, tone: Tone) -> Tag {
         .child(label.into())
 }
 
-/// A tab's scrolling pane under its Ely scroll id.
+/// A tab's scrolling pane under its harness scroll id.
 pub(super) fn pane(id: &'static str, body: impl IntoElement) -> AnyElement {
     use gpui_kit::component::scroll::ScrollableElement as _;
     div()

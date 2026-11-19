@@ -283,7 +283,7 @@ pub(crate) fn view(
         .into_any_element()
 }
 
-/// One context selector under its Ely id, disabled until a save loads.
+/// One context selector under its harness id, disabled until a save loads.
 fn select(
     select: &ChoiceSelect<usize>,
     id: &'static str,

@@ -25,8 +25,7 @@ pub const PANEL_GAP: Pixels = px(8.);
 
 /// What a mark means: the status colors plus the neutral and accent ones.
 ///
-/// It replaces Ely's `Tone` and `Severity`; kit components take it through
-/// `TagVariant::from` and `AlertVariant::from`.
+/// Kit components take it through `TagVariant::from` and `AlertVariant::from`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Tone {
     #[default]

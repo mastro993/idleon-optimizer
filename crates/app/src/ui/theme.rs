@@ -1,23 +1,17 @@
 //! The Console theme (`docs/ui-kit/design.md`), its mono face and the world badges.
 //!
-//! `data/theme.json` is the one source of the app's colors: the kit draws it
-//! directly, and while Ely and GPUI Kit coexist (#335) Ely's `Palette` is
-//! derived from the same tokens. Both follow the system's light or dark
-//! appearance.
+//! `data/theme.json` is the one source of the app's colors, drawn by the kit
+//! in the system's light or dark appearance.
 
 use crate::sections::Group;
-use ely_gpui_component::theme::{Mode, Palette, Theme};
 use gpui::{
     App, FontWeight, Hsla, IntoElement, ParentElement, RenderOnce, Styled, Window,
     WindowAppearance, rgb,
 };
 use gpui_kit::component::tag::Tag;
-use gpui_kit::component::{
-    ActiveTheme as _, Sizable as _, Theme as KitTheme, ThemeConfig, ThemeRegistry,
-};
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, Theme, ThemeRegistry};
 use idleon_ui::widgets::TEXT_CAPTION;
 use std::borrow::Cow;
-use std::rc::Rc;
 
 /// The kit's theme set: the Console theme in its dark and light modes.
 const KIT_THEMES: &str = include_str!("../../data/theme.json");
@@ -35,10 +29,10 @@ const MONO_FONTS: [&[u8]; 3] = [
     include_bytes!("../../fonts/JetBrainsMono-SemiBold.ttf"),
 ];
 
-/// Register the mono face and draw both component libraries in the Console
-/// theme, in the system's current mode.
+/// Register the mono face and draw the kit in the Console theme, in the
+/// system's current mode.
 ///
-/// Call it after `ely_gpui_component::init` and `gpui_kit::init`.
+/// Call it after `gpui_kit::init`.
 pub(crate) fn install(cx: &mut App) {
     cx.text_system()
         .add_fonts(MONO_FONTS.iter().map(|font| Cow::Borrowed(*font)).collect())
@@ -55,10 +49,8 @@ pub(crate) fn install(cx: &mut App) {
             .expect("the bundled kit theme set names its themes")
     };
     let (dark, light) = (config(DARK_THEME), config(LIGHT_THEME));
-    Theme::set_palette(Mode::Dark, Some(palette(&dark)), cx);
-    Theme::set_palette(Mode::Light, Some(palette(&light)), cx);
-    KitTheme::global_mut(cx).dark_theme = dark;
-    KitTheme::global_mut(cx).light_theme = light;
+    Theme::global_mut(cx).dark_theme = dark;
+    Theme::global_mut(cx).light_theme = light;
     show(cx.window_appearance(), cx);
 }
 
@@ -69,60 +61,9 @@ pub(crate) fn follow_system(window: &Window) {
         .detach();
 }
 
-/// Draw both libraries in `appearance`'s mode.
+/// Draw the kit in `appearance`'s mode.
 fn show(appearance: WindowAppearance, cx: &mut App) {
-    Theme::set_mode_now(appearance.into(), cx);
-    KitTheme::change(appearance, None, cx);
-}
-
-/// Ely's palette for `config`'s mode, from the kit theme's tokens
-/// (`docs/ui-kit/design.md`, § Color tokens). Colors the Console theme has no
-/// token for (disabled text, shadows, code and terminal colors) stay Ely's.
-fn palette(config: &Rc<ThemeConfig>) -> Palette {
-    let mut theme = KitTheme::default();
-    theme.apply_config(config);
-    let kit = theme.colors;
-    let mut palette = if theme.mode.is_dark() {
-        Palette::dark(false)
-    } else {
-        Palette::light(false)
-    };
-    palette.bg = kit.background;
-    palette.surface = kit.table;
-    palette.sunken = kit.sidebar;
-    palette.overlay = kit.popover;
-    palette.hover = kit.accent;
-    palette.active = kit.secondary_active;
-    palette.border = kit.border;
-    palette.border_strong = kit.input;
-    palette.fg = kit.foreground;
-    palette.fg_muted = kit.muted_foreground;
-    palette.fg_subtle = kit.table_head_foreground;
-    palette.accent = kit.primary;
-    palette.accent_hover = kit.primary_hover;
-    palette.on_accent = kit.primary_foreground;
-    palette.focus = kit.ring;
-    palette.link = kit.link;
-    palette.selection = kit.selection;
-    palette.success = kit.success;
-    palette.warning = kit.warning;
-    palette.danger = kit.danger;
-    palette.info = kit.info;
-    palette.success_subtle = kit.success.opacity(WORLD_FILL);
-    palette.warning_subtle = kit.warning.opacity(WORLD_FILL);
-    palette.danger_subtle = kit.danger.opacity(WORLD_FILL);
-    palette.info_subtle = kit.info.opacity(WORLD_FILL);
-    palette.backdrop = kit.overlay;
-    palette.tooltip_bg = kit.popover;
-    palette.tooltip_fg = kit.popover_foreground;
-    palette.chart[..5].copy_from_slice(&[
-        kit.chart_1,
-        kit.chart_2,
-        kit.chart_3,
-        kit.chart_4,
-        kit.chart_5,
-    ]);
-    palette
+    Theme::change(appearance, None, cx);
 }
 
 /// One world's color in the active mode: a badge's text, and at
@@ -148,7 +89,7 @@ fn world_hue(group: Group, dark: bool) -> Hsla {
     rgb(if dark { dark_hue } else { light_hue }).into()
 }
 
-/// A world badge's fill alpha, and the soft fill behind a status in Ely.
+/// A world badge's fill alpha.
 const WORLD_FILL: f32 = 0.14;
 /// A world badge's outline alpha.
 const WORLD_OUTLINE: f32 = 0.3;
@@ -186,10 +127,11 @@ mod tests {
     use super::*;
     use gpui::{AppContext as _, Context, TestAppContext, div};
     use gpui_kit::component::{
-        ThemeSet,
+        ThemeConfig, ThemeSet,
         button::{Button, ButtonVariants as _},
         label::Label,
     };
+    use std::rc::Rc;
 
     /// The named theme of the bundled set, as `install` registers it.
     fn config(name: &str) -> Rc<ThemeConfig> {
@@ -203,8 +145,8 @@ mod tests {
     }
 
     /// The kit theme `config` resolves to, outside any app.
-    fn kit_theme(name: &str) -> KitTheme {
-        let mut theme = KitTheme::default();
+    fn kit_theme(name: &str) -> Theme {
+        let mut theme = Theme::default();
         theme.apply_config(&config(name));
         theme
     }
@@ -230,29 +172,6 @@ mod tests {
     fn the_set_has_a_dark_and_a_light_console_theme() {
         assert!(kit_theme(DARK_THEME).mode.is_dark());
         assert!(!kit_theme(LIGHT_THEME).mode.is_dark());
-    }
-
-    #[test]
-    fn ely_draws_the_kit_tokens_in_both_modes() {
-        for name in [DARK_THEME, LIGHT_THEME] {
-            let (kit, ely) = (kit_theme(name).colors, palette(&config(name)));
-            let pairs = [
-                ("background", kit.background, ely.bg),
-                ("surface", kit.table, ely.surface),
-                ("sunken", kit.sidebar, ely.sunken),
-                ("foreground", kit.foreground, ely.fg),
-                ("muted", kit.muted_foreground, ely.fg_muted),
-                ("subtle", kit.table_head_foreground, ely.fg_subtle),
-                ("border", kit.border, ely.border),
-                ("accent", kit.primary, ely.accent),
-                ("focus", kit.ring, ely.focus),
-                ("danger", kit.danger, ely.danger),
-                ("chart.5", kit.chart_5, ely.chart[4]),
-            ];
-            for (token, kit, ely) in pairs {
-                assert_eq!(kit.to_rgb(), ely.to_rgb(), "{name}: {token}");
-            }
-        }
     }
 
     #[test]
@@ -305,11 +224,8 @@ mod tests {
     }
 
     #[gpui::test]
-    fn kit_components_paint_the_console_colors_and_both_libraries_switch_mode(
-        cx: &mut TestAppContext,
-    ) {
+    fn kit_components_paint_the_console_colors_and_switch_mode(cx: &mut TestAppContext) {
         cx.update(|cx| {
-            ely_gpui_component::init_for_tests(cx);
             gpui_kit::init(cx);
             install(cx);
             show(WindowAppearance::Dark, cx);
@@ -332,8 +248,9 @@ mod tests {
                 window.rem_size(),
             )
         });
-        // The Root sets the rem to the kit's `font.size` every frame; Ely sizes
-        // everything in rems of 16 px, so any other value rescales the app.
+        // The Root sets the rem to the kit's `font.size` every frame; the app's
+        // spacing and the kit's component heights are rems of 16 px, so any
+        // other value rescales the app.
         assert_eq!(rem, gpui::px(16.0));
         assert!(
             quads.iter().any(
@@ -356,9 +273,6 @@ mod tests {
         cx.update(|_, cx| {
             assert!(!cx.theme().is_dark());
             assert_eq!(cx.theme().background.to_rgb(), light.background.to_rgb());
-            let ely = ely_gpui_component::theme::ActiveTheme::theme(cx);
-            assert_eq!(ely.mode(), Mode::Light);
-            assert_eq!(ely.colors.bg.to_rgb(), light.background.to_rgb());
             assert_eq!(
                 world_color(Group::W7, cx).to_rgb(),
                 world_hue(Group::W7, false).to_rgb()

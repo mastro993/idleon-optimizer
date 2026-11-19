@@ -31,7 +31,7 @@ section's page re-renders. So a run in one section redraws the sidebar mark and 
 never Home or another section. A finished run schedules the session save that the notify used to
 trigger.
 
-The sidebar's cached box is laid out at the fold's width. Ely's `Sidebar` animates its own width
+The sidebar's cached box is laid out at the fold's width. The sidebar animates its own width
 for 200 ms after a fold, which a fixed box would clip, so for that long the shell embeds the
 sidebar uncached.
 

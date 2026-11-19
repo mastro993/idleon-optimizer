@@ -3,7 +3,7 @@
 //!
 //! A kit `Table` gives every column the same share of its width; these tables
 //! pin their narrow figure columns and let the names and descriptions share
-//! the rest, as Ely's tables sized them.
+//! the rest.
 
 use gpui::prelude::*;
 use gpui::{Styled, px};

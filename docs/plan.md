@@ -289,9 +289,9 @@ cannot start, the window opens without it.
 
 ## 6. UI and assets
 
-- Reuse Ely components for cards, tabs, tables, steppers, badges, banners, scroll areas and dialogs.
-  The GPUI Kit migration (#335) adds `gpui-kit` beside Ely: the window is wrapped in the kit's
-  `Root` and a migrated screen uses kit components; see [`ui-kit/README.md`](ui-kit/README.md).
+- Reuse GPUI Kit components for cards, tabs, tables, steppers, badges, banners, scroll areas and
+  dialogs, and an `idleon_ui` composite only where the kit has none. The window is wrapped in the
+  kit's `Root`; see [`ui-kit/README.md`](ui-kit/README.md) for the theme and the component mapping.
 - Every calculator's breakdown renders through the shared formula tree: expandable nodes with label,
   inputs, multiplier, source and result, plus search highlights and a copy action. The research
   Rates pane is the first consumer. Node ids are scoped by the tree's own id, so a page can show
@@ -342,7 +342,7 @@ crates/ui                           GPUI building blocks: TaskRunner, run chrome
                                     number formats, the display composites GPUI Kit lacks
                                     (`widgets`, see docs/ui-kit/display.md) and the kit table's
                                     `RowsDelegate` (docs/ui-kit/data.md)
-crates/app                          GPUI binary (Ely and GPUI Kit during the migration)
+crates/app                          GPUI binary, drawn with GPUI Kit
   data/theme.json                   the GPUI Kit theme (Console, dark and light)
   fonts/                            JetBrains Mono, bundled under the SIL OFL 1.1
   sections/                         the registry and one module per section
@@ -366,20 +366,18 @@ private state; a section owns its state, its import step and its config in its o
 
 ## 8. Stack pins
 
-The app, Ely, GPUI Kit and the automation bridge must share one GPUI build.
+The app, GPUI Kit and the automation bridge must share one GPUI build.
 
 | Piece | Pin |
 | --- | --- |
 | GPUI | `gpui-pre = 0.3.12`, patched to the bridge's vendored tree |
 | `gpui_platform` | `gpui-pre-platform = 0.3.12`, features `font-kit`, `wayland`, `x11` |
-| Ely | `ely-gpui-component`, rev `49270f2` |
 | GPUI Kit | `gpui-kit = 0.10.0` (exact), features `component`, `assets` |
-| gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.12`, commit `d0e97a4` |
+| gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.12`, commit `68cadf1` |
 
-GPUI Kit 0.10.0 pins `0.3.12` exactly, Ely `main` pins the same snapshot, and the bridge's
-`gpui-pre-0.3.12` branch vendors it. That is the intersection, so Ely and GPUI Kit can sit in one
-graph during the UI kit migration. A bump moves all three together and the smoke harness is the
-check.
+GPUI Kit 0.10.0 pins `0.3.12` exactly and the bridge's `gpui-pre-0.3.12` branch vendors it, so
+both sit in one graph (`cargo tree -i gpui-pre` lists one GPUI). A bump moves them together and the
+smoke harness is the check.
 
 ## 9. Section status
 

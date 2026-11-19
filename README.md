@@ -84,7 +84,7 @@ UI harnesses, and [`docs/plan.md`](docs/plan.md) the architecture. Work is track
 [issues](https://github.com/mastro993/idleon-optimizer/issues), one milestone per calculator.
 
 Built with [GPUI](https://github.com/zed-industries/zed/tree/main/crates/gpui) and
-[Ely](https://elygpui.com).
+[GPUI Kit](https://gpui-kit.com).
 
 ## Credits
 

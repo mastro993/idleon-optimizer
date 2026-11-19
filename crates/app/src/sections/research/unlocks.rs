@@ -100,7 +100,7 @@ fn summary_card(
         body = body.child(roll_line(result));
         for (index, missing) in result.missing.iter().enumerate() {
             let text = format!("Missing roll data — {missing}");
-            // The wrapper keeps the Ely banner's id and reads its message.
+            // The wrapper carries the banner's id and reads its message.
             body = body.child(
                 div()
                     .id(SharedString::from(format!("unlock-missing-{index}")))

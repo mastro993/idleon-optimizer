@@ -13,24 +13,22 @@ rust-version = "1.100"
 license = "MIT"
 
 [workspace.dependencies]
-# One GPUI snapshot for the app, Ely and the automation bridge. gpui-pre 0.3.12
-# is the snapshot GPUI Kit 0.10.0 pins and the newest one the bridge vendors;
-# Ely at the pinned rev takes the same one, so no two copies of GPUI end up in
-# the graph.
+# One GPUI snapshot for the app, GPUI Kit and the automation bridge. gpui-pre
+# 0.3.12 is the snapshot GPUI Kit 0.10.0 pins and the newest one the bridge
+# vendors, so no two copies of GPUI end up in the graph.
 gpui = { package = "gpui-pre", version = "=0.3.12" }
 gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = [
   "font-kit",
   "wayland",
   "x11",
 ] }
-# GPUI Kit, next to Ely until every screen moves to it (#335). Pinned exactly:
-# kit releases are weekly and each one can move the GPUI snapshot. `component`
+# GPUI Kit, the app's component library. Pinned exactly: kit releases are
+# weekly and each one can move the GPUI snapshot. `component`
 # and `assets` are the kit's defaults, named so a new default stays opt-in.
 gpui-kit = { version = "=0.10.0", default-features = false, features = [
   "component",
   "assets",
 ] }
-ely-gpui-component = { git = "https://github.com/ELY-Open-Source/Ely-GPUI-Components", rev = "49270f27ca5d368d3429c049f5badc67b965d975" }
 gpui-mcp = { path = "vendor/gpui-mcp/crates/gpui-mcp", default-features = false, features = [
   "gpui-pre",
 ] }
@@ -39,7 +37,7 @@ log = "0.4"
 serde = { version = "1", features = ["derive"] }
 # Correctly rounded float parsing: a save or project read back from its own
 # export keeps every f64 bit, instead of drifting by an ULP on long decimals.
-# `preserve_order` is what GPUI and Ely already turn on for the whole graph;
+# `preserve_order` is what GPUI already turns on for the whole graph;
 # naming it here makes a single-crate build (`cargo test -p <crate>`) order
 # JSON objects the same way the workspace build and the shipped app do.
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }

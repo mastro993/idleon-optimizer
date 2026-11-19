@@ -1,7 +1,7 @@
 # Layout, display and feedback
 
-What replaces each Ely layout, typography, display and feedback item when a screen moves to GPUI
-Kit (#340). Take the kit component when one exists; use an `idleon_ui::widgets` composite only
+What replaced each Ely layout, typography, display and feedback item when the screens moved to
+GPUI Kit (#340; Ely is gone since #361), and so which component a new screen takes for each need. Take the kit component when one exists; use an `idleon_ui::widgets` composite only
 where the kit has none. The composites live in
 [`crates/ui/src/widgets/`](../../crates/ui/src/widgets/), each a `RenderOnce` builder styled only
 from `cx.theme()`, in the Console sizes from [`design.md`](design.md).
@@ -78,8 +78,8 @@ Spacing inside and between panels: `widgets::PANEL_PADDING` (12 px) and `widgets
 
 ## Icons
 
-`assets::Assets` embeds only the ~100 icons the kit's components draw. `widgets::Icons`, the source
-behind `assets::source()` in the app, adds the Lucide icons the app draws beyond those (`SearchX`,
+`assets::Assets` embeds only the ~100 icons the kit's components draw. `widgets::Icons`, the app's
+asset source, adds the Lucide icons the app draws beyond those (`SearchX`,
 `Upload`, `X`, …). Another `assets::IconName` renders blank until it is added to the list in
 [`icons.rs`](../../crates/ui/src/widgets/icons.rs); `the_icon_source_serves_the_kit_and_the_app_icons`
 checks a sample.

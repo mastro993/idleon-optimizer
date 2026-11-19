@@ -2,8 +2,8 @@
 //! the kit theme, and the rows delegate for its virtualized `DataTable`.
 //!
 //! Everything else a screen draws comes from `gpui_kit::component`;
-//! `docs/ui-kit/display.md` and `docs/ui-kit/forms.md` map each Ely item to
-//! its kit or `idleon_ui` replacement. Sizes follow the Console design
+//! `docs/ui-kit/display.md` and `docs/ui-kit/forms.md` say which kit or
+//! `idleon_ui` component each need takes. Sizes follow the Console design
 //! (`docs/ui-kit/design.md`) in pixels, so they hold when the kit theme
 //! changes the window's rem.
 

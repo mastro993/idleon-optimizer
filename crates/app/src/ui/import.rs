@@ -227,7 +227,7 @@ pub(crate) fn dialog(entity: &Entity<AppState>, dialog: Dialog, cx: &App) -> Dia
 
     dialog
         .title("Import save or project")
-        // Ely's dialog opened and closed in one frame. Keep that: a closing kit
+        // The dialog opens and closes in one frame: a closing kit
         // dialog keeps its surface (and its ids) up through the exit and
         // shields the clicks that land on it.
         .entrance(DialogEntrance::None)
