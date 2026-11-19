@@ -1447,8 +1447,9 @@ const INTERACTIONS = {
       (nodes) => {
         const change = labelOf(nodes, 'prisma-change-3-2') ?? '';
         const model = labelOf(nodes, 'prisma-coverage-model-StatueStartEXP') ?? '';
+        // Prisma ×2 doubles the bubble, so the retained EXP doubles too.
         return change.includes('Statue EXP retained on level-up')
-          && change.includes('+7.35')
+          && change.includes('(+100.00%)')
           && model.includes('Modelled')
           && model.includes('Statue EXP retained on level-up');
       },
@@ -4298,6 +4299,12 @@ const INTERACTIONS = {
     );
   },
   cog: async (lane) => {
+    // The page is taller than the window, and a click lands where the element
+    // is drawn: bring it into view first.
+    const press = async (id) => {
+      await scrollTo(lane, id);
+      await lane.call('click_element', { id });
+    };
     await lane.call('click_element', { id: 'header-import' });
     await waitForNode(lane, 'import-input', 'cog: the import dialog opens');
     await lane.call('click_element', { id: 'import-input' });
@@ -4309,7 +4316,7 @@ const INTERACTIONS = {
     const insights = labelOf(await lane.tree(), 'cog-insights') ?? '';
     check(
       'cog: the insights name the weakest and strongest cogs',
-      insights.includes('Weakest') && insights.includes('Strongest'),
+      insights.includes('Weakest') && insights.includes('strongest'),
       insights,
     );
     const ranges = labelOf(await lane.tree(), 'cog-roll-ranges') ?? '';
@@ -4320,7 +4327,7 @@ const INTERACTIONS = {
     );
     const shelf = labelOf(await lane.tree(), 'cog-shelf') ?? '';
     check('cog: the shelf is read-only', shelf.includes('read-only'), shelf);
-    await lane.call('click_element', { id: 'cog-optimize' });
+    await press('cog-optimize');
     await waitForNode(lane, 'cog-result', 'cog: optimize produces a result', 60000);
     const result = labelOf(await lane.tree(), 'cog-result') ?? '';
     check('cog: the result names its swaps', result.includes('swaps'), result);
@@ -4328,14 +4335,14 @@ const INTERACTIONS = {
     // Previous restores the prior board and Done keeps the optimized one.
     await waitForNode(lane, 'cog-swap-next', 'cog: the walkthrough opens');
     const firstStep = labelOf(await lane.tree(), 'cog-swap-progress') ?? '';
-    await lane.call('click_element', { id: 'cog-swap-next' });
+    await press('cog-swap-next');
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'cog-swap-progress') ?? '') !== firstStep,
       'cog: Next applies the first swap',
     );
     const secondStep = labelOf(await lane.tree(), 'cog-swap-progress') ?? '';
-    await lane.call('click_element', { id: 'cog-swap-prev' });
+    await press('cog-swap-prev');
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'cog-swap-progress') ?? '') === firstStep,
@@ -4345,20 +4352,20 @@ const INTERACTIONS = {
     for (let step = 0; !has(await lane.tree(), 'cog-swap-done'); step += 1) {
       if (step > 200) throw new Error('cog: the walkthrough never reaches Done');
       const before = labelOf(await lane.tree(), 'cog-swap-progress') ?? '';
-      await lane.call('click_element', { id: 'cog-swap-next' });
+      await press('cog-swap-next');
       await waitFor(
         lane,
         (nodes) => (labelOf(nodes, 'cog-swap-progress') ?? '') !== before,
         `cog: walkthrough step ${step + 2}`,
       );
     }
-    await lane.call('click_element', { id: 'cog-swap-done' });
+    await press('cog-swap-done');
     await waitFor(
       lane,
       (nodes) => !has(nodes, 'cog-walkthrough') && has(nodes, 'cog-result'),
       'cog: Done keeps the final board and closes the walkthrough',
     );
-    await lane.call('click_element', { id: 'cog-reset' });
+    await press('cog-reset');
     await waitFor(
       lane,
       (nodes) => !has(nodes, 'cog-result') && has(nodes, 'cog-board'),
@@ -4367,10 +4374,10 @@ const INTERACTIONS = {
 
     // Custom weights replace the single goal. Set build-only weights and check
     // the result names the weighted objective.
-    await lane.call('click_element', { id: 'cog-weighted' });
+    await press('cog-weighted');
     await waitForNode(lane, 'cog-weight-build', 'cog: custom weights show their fields');
     const typeWeight = async (id, value) => {
-      await lane.call('click_element', { id });
+      await press(id);
       await lane.call('keyboard', { keystroke: 'secondary-a' });
       await lane.call('type_text', { text: value });
     };
@@ -4378,17 +4385,18 @@ const INTERACTIONS = {
     await typeWeight('cog-weight-flaggy', '0');
     await typeWeight('cog-weight-build', '100');
     const weightValue = (nodes, label) =>
-      nodes.find((node) => node.role === 'text_input' && node.label === label)?.value?.value ?? '';
+      // The kit number field reports itself as a slider.
+      nodes.find((node) => node.role === 'slider' && node.label === label)?.value?.value ?? '';
     await waitFor(
       lane,
       (nodes) => weightValue(nodes, 'Build weight') === '100',
       'cog: the build weight reads 100',
     );
-    await lane.call('click_element', { id: 'cog-optimize' });
+    await press('cog-optimize');
     await waitForNode(lane, 'cog-result', 'cog: a weighted optimize produces a result', 60000);
     const weighted = labelOf(await lane.tree(), 'cog-result') ?? '';
     check('cog: the result names the weighted objective', weighted.includes('Custom weights'), weighted);
-    await lane.call('click_element', { id: 'cog-reset' });
+    await press('cog-reset');
     await waitFor(
       lane,
       (nodes) => !has(nodes, 'cog-result') && has(nodes, 'cog-board'),
@@ -4411,7 +4419,7 @@ const INTERACTIONS = {
     );
 
     // The perfect board explains its layers.
-    await lane.call('click_element', { id: 'cog-perfect' });
+    await press('cog-perfect');
     await waitForNode(lane, 'cog-perfect-result', 'cog: the perfect board is built', 120000);
     await waitForNode(lane, 'cog-perfect-layers', 'cog: the perfect board lists its layers');
     const perfect = labelOf(await lane.tree(), 'cog-perfect-result') ?? '';
@@ -4420,7 +4428,7 @@ const INTERACTIONS = {
       perfect.includes('player at') && perfect.includes('Yang'),
       perfect,
     );
-    await lane.call('click_element', { id: 'cog-reset' });
+    await press('cog-reset');
     await waitFor(
       lane,
       (nodes) => !has(nodes, 'cog-perfect-result') && has(nodes, 'cog-board'),

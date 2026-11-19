@@ -6,63 +6,37 @@
 //! charges. The stone each upgrade is paid from is added here, because the plan
 //! on the Optimizer tab spends exactly those saved balances.
 
+use super::table::{Col, table, text};
+use super::{pane, tag};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
+use gpui::{AnyElement, App, IntoElement, ParentElement, SharedString, Styled, div};
 use idleon_cglunko::{self as cglunko, Page, stone};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, Tone};
 
-pub(crate) fn upgrades_pane(
-    state: &mut AppState,
-    _window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let cglunko = state.cglunko.clone();
-    let page = state.cglunko_page;
-    let muted = cx.theme().colors.fg_muted;
+pub(crate) fn upgrades_pane(state: &AppState, cx: &App) -> AnyElement {
     let body = div()
         .id("cglunko-upgrades")
         .flex()
         .flex_col()
         .gap_3()
         .p_3()
-        .child(page_card(&cglunko, page))
-        .child(
-            Caption::new(
-                "Next Cost is the cost of the next level: the base raised to that level plus the level, divided by the Active Drops discount, five times as much on the odd indexes, and paid from the upgrade's own stone. The Optimizer tab spends these saved balances.",
-            )
-            .text_color(muted),
-        );
-    ScrollArea::new("cglunko-upgrades-scroll")
-        .vertical()
-        .flex_1()
-        .min_h_0()
-        .child(body)
-        .into_any_element()
+        .child(page_card(&state.cglunko, state.cglunko_page, cx))
+        .child(Caption::new(
+            "Next Cost is the cost of the next level: the base raised to that level plus the level, divided by the Active Drops discount, five times as much on the odd indexes, and paid from the upgrade's own stone. The Optimizer tab spends these saved balances.",
+        ));
+    pane("cglunko-upgrades-scroll", body)
 }
 
 /// Every upgrade on the page with its level, bonus, per-level value and next
 /// cost, plus the stone that funds it.
-fn page_card(cglunko: &idleon_cglunko::Cglunko, page: Page) -> AnyElement {
-    let mut table = Table::new([
-        "Upgrade",
-        "Effect",
-        "Lv",
-        "Bonus",
-        "Per Lv",
-        "Next Cost",
-        "Stones",
-    ]);
-    for index in page.upgrades() {
+fn page_card(cglunko: &idleon_cglunko::Cglunko, page: Page, cx: &App) -> AnyElement {
+    let rows = page.upgrades().map(|index| {
         let cost = cglunko.next_cost(index);
         let balance = cglunko.stone_balance(index);
         let affordable = cost.is_finite() && cost <= balance;
-        let mut stones = div()
+        let stones = div()
             .id(("cglunko-stones", index))
             .flex()
             .flex_col()
@@ -73,11 +47,11 @@ fn page_card(cglunko: &idleon_cglunko::Cglunko, page: Page) -> AnyElement {
                 page.label(),
                 stone(index) % 6 + 1,
                 format::rate(balance)
-            )));
-        if !affordable {
-            stones = stones.child(Badge::new("Short").tone(Tone::Warning));
-        }
-        table = table.row([
+            )))
+            .when(!affordable, |stones| {
+                stones.child(tag("Short", Tone::Warning))
+            });
+        vec![
             div()
                 .id(("cglunko-upgrade", index))
                 .child(SharedString::from(cglunko::upgrade_name(index)))
@@ -87,32 +61,37 @@ fn page_card(cglunko: &idleon_cglunko::Cglunko, page: Page) -> AnyElement {
                 .min_w_0()
                 .child(effect(cglunko, index))
                 .into_any_element(),
-            div()
-                .child(cglunko.level(index).to_string())
-                .into_any_element(),
-            div()
-                .child(format::value(cglunko.bonus(index)))
-                .into_any_element(),
-            div()
-                .child(format::value(cglunko::upgrade_per_lv(index)))
-                .into_any_element(),
-            div()
-                .child(if cost.is_finite() {
-                    format::value(cost)
-                } else {
-                    "—".into()
-                })
-                .into_any_element(),
+            text(cglunko.level(index).to_string()),
+            text(format::value(cglunko.bonus(index))),
+            text(format::value(cglunko::upgrade_per_lv(index))),
+            text(if cost.is_finite() {
+                format::value(cost)
+            } else {
+                "—".into()
+            }),
             stones.into_any_element(),
-        ]);
-    }
+        ]
+    });
     Card::new()
         .header(
             CardHeader::new(format!("Page {} ({})", page.index() + 1, page.label())).description(
                 "The twelve upgrades on this page and the stone balance each one is paid from.",
             ),
         )
-        .child(div().p_3().child(div().min_w_0().child(table)))
+        .child(table(
+            "cglunko-upgrade-table",
+            &[
+                Col::Text("Upgrade"),
+                Col::Text("Effect"),
+                Col::Number("Lv"),
+                Col::Number("Bonus"),
+                Col::Number("Per Lv"),
+                Col::Number("Next Cost"),
+                Col::Text("Stones"),
+            ],
+            rows,
+            cx,
+        ))
         .into_any_element()
 }
 

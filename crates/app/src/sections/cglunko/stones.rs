@@ -6,51 +6,35 @@
 //! through this one tab: the page's stones with their next digit, the digit's
 //! DR impact, and the focus target the card explains.
 
+use super::table::{Col, table, text};
+use super::{grouped, pane, tag};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, Hsla, IntoElement, ParentElement, SharedString, Styled, Window, div,
-};
+use gpui::{AnyElement, App, IntoElement, ParentElement, SharedString, Styled, div};
 use idleon_cglunko::{self as cglunko, Cglunko, Focus, Page, Stone};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
 
-pub(crate) fn stones_pane(
-    state: &mut AppState,
-    _window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let cglunko = state.cglunko.clone();
+pub(crate) fn stones_pane(state: &AppState, cx: &App) -> AnyElement {
+    let cglunko = &state.cglunko;
     let page = state.cglunko_page;
-    let muted = cx.theme().colors.fg_muted;
+    let figures = &state.cglunko_figures;
     let body = div()
         .id("cglunko-stones")
         .flex()
         .flex_col()
         .gap_3()
         .p_3()
-        .child(digit_impact(&cglunko, muted))
-        .child(stone_card(&cglunko, page))
-        .child(focus_card(&cglunko, page, muted));
-    ScrollArea::new("cglunko-stones-scroll")
-        .vertical()
-        .flex_1()
-        .min_h_0()
-        .child(body)
-        .into_any_element()
+        .child(digit_impact(cglunko))
+        .child(stone_card(cglunko, page, &figures.stones, cx))
+        .child(focus_card(cglunko, page, &figures.focus, cx));
+    pane("cglunko-stones-scroll", body)
 }
 
-/// The Digit DR Impact cards: what one digit of each colour is worth.
-fn digit_impact(cglunko: &Cglunko, muted: Hsla) -> AnyElement {
+/// The Digit DR Impact figures: what one digit of each colour is worth.
+fn digit_impact(cglunko: &Cglunko) -> AnyElement {
     let impact = |page: Page| {
-        let digits = match page {
-            Page::Blue => cglunko.blue_digits(),
-            Page::Purple => cglunko.purple_digits(),
-        };
+        let digits = digits(cglunko, page);
         let bonus = cglunko.digit_bonus(page);
         format!(
             "{}: +{}% per {}-shape digit ({} = +{}% DR)",
@@ -62,30 +46,22 @@ fn digit_impact(cglunko: &Cglunko, muted: Hsla) -> AnyElement {
         )
     };
     let summary = format!("{} · {}", impact(Page::Blue), impact(Page::Purple));
-    let mut cards = div().id("cglunko-digit-cards").flex().flex_wrap().gap_3();
-    for page in Page::ALL {
-        let digits = match page {
-            Page::Blue => cglunko.blue_digits(),
-            Page::Purple => cglunko.purple_digits(),
-        };
-        cards = cards.child(
-            KpiCard::new(
-                Statistic::new(
-                    format!("cglunko-digit-{}", page.id()),
-                    cglunko::upgrade_name(page.digit_upgrade()),
-                    cglunko.digit_bonus(page),
-                )
-                .prefix("+")
-                .suffix("%")
-                .size(TextSize::Xl),
+    let cards = Page::ALL.into_iter().fold(KpiStrip::new(), |strip, page| {
+        strip.child(
+            Statistic::new(
+                format!("cglunko-digit-{}", page.id()),
+                cglunko::upgrade_name(page.digit_upgrade()),
+                grouped(cglunko.digit_bonus(page), 0),
             )
+            .prefix("+")
+            .suffix("%")
             .caption(format!(
                 "DR per {}-shape digit · {} digits held",
                 page.label().to_lowercase(),
-                digits
+                digits(cglunko, page)
             )),
-        );
-    }
+        )
+    });
     div()
         .id("cglunko-digit-impact")
         .role(gpui::Role::Label)
@@ -93,73 +69,51 @@ fn digit_impact(cglunko: &Cglunko, muted: Hsla) -> AnyElement {
         .flex()
         .flex_col()
         .gap_2()
-        .child(cards)
-        .child(Caption::new(summary).text_color(muted))
+        .child(div().id("cglunko-digit-cards").child(cards))
+        .child(Caption::new(summary))
         .into_any_element()
 }
 
-/// The selected page's six stones with the next digit and the kills it takes.
-fn stone_card(cglunko: &Cglunko, page: Page) -> AnyElement {
-    let mut rows: Vec<Stone> = cglunko
-        .stone_rows()
-        .into_iter()
-        .filter(|stone| stone.page == page)
-        .collect();
-    rows.sort_by(stone_order);
-    let mut table = Table::new([
-        "Stone",
-        "Count",
-        "Digits",
-        "Next Pow10",
-        "Deficit",
-        "Drops / Kill",
-        "Kills Needed",
-        "Priority",
-    ]);
-    for (rank, stone) in rows.iter().enumerate() {
-        let mut priority = div()
+/// The selected page's six stones with the next digit and the kills it takes,
+/// in [`stone_order`].
+fn stone_card(cglunko: &Cglunko, page: Page, stones: &[Stone], cx: &App) -> AnyElement {
+    let rows = stones.iter().enumerate().map(|(rank, stone)| {
+        let priority = div()
             .id(("cglunko-stone-priority", stone.index))
             .flex()
-            .flex_wrap()
             .items_center()
-            .gap_1();
-        if rank == 0 && stone.deficit > 0.0 {
-            priority = priority.child(
-                div()
-                    .id(("cglunko-stone-next", stone.index))
-                    .child(Badge::new("Next").tone(Tone::Accent)),
-            );
-        }
-        if stone.focused {
-            priority = priority.child(
-                div().id(("cglunko-stone-focus", stone.index)).child(
-                    Badge::new(format!("Focused ×{}", format::value(stone.focus_multi)))
-                        .tone(Tone::Warning),
-                ),
-            );
-        }
-        table = table.row([
+            .gap_1()
+            .when(rank == 0 && stone.deficit > 0.0, |priority| {
+                priority.child(
+                    div()
+                        .id(("cglunko-stone-next", stone.index))
+                        .child(tag("Next", Tone::Accent)),
+                )
+            })
+            .when(stone.focused, |priority| {
+                priority.child(div().id(("cglunko-stone-focus", stone.index)).child(tag(
+                    format!("Focused ×{}", format::value(stone.focus_multi)),
+                    Tone::Warning,
+                )))
+            });
+        vec![
             div()
                 .id(("cglunko-stone", stone.index))
                 .child(SharedString::from(stone_name(stone.page, stone.slot)))
                 .into_any_element(),
-            div().child(format::value(stone.current)).into_any_element(),
-            div().child(stone.digits.to_string()).into_any_element(),
-            div()
-                .child(format::value(stone.next_pow10))
-                .into_any_element(),
-            div().child(format::value(stone.deficit)).into_any_element(),
-            div().child(drops(stone.drops_per_kill)).into_any_element(),
-            div()
-                .child(if stone.deficit > 0.0 {
-                    format::value(stone.kills_needed.ceil())
-                } else {
-                    "—".into()
-                })
-                .into_any_element(),
+            text(format::value(stone.current)),
+            text(stone.digits.to_string()),
+            text(format::value(stone.next_pow10)),
+            text(format::value(stone.deficit)),
+            text(drops(stone.drops_per_kill)),
+            text(if stone.deficit > 0.0 {
+                format::value(stone.kills_needed.ceil())
+            } else {
+                "—".into()
+            }),
             priority.into_any_element(),
-        ]);
-    }
+        ]
+    });
     Card::new()
         .header(
             CardHeader::new(format!("{} Stones", page.label())).description(format!(
@@ -168,86 +122,89 @@ fn stone_card(cglunko: &Cglunko, page: Page) -> AnyElement {
                 digits(cglunko, page)
             )),
         )
-        .child(div().p_3().child(div().min_w_0().child(table)))
+        .child(table(
+            "cglunko-stone-table",
+            &[
+                Col::Text("Stone"),
+                Col::Number("Count"),
+                Col::Number("Digits"),
+                Col::Number("Next Pow10"),
+                Col::Number("Deficit"),
+                Col::Number("Drops / Kill"),
+                Col::Number("Kills Needed"),
+                Col::Text("Priority"),
+            ],
+            rows,
+            cx,
+        ))
         .into_any_element()
 }
 
 /// The recommended focus target and the explanation of what focusing buys.
-fn focus_card(cglunko: &Cglunko, page: Page, muted: Hsla) -> AnyElement {
-    let rows: Vec<Focus> = cglunko
-        .best_focus()
-        .into_iter()
-        .filter(|row| row.page == page)
-        .collect();
+fn focus_card(cglunko: &Cglunko, page: Page, rows: &[Focus], cx: &App) -> AnyElement {
     let note = focus_note(cglunko, page, rows.first());
-    let body = div()
-        .id("cglunko-focus-body")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
-        .child(
-            div()
-                .id("cglunko-focus-note")
-                .role(gpui::Role::Label)
-                .aria_label(note.clone())
-                .child(Caption::new(note).text_color(muted)),
-        );
+    let note = div()
+        .id("cglunko-focus-note")
+        .role(gpui::Role::Label)
+        .aria_label(note.clone())
+        .child(Caption::new(note));
     if rows.is_empty() {
         return Card::new()
             .header(CardHeader::new("Recommended focus target"))
-            .child(
-                body.child(
-                    Caption::new(
-                        "Every stone on this page already sits on its next power of ten, so there is nothing left to focus.",
-                    )
-                    .text_color(muted),
-                ),
-            )
+            .child(div().id("cglunko-focus-body").child(note))
+            .child(Caption::new(
+                "Every stone on this page already sits on its next power of ten, so there is nothing left to focus.",
+            ))
             .into_any_element();
     }
-    let mut table = Table::new([
-        "#",
-        "Stone",
-        "Deficit",
-        "Kills (focused)",
-        "Kills (unfocused)",
-        "DR / Digit",
-    ]);
-    for (rank, row) in rows.iter().enumerate() {
-        let mut stone = div()
-            .id(("cglunko-focus", row.index))
-            .flex()
-            .items_center()
-            .gap_1()
-            .child(SharedString::from(stone_name(row.page, row.slot)));
-        if rank == 0 {
-            stone = stone.child(
-                div()
-                    .id(("cglunko-focus-recommend", row.index))
-                    .child(Badge::new("Recommend").tone(Tone::Accent)),
-            );
-        }
-        table = table.row([
-            div().child((rank + 1).to_string()).into_any_element(),
-            stone.into_any_element(),
-            div().child(format::value(row.deficit)).into_any_element(),
-            div()
-                .child(format::value(row.kills_with_focus.ceil()))
-                .into_any_element(),
-            div()
-                .child(format::value(row.kills_without.ceil()))
-                .into_any_element(),
-            div()
-                .child(format!("+{}%", format::value(row.dr_per_digit)))
-                .into_any_element(),
-        ]);
-    }
+    let table = table(
+        "cglunko-focus-table",
+        &[
+            Col::Number("#"),
+            Col::Text("Stone"),
+            Col::Number("Deficit"),
+            Col::Number("Kills (focused)"),
+            Col::Number("Kills (unfocused)"),
+            Col::Number("DR / Digit"),
+        ],
+        rows.iter().enumerate().map(|(rank, row)| {
+            let stone = div()
+                .id(("cglunko-focus", row.index))
+                .flex()
+                .items_center()
+                .gap_1()
+                .child(SharedString::from(stone_name(row.page, row.slot)))
+                .when(rank == 0, |stone| {
+                    stone.child(
+                        div()
+                            .id(("cglunko-focus-recommend", row.index))
+                            .child(tag("Recommend", Tone::Accent)),
+                    )
+                });
+            vec![
+                text((rank + 1).to_string()),
+                stone.into_any_element(),
+                text(format::value(row.deficit)),
+                text(format::value(row.kills_with_focus.ceil())),
+                text(format::value(row.kills_without.ceil())),
+                text(format!("+{}%", format::value(row.dr_per_digit))),
+            ]
+        }),
+        cx,
+    );
     Card::new()
         .header(CardHeader::new("Recommended focus target").description(
             "Each colour has its own focus slot; the ranking is the stones still short of a digit, fewest focused kills first.",
         ))
-        .child(body.child(div().min_w_0().child(table)))
+        .child(
+            div()
+                .id("cglunko-focus-body")
+                .flex()
+                .flex_col()
+                .gap_3()
+                .child(note)
+                .child(table),
+        )
         .into_any_element()
 }
 
@@ -287,7 +244,7 @@ fn focus_note(cglunko: &Cglunko, page: Page, best: Option<&Focus>) -> String {
 
 /// The stone table order: the stones still short of a digit first,
 /// fewest kills first, a stone already on its power of ten last.
-fn stone_order(a: &Stone, b: &Stone) -> std::cmp::Ordering {
+pub(super) fn stone_order(a: &Stone, b: &Stone) -> std::cmp::Ordering {
     match (a.deficit > 0.0, b.deficit > 0.0) {
         (true, false) => std::cmp::Ordering::Less,
         (false, true) => std::cmp::Ordering::Greater,

@@ -288,10 +288,14 @@ pub(crate) struct AppState {
     pub(crate) cglunko_tab: CglunkoTab,
     /// The page the Cglunko upgrade list and plan work on.
     pub(crate) cglunko_page: CglunkoPage,
+    /// What the cglunko tabs list from the save, rebuilt per save and page.
+    pub(crate) cglunko_figures: crate::sections::cglunko::Figures,
     /// The Clamworks state the last imported save carried.
     pub(crate) clamworks: Clamworks,
     /// The cog board section: the decoded save and the board on screen.
     pub(crate) cog: CogState,
+    /// The cog section's weight fields, long tables and board figures.
+    pub(crate) cog_controls: crate::sections::cog::Controls,
     /// The Clamworks tab the section was left on.
     pub(crate) clamworks_tab: ClamworksTab,
     /// The multikill total Multi-Scalping reads, until the combat sim lands.
@@ -1004,7 +1008,9 @@ impl AppState {
                 cancelled_kept: "Prisma run cancelled; the previous result is unchanged.",
                 cancelled_empty: "Prisma run cancelled; nothing was compared.",
             },
-            |_, result| {
+            |state, result| {
+                // A new stored run rebuilds the section's rows.
+                state.prisma.stored += 1;
                 let changed = result
                     .results
                     .iter()
@@ -1199,6 +1205,7 @@ impl AppState {
         let fountain_breakdown = ui::formula_tree("fountain-formula", window, cx);
         let jar_breakdown = ui::formula_tree("jar-formula", window, cx);
         let jar_controls = crate::sections::jar::Controls::new(window, cx);
+        let cog_controls = crate::sections::cog::Controls::new(window, cx);
         let jar_sim = report_run::<JarSimResult, JarSimInputs>(
             cx,
             &mut subscriptions,
@@ -1342,9 +1349,11 @@ impl AppState {
             monument_save: None,
             monument_controls: MonumentControls::new(window, cx),
             cog: CogState::default(),
+            cog_controls,
             cglunko: Cglunko::default(),
             cglunko_tab: CglunkoTab::default(),
             cglunko_page: CglunkoPage::default(),
+            cglunko_figures: Default::default(),
             clamworks: Clamworks::default(),
             clamworks_tab: ClamworksTab::default(),
             clamworks_multikill: 0.0,

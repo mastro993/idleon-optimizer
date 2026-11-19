@@ -758,7 +758,10 @@ scripts that read it and whether this build models a downstream metric for it, s
 is never presented as a stat, skill or damage gain. The shared task runner reports progress and keeps the previous result
 when a run is cancelled, and a save, character, cauldron or AFK-hours change marks the result stale.
 Missing: the damage, stats and skills outcome families beyond the modelled one, and the bubble
-icons.
+icons. The section draws with GPUI Kit (#358): the character and metric selects, the AFK hours
+field and the filter are kit controls built once in the section state, and the ranked, filtered
+and formatted rows and the coverage rows are rebuilt only when a run stores its result or the
+metric, the filter or the width changes.
 Details: [`docs/sections/prisma.md`](sections/prisma.md).
 
 The Monument section is complete: Bravery (MN-01), Justice (MN-02), Wisdom (MN-03) and bonus
@@ -797,7 +800,11 @@ every player slot and kept only when a layer raises the score. It returns the la
 perfect stats that explain the board, targets the selected single goal, and reads the effective construction level the roll ranges use. The tiny-cog board is
 not decoded yet, so the perfect board covers the 12×8 board only. A finished run opens the swap
 walkthrough at the board it started from: Next applies the swap list in order, Previous rebuilds
-the prior board and Done keeps the optimized placement. Details:
+the prior board and Done keeps the optimized placement. The section draws with GPUI Kit (#358):
+the weight fields are kit number fields built once in `controls.rs` that show the persisted
+weights; the board totals, the insights, the roll ranges and the shelf, swap and walkthrough rows
+are worked out only when the board on screen, the goal, the save or the step changes, and the
+shelf, the swap list and the walkthrough are virtualized tables. Details:
 [`docs/sections/cog.md`](sections/cog.md).
 
 The Farming section's assignment and Land Rank allocation are built (FM-02): the objective selector

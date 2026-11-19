@@ -2,9 +2,7 @@
 
 use crate::sections::prisma::RunInputs as PrismaRunInputs;
 use crate::state::AppState;
-use gpui::{App, Context};
-use idleon_prisma::Outcome as PrismaOutcome;
-use idleon_ui::runner::TaskState;
+use gpui::Context;
 
 impl AppState {
     /// The inputs a Prisma run started now would use.
@@ -19,11 +17,6 @@ impl AppState {
                 0
             },
         }
-    }
-
-    /// The Prisma run: running, progress, result and staleness.
-    pub(crate) fn prisma_task(&self, cx: &App) -> TaskState<PrismaOutcome> {
-        self.prisma_run.read(cx).state(&self.prisma_inputs())
     }
 
     /// Select the character the plan reads its Prisma state for.

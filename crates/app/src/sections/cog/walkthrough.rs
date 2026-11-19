@@ -3,25 +3,29 @@
 //!
 //! The board starts at the run's input, Next applies the swap list in order,
 //! Previous rebuilds the prior board and Done keeps the optimized placement.
+//! The list is a `DataTable` whose rows [`super::controls::Controls::sync`]
+//! rebuilds when a step is applied or undone.
 
+use super::tag;
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ControlSize;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div, px};
+use gpui::{AnyElement, Entity, FontWeight, IntoElement, ParentElement, Role, Styled, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::table::DataTable;
+use gpui_kit::component::{Disableable as _, Sizable as _};
 use idleon_cog::{SwapStep, SwapWalkthrough, display_name};
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, Tone};
 
 /// The walkthrough card for an open run.
-pub(crate) fn card(walkthrough: &SwapWalkthrough, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
+pub(crate) fn card(
+    state: &AppState,
+    walkthrough: &SwapWalkthrough,
+    entity: &Entity<AppState>,
+) -> AnyElement {
     let previous = entity.clone();
     let next = entity.clone();
-    let done = entity;
+    let done = entity.clone();
     let applied = walkthrough.applied();
     let total = walkthrough.total();
     let complete = walkthrough.is_complete();
@@ -35,85 +39,66 @@ pub(crate) fn card(walkthrough: &SwapWalkthrough, cx: &mut Context<AppState>) ->
         step_summary,
     );
 
-    let previous_button = Button::new("cog-swap-prev", "Previous")
-        .variant(ButtonVariant::Subtle)
-        .size(ControlSize::Sm)
+    let previous_button = Button::new("cog-swap-prev")
+        .label("Previous")
+        .secondary()
+        .small()
         .icon(IconName::ArrowLeft)
         .disabled(applied == 0)
         .on_click(move |_event, _window, cx| {
             previous.update(cx, |state, cx| state.previous_cog_swap(cx));
         });
-    let next_button = Button::new("cog-swap-next", "Next")
-        .variant(ButtonVariant::Primary)
-        .size(ControlSize::Sm)
-        .trailing_icon(IconName::ArrowRight)
-        .on_click(move |_event, _window, cx| {
-            next.update(cx, |state, cx| state.next_cog_swap(cx));
-        });
-    let done_button = Button::new("cog-swap-done", "Done")
-        .variant(ButtonVariant::Primary)
-        .size(ControlSize::Sm)
-        .icon(IconName::Check)
-        .on_click(move |_event, _window, cx| {
-            done.update(cx, |state, cx| state.finish_cog_swaps(cx));
-        });
-    let mut actions = div().flex().items_center().gap_2().child(previous_button);
-    actions = if complete {
-        actions.child(done_button)
+    let forward = if complete {
+        Button::new("cog-swap-done")
+            .label("Done")
+            .icon(IconName::Check)
+            .on_click(move |_event, _window, cx| {
+                done.update(cx, |state, cx| state.finish_cog_swaps(cx));
+            })
     } else {
-        actions.child(next_button)
+        Button::new("cog-swap-next")
+            .label("Next")
+            .icon(IconName::ArrowRight)
+            .on_click(move |_event, _window, cx| {
+                next.update(cx, |state, cx| state.next_cog_swap(cx));
+            })
     };
-
-    let mut table = Table::new(["#", "From", "To", "At", "Source", "State"]);
-    for (index, step) in walkthrough.steps().iter().enumerate() {
-        table = table.row([
-            div().child((index + 1).to_string()).into_any_element(),
-            div().child(display_name(&step.from)).into_any_element(),
-            div().child(display_name(&step.to)).into_any_element(),
-            div()
-                .child(format!("({},{})", step.col, step.row))
-                .into_any_element(),
-            div().child(step.source_label()).into_any_element(),
-            step_state(index, applied),
-        ]);
-    }
+    let actions = div()
+        .flex()
+        .items_center()
+        .gap_2()
+        .child(previous_button)
+        .child(forward.primary().small());
 
     let card = Card::new()
         .header(
             CardHeader::new("Swap walkthrough")
                 .description(progress.clone())
-                .action(Badge::new(format!("{applied} / {total} applied")).tone(Tone::Accent)),
+                .action(tag(format!("{applied} / {total} applied"), Tone::Accent)),
         )
         .child(
             div()
+                .id("cog-swap-progress")
+                .role(Role::Label)
+                .aria_label(detail.clone())
                 .flex()
                 .flex_col()
-                .gap_3()
+                .gap_1()
                 .child(
                     div()
-                        .id("cog-swap-progress")
-                        .role(Role::Label)
-                        .aria_label(detail.clone())
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(
-                            div()
-                                .text_size(px(14.0))
-                                .font_weight(gpui::FontWeight::SEMIBOLD)
-                                .child(detail),
-                        )
-                        .child(Caption::new(progress)),
+                        .text_size(TEXT_BODY)
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .child(detail),
                 )
-                .child(actions)
-                .child(
-                    ScrollArea::new("cog-swap-steps")
-                        .vertical()
-                        .h(px(240.0))
-                        .child(table),
-                ),
+                .child(Caption::new(progress)),
         )
-        .into_any_element();
+        .child(actions)
+        .child(
+            div()
+                .id("cog-swap-steps")
+                .h(px(240.0))
+                .child(DataTable::new(&state.cog_controls.steps)),
+        );
     div().id("cog-walkthrough").child(card).into_any_element()
 }
 
@@ -131,16 +116,4 @@ fn step_summary(step: &SwapStep) -> String {
         step.row,
         step.source_label()
     )
-}
-
-/// The row's state: applied steps, the step Next would apply and pending ones.
-fn step_state(index: usize, applied: usize) -> AnyElement {
-    let badge = if index < applied {
-        Badge::new("Applied").tone(Tone::Success)
-    } else if index == applied {
-        Badge::new("Now").tone(Tone::Accent)
-    } else {
-        Badge::new("Pending").tone(Tone::Neutral)
-    };
-    badge.into_any_element()
 }
