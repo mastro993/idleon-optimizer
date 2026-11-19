@@ -202,39 +202,6 @@ pub(crate) fn figure(
         .into_any_element()
 }
 
-/// The height of an Ely tab strip (Ely's medium control height), which the
-/// sections that still draw one pass to [`scrolling_tabs`].
-const ELY_TAB_HEIGHT: Pixels = px(28.0);
-
-/// A tab strip that scrolls sideways when its tabs need more room than the
-/// workspace leaves them, instead of running past the window's edge. It takes
-/// the full width in a column and shrinks beside siblings in a row; its height
-/// is a tab's, so a column that squeezes its children never collapses it.
-///
-/// For the sections that still draw an Ely `TabBar`; a kit [`tab_bar`]
-/// scrolls on its own.
-pub(crate) fn scrolling_tabs(
-    id: impl Into<ElementId>,
-    tabs: impl IntoElement,
-    _cx: &App,
-) -> AnyElement {
-    div()
-        .flex()
-        .w_full()
-        .min_w_0()
-        .h(ELY_TAB_HEIGHT)
-        .min_h(ELY_TAB_HEIGHT)
-        .child(
-            div()
-                .flex_1()
-                .min_w_0()
-                .child(tabs)
-                .overflow_x_scrollbar()
-                .id(id),
-        )
-        .into_any_element()
-}
-
 /// A kit underline tab strip, each tab sized to its label, that scrolls
 /// sideways when the tabs outgrow it. `tabs` are `(element id, label)` pairs;
 /// each tab keeps its own element id, which the harnesses click, and

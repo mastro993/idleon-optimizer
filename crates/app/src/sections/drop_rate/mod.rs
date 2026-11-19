@@ -9,98 +9,137 @@
 mod actions;
 
 use crate::state::AppState;
-use ely_gpui_component::forms::{Choice, Input, Select, TextInput};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, Entity, FontWeight, Hsla, ParentElement, Role, Styled, Subscription,
     Window, div, px,
 };
-use idleon_common::formula::FormulaNode;
+use gpui_kit::component::input::{Input, InputEvent, InputState};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_drop_rate::{self as drop_rate, Runtime, Selection, Total};
 use idleon_save::Save;
 use idleon_stats::{self as stats, Snapshot};
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, ChoiceSelect, PANEL_GAP, TEXT_CAPTION,
+};
 
 /// The page's own state: the context, the save slice it reads, the two live
-/// fields a dungeon run shows and the breakdown tree under them.
+/// fields a dungeon run shows, what they resolve to and the breakdown tree.
+///
+/// The selectors' rows and the total are read when the save, the selection or
+/// a live field changes ([`State::refresh`]), so a frame only formats them.
 pub(crate) struct State {
     pub(crate) selection: Selection,
     pub(crate) snapshot: Option<Snapshot>,
     /// Dungeon Total LUK; a blank field means "not entered".
-    pub(crate) luk: Entity<TextInput>,
+    luk: Entity<InputState>,
     /// Dungeon Drop Rate stat.
-    pub(crate) rate: Entity<TextInput>,
+    rate: Entity<InputState>,
     /// The `#tree` breakdown.
-    pub(crate) tree: Entity<FormulaTree>,
-    _subscriptions: Vec<Subscription>,
+    tree: Entity<FormulaTree>,
+    characters: Vec<Choice<usize>>,
+    maps: Vec<Choice<usize>>,
+    character_select: ChoiceSelect<usize>,
+    map_select: ChoiceSelect<usize>,
+    /// The live fields as they read, or why they cannot be read.
+    runtime: Result<Runtime, String>,
+    total: Total,
+    /// Whether the tree holds the current total's expansion.
+    expanded: bool,
+    _subscriptions: [Subscription; 4],
 }
 
 impl State {
     /// The page with empty fields and no save.
     pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let (luk, luk_subscription) = live_field("Dungeon Total LUK", "e.g. 1200", window, cx);
-        let (rate, rate_subscription) = live_field("Dungeon Drop Rate Stat", "e.g. 35", window, cx);
-        Self {
+        let luk = live_field("e.g. 1200", window, cx);
+        let rate = live_field("e.g. 35", window, cx);
+        let maps = map_choices(None, 0);
+        let character_select = ChoiceSelect::new(Vec::new(), None, window, cx);
+        let map_select = ChoiceSelect::new(maps.clone(), None, window, cx);
+        let pick = |pick: fn(&mut AppState, usize, &mut Context<AppState>)| {
+            move |state: &mut AppState,
+                  _: Entity<_>,
+                  event: &SelectEvent<Vec<Choice<usize>>>,
+                  cx: &mut Context<AppState>| {
+                if let SelectEvent::Confirm(Some(value)) = event {
+                    pick(state, *value, cx);
+                }
+            }
+        };
+        let edited = |state: &mut AppState,
+                      _: Entity<InputState>,
+                      event: &InputEvent,
+                      cx: &mut Context<AppState>| {
+            if matches!(event, InputEvent::Change) {
+                state.drop_rate.refresh(cx);
+                cx.notify();
+            }
+        };
+        let subscriptions = [
+            cx.subscribe(
+                character_select.state(),
+                pick(AppState::set_drop_rate_character),
+            ),
+            cx.subscribe(map_select.state(), pick(AppState::set_drop_rate_map)),
+            cx.subscribe(&luk, edited),
+            cx.subscribe(&rate, edited),
+        ];
+        let mut state = Self {
             selection: Selection::default(),
             snapshot: None,
             luk,
             rate,
             tree: crate::ui::formula_tree("drop-rate-formula", window, cx),
-            _subscriptions: vec![luk_subscription, rate_subscription],
-        }
+            characters: Vec::new(),
+            maps,
+            character_select,
+            map_select,
+            runtime: Ok(Runtime::default()),
+            total: Total::Unsupported,
+            expanded: false,
+            _subscriptions: subscriptions,
+        };
+        state.refresh(cx);
+        state
     }
 
     /// Take a freshly imported save: character one on its current map.
-    pub(crate) fn load(&mut self, save: &Save) {
+    pub(crate) fn load(&mut self, save: &Save, cx: &mut App) {
         let snapshot = Snapshot::from_save(save);
         self.selection = Selection::from_snapshot(&snapshot);
+        self.characters = character_choices(&snapshot);
         self.snapshot = Some(snapshot);
+        self.refresh_maps();
+        self.refresh(cx);
     }
 
-    /// The live dungeon values as the fields hold them.
-    pub(crate) fn runtime(&self, cx: &App) -> Result<Runtime, String> {
-        Runtime::read(self.luk.read(cx).text(), self.rate.read(cx).text())
+    /// Rebuild the map selector's rows, which follow the selected character.
+    pub(crate) fn refresh_maps(&mut self) {
+        self.maps = map_choices(self.snapshot.as_ref(), self.selection.character);
     }
 
-    /// The total card's answer for the current context.
-    pub(crate) fn total(&self, cx: &App) -> Total {
-        match self.runtime(cx) {
+    /// Read the live fields and the selection again: the total, and the tree
+    /// behind it when the map's pool chain has one.
+    pub(crate) fn refresh(&mut self, cx: &mut App) {
+        self.runtime = Runtime::read(&self.luk.read(cx).value(), &self.rate.read(cx).value());
+        self.total = match self.runtime {
             Ok(runtime) => drop_rate::total(self.selection.map, runtime),
-            Err(reason) => Total::Invalid(reason),
-        }
-    }
-
-    /// The formula tree's root: the expansion of the total, or nothing
-    /// to expand on a map whose pool chain this build does not decode.
-    pub(crate) fn breakdown(&self, cx: &App) -> Option<FormulaNode> {
-        drop_rate::tree(self.selection.map, self.runtime(cx).ok()?)
-    }
-
-    /// The character selector's rows: every character with its class.
-    pub(crate) fn characters(&self) -> Vec<Choice> {
-        let Some(snapshot) = self.snapshot.as_ref() else {
-            return Vec::new();
+            Err(ref reason) => Total::Invalid(reason.clone()),
         };
-        (0..snapshot.characters())
-            .map(|character| {
-                let class = stats::class_label(snapshot.class_id(character));
-                Choice::new(
-                    character.to_string(),
-                    format!("{} ({class})", snapshot.name(character)),
-                )
-            })
-            .collect()
-    }
-
-    /// The map selector's rows, marked when they are dungeons.
-    pub(crate) fn maps(&self) -> Vec<Choice> {
-        drop_rate::maps(self.snapshot.as_ref(), self.selection.character)
-            .into_iter()
-            .map(|row| Choice::new(row.map.to_string(), row.label))
-            .collect()
+        let root = self
+            .runtime
+            .as_ref()
+            .ok()
+            .copied()
+            .and_then(|runtime| drop_rate::tree(self.selection.map, runtime));
+        self.expanded = root.is_some();
+        if let Some(root) = root {
+            self.tree.update(cx, |tree, cx| tree.set_root(root, cx));
+        }
     }
 
     /// Whether the selected map runs the live dungeon formula.
@@ -110,104 +149,79 @@ impl State {
 }
 
 /// One live dungeon field: digits and a decimal point, blank until entered.
-fn live_field(
-    label: &'static str,
-    placeholder: &'static str,
-    window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> (Entity<TextInput>, Subscription) {
-    let input = cx.new(|cx| {
-        TextInput::new(window, cx)
-            .filter(|ch| ch.is_ascii_digit() || ch == '.')
+fn live_field(placeholder: &'static str, window: &mut Window, cx: &mut App) -> Entity<InputState> {
+    cx.new(|cx| {
+        InputState::new(window, cx)
             .placeholder(placeholder)
-            .label(label)
-    });
-    let subscription = crate::state::redraw_on_edit(cx, &input);
-    (input, subscription)
+            .validate(|text, _| text.chars().all(|ch| ch.is_ascii_digit() || ch == '.'))
+    })
+}
+
+/// The character selector's rows: every character with its class.
+fn character_choices(snapshot: &Snapshot) -> Vec<Choice<usize>> {
+    (0..snapshot.characters())
+        .map(|character| {
+            let class = stats::class_label(snapshot.class_id(character));
+            Choice::new(character, format!("{} ({class})", snapshot.name(character)))
+        })
+        .collect()
+}
+
+/// The map selector's rows, marked when they are dungeons.
+fn map_choices(snapshot: Option<&Snapshot>, character: usize) -> Vec<Choice<usize>> {
+    drop_rate::maps(snapshot, character)
+        .into_iter()
+        .map(|row| Choice::new(row.map, row.label))
+        .collect()
 }
 
 /// The Drop Rate page: the context, the live dungeon fields, the total and the
 /// formula tree.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    // The tree's root is set before the palette is borrowed: updating the child
-    // entity needs the context mutably.
-    let tree = state.drop_rate.tree.clone();
-    let expanded = match state.drop_rate.breakdown(cx) {
-        Some(root) => {
-            tree.update(cx, |tree, cx| tree.set_root(root, cx));
-            true
-        }
-        None => false,
-    };
-    let colors = &cx.theme().colors;
-    let (muted, gold, danger) = (colors.fg_muted, colors.warning, colors.danger);
-    let selection = state.drop_rate.selection;
-    let character = state
-        .drop_rate
+    let page = &state.drop_rate;
+    let selection = page.selection;
+    page.character_select.show(
+        page.characters.clone(),
+        Some(&selection.character),
+        window,
+        cx,
+    );
+    page.map_select
+        .show(page.maps.clone(), Some(&selection.map), window, cx);
+    let theme = cx.theme();
+    let (muted, gold, danger) = (theme.muted_foreground, theme.warning, theme.danger);
+    let character = page
         .snapshot
         .as_ref()
         .map(|snapshot| snapshot.name(selection.character));
     let loaded = character.is_some();
-    let total = state.drop_rate.total(cx);
-    let runtime = state.drop_rate.runtime(cx).ok();
+    let runtime = page.runtime.as_ref().ok();
     let out_of_range =
         |value: Option<f64>| value.is_some_and(|value| !value.is_finite() || value < 0.0);
     let luk_invalid = out_of_range(runtime.and_then(|runtime| runtime.luk));
     let rate_invalid = out_of_range(runtime.and_then(|runtime| runtime.drop_rate));
-    let characters = state.drop_rate.characters();
-    let maps = state.drop_rate.maps();
-    let dungeon = state.drop_rate.dungeon();
-    let luk = state.drop_rate.luk.clone();
-    let rate = state.drop_rate.rate.clone();
-    let gap = total.reason().map(str::to_string);
-    let entity = cx.entity();
-    let character_pick = entity.clone();
-    let map_pick = entity;
+    let gap = page.total.reason().map(str::to_string);
 
     let controls = div()
         .id("drop-rate-context-controls")
         .flex()
-        .flex_wrap()
         .items_end()
         .gap_3()
-        .p_3()
-        .child(
-            field("Character", muted).child(
-                Select::new("drop-rate-character", characters)
-                    .label("Character")
-                    .placeholder("Load a save first")
-                    .selected(selection.character.to_string())
-                    .disabled(!loaded)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            character_pick
-                                .update(cx, |state, cx| state.set_drop_rate_character(index, cx));
-                        }
-                    }),
-            ),
-        )
-        .child(
-            field("Map", muted).child(
-                Select::new("drop-rate-map", maps)
-                    .label("Map")
-                    .placeholder("Load a save first")
-                    .selected(selection.map.to_string())
-                    .disabled(!loaded)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            map_pick.update(cx, |state, cx| state.set_drop_rate_map(index, cx));
-                        }
-                    }),
-            ),
-        );
+        .child(field("Character", muted).child(select(
+            &page.character_select,
+            "drop-rate-character",
+            "Character",
+            loaded,
+        )))
+        .child(field("Map", muted).child(select(&page.map_select, "drop-rate-map", "Map", loaded)));
 
     let note = context_note(character.as_deref(), selection);
     let total = total_card(
-        &total,
+        &page.total,
         character.as_deref(),
         selection,
         loaded,
@@ -215,8 +229,8 @@ pub(crate) fn view(
         gold,
         danger,
     );
-    let formula = if expanded {
-        formula_card(tree)
+    let formula = if page.expanded {
+        formula_card(page.tree.clone())
     } else {
         formula_gap(gap, loaded, muted)
     };
@@ -227,29 +241,27 @@ pub(crate) fn view(
         .size_full()
         .min_h_0()
         .child(
-            ScrollArea::new("drop-rate-scroll")
-                .vertical()
+            div()
                 .flex_1()
                 .min_h_0()
                 .child(
                     div()
                         .flex()
                         .flex_col()
-                        .gap_3()
+                        .gap(PANEL_GAP)
                         .child(
                             Card::new()
                                 .header(CardHeader::new("Calculation Context").description(
                                     "The drop-rate descriptor resolves against this character and map.",
                                 ))
                                 .child(controls)
-                                .when(dungeon, |card| {
+                                .when(page.dungeon(), |card| {
                                     card.child(dungeon_fields(
-                                        &luk,
-                                        &rate,
+                                        &page.luk,
+                                        &page.rate,
                                         luk_invalid,
                                         rate_invalid,
-                                        muted,
-                                        colors.sunken,
+                                        cx,
                                     ))
                                 })
                                 .child(
@@ -257,18 +269,35 @@ pub(crate) fn view(
                                         .id("drop-rate-context-note")
                                         .role(Role::Label)
                                         .aria_label(note.clone())
-                                        .px_3()
-                                        .pb_3()
-                                        .text_size(px(12.0))
+                                        .text_size(TEXT_CAPTION)
                                         .text_color(muted)
                                         .child(note),
                                 ),
                         )
                         .child(total)
                         .child(formula),
-                ),
+                )
+                .overflow_y_scrollbar()
+                .id("drop-rate-scroll"),
         )
         .into_any_element()
+}
+
+/// One context selector under its Ely id, disabled until a save loads.
+fn select(
+    select: &ChoiceSelect<usize>,
+    id: &'static str,
+    label: &'static str,
+    loaded: bool,
+) -> impl IntoElement {
+    div().flex_none().w(px(240.0)).child(
+        Select::new(select.state())
+            .id(id)
+            .accessibility_label(label)
+            .placeholder("Load a save first")
+            .disabled(!loaded)
+            .small(),
+    )
 }
 
 /// The shared formula tree in its card, sized like the other sections'
@@ -303,9 +332,7 @@ fn formula_gap(reason: Option<String>, loaded: bool, muted: Hsla) -> AnyElement 
                 .id("drop-rate-formula-gap")
                 .role(Role::Label)
                 .aria_label(reason.clone())
-                .px_3()
-                .pb_3()
-                .text_size(px(12.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(reason),
         )
@@ -323,37 +350,42 @@ fn gap_reason(reason: Option<&str>, loaded: bool) -> String {
 
 /// The two live dungeon inputs, shown only while a dungeon map is selected.
 fn dungeon_fields(
-    luk: &Entity<TextInput>,
-    rate: &Entity<TextInput>,
+    luk: &Entity<InputState>,
+    rate: &Entity<InputState>,
     luk_invalid: bool,
     rate_invalid: bool,
-    muted: Hsla,
-    sunken: Hsla,
+    cx: &App,
 ) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     div()
         .id("drop-rate-dungeon-runtime")
         .flex()
-        .flex_wrap()
-        .items_end()
-        .gap_3()
-        .mx_3()
-        .mb_3()
+        .flex_col()
+        .gap(PANEL_GAP)
         .p_3()
-        .rounded_md()
-        .bg(sunken)
-        .child(field("Dungeon Total LUK", muted).child(clickable_field(
-            "drop-rate-luk",
-            "Dungeon Total LUK",
-            luk,
-            luk_invalid,
-        )))
+        .rounded(cx.theme().radius)
+        .bg(cx.theme().sidebar)
         .child(
-            field("Dungeon Drop Rate Stat", muted).child(clickable_field(
-                "drop-rate-drop",
-                "Dungeon Drop Rate Stat",
-                rate,
-                rate_invalid,
-            )),
+            div()
+                .flex()
+                .items_end()
+                .gap_3()
+                .child(field("Dungeon Total LUK", muted).child(clickable_field(
+                    "drop-rate-luk",
+                    "Dungeon Total LUK",
+                    luk,
+                    luk_invalid,
+                    cx,
+                )))
+                .child(
+                    field("Dungeon Drop Rate Stat", muted).child(clickable_field(
+                        "drop-rate-drop",
+                        "Dungeon Drop Rate Stat",
+                        rate,
+                        rate_invalid,
+                        cx,
+                    )),
+                ),
         )
         .child(
             Caption::new("These current-run values are not stored in save JSON.").text_color(muted),
@@ -366,19 +398,26 @@ fn dungeon_fields(
 fn clickable_field(
     id: &'static str,
     label: &'static str,
-    input: &Entity<TextInput>,
+    input: &Entity<InputState>,
     invalid: bool,
+    cx: &App,
 ) -> AnyElement {
     let field = input.clone();
+    let danger = cx.theme().danger;
     div()
         .id(id)
         .role(Role::Label)
         .aria_label(label)
+        .w(px(190.0))
         .on_click(move |_event, window, cx| {
-            let focus = field.read(cx).focus().clone();
-            window.focus(&focus, cx);
+            field.update(cx, |field, cx| field.focus(window, cx));
         })
-        .child(Input::new(input).size(ControlSize::Sm).invalid(invalid))
+        .child(
+            Input::new(input)
+                .aria_label(label)
+                .small()
+                .when(invalid, |input| input.border_color(danger)),
+        )
         .into_any_element()
 }
 
@@ -445,7 +484,7 @@ fn total_card(
                         .id("drop-rate-total-sub")
                         .role(Role::Label)
                         .aria_label(sub.clone())
-                        .text_size(px(12.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(sub),
                 ),
@@ -482,7 +521,6 @@ fn field(label: &'static str, muted: Hsla) -> gpui::Div {
         .flex()
         .flex_col()
         .gap_1()
-        .min_w(px(190.0))
         .child(Caption::new(label).text_color(muted))
 }
 

@@ -6,32 +6,38 @@
 //! value from the previous character or map. The breakdown rows and the
 //! explorer read the descriptor model in `idleon_stats::breakdowns`; the
 //! explorer is [`explorer`], and both formula trees are the shared
-//! [`FormulaTree`] component, not a second renderer. The sandbox keeps the
-//! imported save beside a set of pending edits: the rows above resolve against
-//! the edited save, the baseline sheet keeps the saved values, and the ledger
-//! lists the inputs and the formulas the two disagree on.
+//! [`FormulaTree`](idleon_ui::formula::FormulaTree) component, not a second
+//! renderer. The sandbox keeps the imported save beside a set of pending edits:
+//! the rows above resolve against the edited save, the baseline sheet keeps the
+//! saved values, and the ledger lists the inputs and the formulas the two
+//! disagree on.
+//!
+//! Resolving every descriptor takes hundreds of milliseconds, so the sheets
+//! are built off the UI thread ([`AppState::resolve_stats`]) and the page
+//! shows a skeleton until they land.
 
 mod actions;
+mod breakdowns;
+mod controls;
 mod explorer;
+mod sandbox;
+
+pub(crate) use controls::Controls;
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, NumberInput, Select};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled, Window,
-    div, px,
-};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Task, Window, div, px};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::searchable_list::SearchableListDelegate;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::skeleton::Skeleton;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_research::model::{SimContext, Simulation};
 use idleon_save::Save;
-use idleon_stats::{
-    self as stats, BreakdownCategory, ConstructionMode, Context as StatsContext, MapVisibility,
-    Resolution, Skill,
+use idleon_stats::{self as stats, BreakdownCategory, Context as StatsContext};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, ChoiceSelect, PANEL_GAP, TEXT_CAPTION, Tone,
 };
 
 /// The section's own state: the context, the save slice and the breakdowns.
@@ -44,6 +50,9 @@ pub(crate) struct State {
     /// Every descriptor resolved against the save, the context and the
     /// pending edits.
     pub(crate) sheet: Option<stats::Sheet>,
+    /// Bumped whenever new sheets land, so the formula trees know their root
+    /// may have moved.
+    pub(crate) revision: u64,
     /// The editable game inputs and the edits pending on them.
     pub(crate) sandbox: Option<stats::Sandbox>,
     /// The descriptors the pending edits moved, in registry order.
@@ -56,11 +65,18 @@ pub(crate) struct State {
     pub(crate) selected: Option<String>,
     /// The formula explorer's filters and its own selection.
     pub(crate) explorer: explorer::State,
-    /// The save or the context moved under the sheet, which the next render
-    /// re-resolves. Resolving every descriptor is the expensive half of an
-    /// import, so it waits for the page instead of holding up the window that
-    /// imported the save.
+    /// The map selector's rows for the current character and list level.
+    pub(crate) options: Vec<stats::MapOption>,
+    characters: Vec<Choice<usize>>,
+    map_choices: Vec<Choice<usize>>,
+    /// The save, the context or an edit moved under the sheets. Resolving
+    /// every descriptor is the expensive half of an import, so it waits for
+    /// the page instead of holding up the window that imported the save.
     dirty: bool,
+    /// Sheets are being built off the UI thread.
+    building: bool,
+    /// The build in flight; replacing it drops a stale one.
+    pending: Option<Task<()>>,
 }
 
 impl Default for State {
@@ -70,75 +86,104 @@ impl Default for State {
             snapshot: None,
             saved_sheet: None,
             sheet: None,
+            revision: 0,
             sandbox: None,
             affected: Vec::new(),
             input_error: String::new(),
             category: BreakdownCategory::Combat,
             selected: None,
             explorer: explorer::State::default(),
+            options: Vec::new(),
+            characters: Vec::new(),
+            map_choices: Vec::new(),
             dirty: false,
+            building: false,
+            pending: None,
         }
     }
 }
 
+/// The two sheets one build resolves: the baseline and the one on screen.
+type Sheets = (stats::Sheet, stats::Sheet);
+
 impl State {
     /// Take a freshly imported save, opening on character one and its current
     /// map. The other selectors keep the user's choice, and the sheet resolves
-    /// on the next render.
+    /// when the page opens.
     pub(crate) fn load(&mut self, save: &Save) {
         let snapshot = stats::Snapshot::from_save(save);
         self.context.character = 0;
         self.context.map = snapshot.current_map(0).unwrap_or(0);
+        self.characters = controls::character_choices(&snapshot);
         self.snapshot = Some(snapshot);
         // A new save starts with no hypothetical edits.
         self.sandbox = Some(stats::Sandbox::new(save, self.context.character));
         self.input_error.clear();
         self.clamp(&mut Vec::new());
+        self.invalidate(true);
+    }
+
+    /// The sheets no longer describe the context. A context change drops them,
+    /// so the page never shows the previous character's or map's values; a
+    /// sandbox edit keeps them on screen until the edited ones land.
+    pub(crate) fn invalidate(&mut self, drop_sheets: bool) {
+        if drop_sheets {
+            self.sheet = None;
+            self.saved_sheet = None;
+            self.affected.clear();
+        }
+        self.pending = None;
         self.dirty = true;
     }
 
-    /// Build the sheet a load or a restore left for the next render.
-    pub(crate) fn ensure_built(
-        &mut self,
-        save: Option<&Save>,
-        simulation: &Simulation,
-        sim_context: &SimContext,
-    ) {
-        if !std::mem::take(&mut self.dirty) {
-            return;
-        }
-        if let Some(save) = save {
-            self.rebuild(save, simulation, sim_context);
-        }
-    }
-
-    /// Re-resolve every breakdown; a selection the new sheet still carries is
-    /// kept, otherwise the first row of the current tab is selected.
+    /// The build the save, the context and the pending edits need, ready to
+    /// run off the UI thread; `None` when nothing moved.
     ///
     /// The baseline resolves the imported save; the sheet on screen resolves
     /// the sandbox's current save, so every value, the explorer and the ledger
     /// agree on which hypothetical state they describe.
-    pub(crate) fn rebuild(
+    fn job(
         &mut self,
         save: &Save,
         simulation: &Simulation,
         sim_context: &SimContext,
-    ) {
+    ) -> Option<impl FnOnce() -> Sheets + Send + 'static> {
+        if !std::mem::take(&mut self.dirty) {
+            return None;
+        }
+        self.building = true;
         let context = self.context;
         if let Some(sandbox) = self.sandbox.as_mut() {
             sandbox.adopt(save, context.character);
         }
-        let baseline =
-            stats::Sheet::build(&breakdown_inputs(save, simulation, sim_context, context));
-        let sheet = match self.sandbox.as_ref() {
-            Some(sandbox) if sandbox.count() > 0 => stats::Sheet::build(&breakdown_inputs(
-                &sandbox.current(),
-                simulation,
-                sim_context,
-                context,
-            )),
-            _ => baseline.clone(),
-        };
+        let edited = self
+            .sandbox
+            .as_ref()
+            .filter(|sandbox| sandbox.count() > 0)
+            .map(stats::Sandbox::current);
+        let (save, simulation, sim_context) =
+            (save.clone(), simulation.clone(), sim_context.clone());
+        Some(move || {
+            let baseline =
+                stats::Sheet::build(&breakdown_inputs(&save, &simulation, &sim_context, context));
+            let sheet = match edited {
+                Some(edited) => stats::Sheet::build(&breakdown_inputs(
+                    &edited,
+                    &simulation,
+                    &sim_context,
+                    context,
+                )),
+                None => baseline.clone(),
+            };
+            (baseline, sheet)
+        })
+    }
+
+    /// Take the sheets a build resolved. A selection the new sheet still
+    /// carries is kept, otherwise the first row of the current tab is selected.
+    fn adopt(&mut self, (baseline, sheet): Sheets) {
+        self.building = false;
+        self.revision += 1;
         self.affected = sheet.affected(&baseline);
         let selection = self.selected.take().filter(|id| sheet.get(id).is_some());
         self.selected = selection;
@@ -166,12 +211,14 @@ impl State {
         sheet.get(self.selected.as_deref()?)
     }
 
-    /// The map selector's rows for the current character and list level.
-    pub(crate) fn options(&self) -> Vec<stats::MapOption> {
-        self.snapshot
-            .as_ref()
-            .map(|snapshot| self.context.map_options(snapshot))
-            .unwrap_or_default()
+    /// Read the map selector's rows again, after the character or the list
+    /// level moved.
+    pub(crate) fn refresh_options(&mut self) {
+        let Some(snapshot) = self.snapshot.as_ref() else {
+            return;
+        };
+        self.options = self.context.map_options(snapshot);
+        self.map_choices = controls::map_choices(snapshot, &self.options);
     }
 
     /// Keep the context inside the save and the list level; names the dropped
@@ -195,23 +242,20 @@ impl State {
                 self.context.map
             ));
         }
+        self.refresh_options();
     }
 }
 
-/// The All Stats Dashboard page: the context card and the map access summary.
+/// The All Stats Dashboard page: the context card, the map access summary,
+/// the sandbox, the breakdowns and the explorer.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    // A cloned save is a reference-count bump; the sheet needs it beside the
-    // mutable borrow of the section's own state.
-    let save = state.save.clone();
-    state
-        .stats_all
-        .ensure_built(save.as_ref(), &state.simulation, &state.context);
-    let entity = cx.entity();
-    let muted = cx.theme().colors.fg_muted;
+    state.resolve_stats(None, cx);
+    state.stats_controls.sync(&state.stats_all, window, cx);
+    let muted = cx.theme().muted_foreground;
     let stats = &state.stats_all;
     let context = stats.context;
     let snapshot = stats.snapshot.as_ref();
@@ -233,150 +277,89 @@ pub(crate) fn view(
             )
         }
     };
-
-    let snapshot_choices: Vec<Choice> = match snapshot {
-        None => Vec::new(),
-        Some(snapshot) => (0..snapshot.characters())
-            .map(|character| {
-                let class = stats::class_label(snapshot.class_id(character));
-                Choice::new(
-                    character.to_string(),
-                    format!("{} ({class})", snapshot.name(character)),
-                )
-            })
-            .collect(),
-    };
-    let options = stats.options();
-    let map_choices: Vec<Choice> = snapshot
-        .map(|snapshot| {
-            options
-                .iter()
-                .map(|option| {
-                    let map = option.class.map;
-                    Choice::new(map.to_string(), option.label(snapshot.map_bonus(map)))
-                        .note(format!("World {}", option.class.world))
-                })
-                .collect()
-        })
-        .unwrap_or_default();
-
-    let character = entity.clone();
-    let map = entity.clone();
-    let list = entity.clone();
-    let skill = entity.clone();
-    let construction = entity.clone();
     let has_save = snapshot.is_some();
-
-    let controls = div()
-        .id("stats-context-controls")
+    let controls = &state.stats_controls;
+    let pick =
+        |select: &ChoiceSelect<usize>| Select::new(select.state()).placeholder("Load a save first");
+    let row_one = div()
         .flex()
-        .flex_wrap()
         .items_end()
         .gap_3()
-        .p_3()
-        .child(
-            field("Character", muted).child(
-                Select::new("stats-character", snapshot_choices)
-                    .label("Character")
-                    .placeholder("Load a save first")
-                    .selected(context.character.to_string())
-                    .disabled(!has_save)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            character.update(cx, |state, cx| state.set_stats_character(index, cx));
-                        }
-                    }),
-            ),
-        )
-        .child(
-            field("Map", muted).child(
-                Select::new("stats-map", map_choices)
-                    .label("Map")
-                    .placeholder("Load a save first")
-                    .selected(context.map.to_string())
-                    .disabled(!has_save)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            map.update(cx, |state, cx| state.set_stats_map(index, cx));
-                        }
-                    }),
-            ),
-        )
-        .child(
-            field("Map List", muted).child(
-                Select::new(
-                    "stats-map-visibility",
-                    MapVisibility::ALL.map(|level| Choice::new(level.id(), level.label())),
-                )
-                .label("Map list")
-                .selected(context.map_visibility.id())
-                .on_change(move |value, _window, cx| {
-                    if let Some(level) = MapVisibility::from_id(value.as_ref()) {
-                        list.update(cx, |state, cx| state.set_stats_map_visibility(level, cx));
-                    }
-                }),
-            ),
-        )
-        .child(
-            field("Skill", muted).child(
-                Select::new(
-                    "stats-skill",
-                    Skill::ALL.map(|skill| Choice::new(skill.id(), skill.label())),
-                )
-                .label("Skill")
-                .selected(context.skill.id())
-                .on_change(move |value, _window, cx| {
-                    if let Some(next) = Skill::from_id(value.as_ref()) {
-                        skill.update(cx, |state, cx| state.set_stats_skill(next, cx));
-                    }
-                }),
-            ),
-        )
-        .child(
-            field("Construction Mode", muted).child(
-                Select::new(
-                    "stats-construction",
-                    ConstructionMode::ALL.map(|mode| Choice::new(mode.id(), mode.label())),
-                )
-                .label("Construction mode")
-                .selected(context.construction.id())
-                .on_change(move |value, _window, cx| {
-                    if let Some(mode) = ConstructionMode::from_id(value.as_ref()) {
-                        construction.update(cx, |state, cx| state.set_stats_construction(mode, cx));
-                    }
-                }),
-            ),
-        );
-
-    let page = div()
+        .child(context_select(
+            pick(&controls.character),
+            "stats-character",
+            "Character",
+            has_save,
+            muted,
+        ))
+        .child(context_select(
+            pick(&controls.map),
+            "stats-map",
+            "Map",
+            has_save,
+            muted,
+        ))
+        .child(context_select(
+            Select::new(controls.visibility.state()),
+            "stats-map-visibility",
+            "Map List",
+            true,
+            muted,
+        ));
+    let row_two = div()
         .flex()
-        .flex_col()
+        .items_end()
         .gap_3()
-        .child(
-            Card::new()
-                .header(CardHeader::new("Calculation Context").description(
-                    "Every breakdown below resolves against this character, map, skill and construction mode.",
-                ))
-                .child(controls)
-                .child(
-                    div()
-                        .id("stats-context-note")
-                        .role(Role::Label)
-                        .aria_label(note.clone())
-                        .px_3()
-                        .pb_3()
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(note),
-                ),
-        )
-        .when_some(snapshot, |page, snapshot| {
-            page.child(map_card(context, snapshot, &options, muted))
-        })
-        .child(input_ledger(&state.stats_all, cx))
-        .child(affected_formulas(&state.stats_all, cx))
-        .child(breakdowns(state, cx))
-        .child(explorer::region(state, cx));
+        .child(context_select(
+            Select::new(controls.skill.state()),
+            "stats-skill",
+            "Skill",
+            true,
+            muted,
+        ))
+        .child(context_select(
+            Select::new(controls.construction.state()),
+            "stats-construction",
+            "Construction Mode",
+            true,
+            muted,
+        ));
+
+    let mut page = div().flex().flex_col().gap(PANEL_GAP).child(
+        Card::new()
+            .header(CardHeader::new("Calculation Context").description(
+                "Every breakdown below resolves against this character, map, skill and construction mode.",
+            ))
+            .child(
+                div()
+                    .id("stats-context-controls")
+                    .flex()
+                    .flex_col()
+                    .gap(PANEL_GAP)
+                    .child(row_one)
+                    .child(row_two),
+            )
+            .child(
+                div()
+                    .id("stats-context-note")
+                    .role(Role::Label)
+                    .aria_label(note.clone())
+                    .text_size(TEXT_CAPTION)
+                    .text_color(muted)
+                    .child(note),
+            ),
+    );
+    if let Some(snapshot) = snapshot {
+        page = page.child(map_card(context, snapshot, &stats.options, muted));
+    }
+    page = if has_save && stats.sheet.is_none() {
+        page.child(resolving())
+    } else {
+        page.child(sandbox::input_ledger(state, cx))
+            .child(sandbox::affected_formulas(&state.stats_all, cx))
+            .child(breakdowns::region(state, cx))
+            .child(explorer::region(state, cx))
+    };
     div()
         .id("stats-all-dashboard")
         .flex()
@@ -384,516 +367,28 @@ pub(crate) fn view(
         .size_full()
         .min_h_0()
         .child(
-            ScrollArea::new("stats-all-scroll")
-                .vertical()
+            div()
                 .flex_1()
                 .min_h_0()
-                .child(page),
+                .child(page)
+                .overflow_y_scrollbar()
+                .id("stats-all-scroll"),
         )
         .into_any_element()
 }
 
-/// The category tab ids: stable for the keyboard and the automation harness.
-trait CategoryTab {
-    fn tab_id(self) -> SharedString;
-    fn from_tab_id(id: &str) -> Option<Self>
-    where
-        Self: Sized;
-}
-
-impl CategoryTab for BreakdownCategory {
-    fn tab_id(self) -> SharedString {
-        SharedString::from(format!("stats-{}-tab", self.id()))
-    }
-
-    fn from_tab_id(id: &str) -> Option<Self> {
-        let key = id.strip_prefix("stats-")?.strip_suffix("-tab")?;
-        BreakdownCategory::from_id(key)
-    }
-}
-
-/// The category tabs, the descriptor rows and the selected formula tree.
-fn breakdowns(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
-    let tree = state.stats_breakdown.clone();
-    let muted = cx.theme().colors.fg_muted;
-    let accents = (cx.theme().colors.accent, cx.theme().colors.fg_muted);
-    let colors = cx.theme().colors.clone();
-    let category = state.stats_all.category;
-    let selected = state.stats_all.selected.clone();
-    let rows: Vec<stats::Breakdown> = state
-        .stats_all
-        .sheet
-        .as_ref()
-        .map(|sheet| sheet.in_category(category).cloned().collect())
-        .unwrap_or_default();
-    let counts: Vec<(&'static str, usize)> = BreakdownCategory::ALL
-        .iter()
-        .map(|entry| {
-            (
-                entry.label(),
-                state
-                    .stats_all
-                    .sheet
-                    .as_ref()
-                    .map_or(0, |sheet| sheet.count(*entry)),
-            )
-        })
-        .collect();
-    let summary = counts
-        .iter()
-        .map(|(label, count)| format!("{label} {count}"))
-        .collect::<Vec<_>>()
-        .join(" · ");
-
-    let mut tabs = TabBar::new("stats-categories").selected(category.tab_id());
-    for (entry, (label, count)) in BreakdownCategory::ALL.iter().zip(&counts) {
-        tabs = tabs.tab(WindowTab::new(entry.tab_id(), format!("{label} ({count})")));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        if let Some(entry) = BreakdownCategory::from_tab_id(id.as_ref()) {
-            entity.update(cx, |state, cx| state.set_stats_category(entry, cx));
-        }
-    });
-
-    let list = rows.iter().fold(
-        div()
-            .id("stats-breakdown-rows")
-            .flex()
-            .flex_col()
-            .gap_1()
-            .p_3(),
-        |list, row| {
-            let id = row.id.to_string();
-            let label = match row.display_value() {
-                Some(value) => format!("{}: {value}", row.name),
-                None => format!("{}: not modelled", row.name),
-            };
-            // A pending edit annotates the saved value with a
-            // `Saved: <value> (±%)` line under the descriptor header.
-            let saved = state
-                .stats_all
-                .affected
-                .iter()
-                .find(|entry| entry.id == row.id)
-                .map(stats::Affected::saved_note);
-            let aria = match saved.as_deref() {
-                Some(note) => format!("{label} · {} · {note}", row.scope.label()),
-                None => format!("{label} · {}", row.scope.label()),
-            };
-            let is_selected = selected.as_deref() == Some(row.id);
-            let click = cx.entity();
-            let row_id = id.clone();
-            let partial = matches!(
-                &row.resolution,
-                Resolution::Value {
-                    partial: Some(_),
-                    ..
-                }
-            );
-            list.child(
-                div()
-                    .id(format!("stats-row-{id}"))
-                    .role(Role::Button)
-                    .aria_label(aria)
-                    .flex()
-                    .items_center()
-                    .gap_3()
-                    .px_2()
-                    .py_1()
-                    .rounded_md()
-                    .cursor_pointer()
-                    .when(is_selected, |row| row.bg(accents.0.opacity(0.12)))
-                    .on_click(move |_, _window, cx| {
-                        let id = row_id.clone();
-                        click.update(cx, |state, cx| state.set_stats_descriptor(id, cx));
-                    })
-                    .child(div().flex_1().child(row.name))
-                    .child(
-                        Caption::new(row.scope.label())
-                            .text_color(muted)
-                            .into_any_element(),
-                    )
-                    .when_some(row.display_value(), |line, value| {
-                        line.child(div().child(value))
-                    })
-                    .when_some(saved, |line, note| {
-                        line.child(Caption::new(note).text_color(colors.warning))
-                    })
-                    .when(partial, |line| {
-                        line.child(Badge::new("Partial").tone(Tone::Warning))
-                    })
-                    .when(row.display_value().is_none(), |line| {
-                        line.child(Badge::new("Not modelled").tone(Tone::Warning))
-                    }),
-            )
-        },
-    );
-
-    let detail = detail_card(state, tree, cx);
-
+/// What the page shows while the sheets resolve off the UI thread.
+fn resolving() -> AnyElement {
     div()
+        .id("stats-resolving")
+        .role(Role::Label)
+        .aria_label("Resolving every descriptor")
         .flex()
         .flex_col()
-        .gap_2()
-        .child(
-            Card::new()
-                .header(CardHeader::new("Category Breakdowns").description(
-                    "Every descriptor the registry lists, grouped by its category. A row whose \
-                     formula this build does not model says so instead of showing a guess.",
-                ))
-                .child(
-                    div()
-                        .id("stats-category-summary")
-                        .role(Role::Label)
-                        .aria_label(summary.clone())
-                        .px_3()
-                        .pb_2()
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(summary),
-                )
-                .child(div().px_3().pb_2().child(crate::ui::layout::scrolling_tabs(
-                    "stats-categories-scroll",
-                    tabs,
-                    cx,
-                )))
-                .child(
-                    div()
-                        .id("stats-category-panel")
-                        .role(Role::Label)
-                        .aria_label(format!(
-                            "{} breakdowns: {} rows",
-                            category.label(),
-                            rows.len()
-                        ))
-                        .child(list),
-                ),
-        )
-        .child(detail)
-        .into_any_element()
-}
-
-/// The selected descriptor: its provenance, its value and the shared tree.
-fn detail_card(
-    state: &mut AppState,
-    tree: Entity<idleon_ui::formula::FormulaTree>,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let Some(row) = state.stats_all.selected_row() else {
-        return Card::new()
-            .header(
-                CardHeader::new("Descriptor Breakdown")
-                    .description("Select a row above to see its formula tree."),
-            )
-            .child(
-                div()
-                    .id("stats-descriptor-empty")
-                    .role(Role::Label)
-                    .aria_label("No descriptor selected")
-                    .px_3()
-                    .pb_3()
-                    .text_size(px(12.0))
-                    .text_color(muted)
-                    .child("Select a row above to see its formula tree."),
-            )
-            .into_any_element();
-    };
-    let row = row.clone();
-    let value = row
-        .display_value()
-        .unwrap_or_else(|| "not modelled".to_string());
-    let saved = state
-        .stats_all
-        .affected
-        .iter()
-        .find(|entry| entry.id == row.id)
-        .map(stats::Affected::saved_note);
-    let warning = row.warning().map(str::to_string);
-    let scope = row.scope.label();
-    let header = CardHeader::new(format!("{} · {scope}", row.name))
-        .description("The formula tree is the shared breakdown component");
-    let mut card = Card::new().header(header).child(
-        div()
-            .id("stats-descriptor-summary")
-            .role(Role::Label)
-            .aria_label(format!("{}: {value}", row.name))
-            .px_3()
-            .pb_2()
-            .text_size(px(12.0))
-            .text_color(muted)
-            .child(value),
-    );
-    if let Some(note) = saved.clone() {
-        card = card.child(
-            div()
-                .id("stats-descriptor-saved")
-                .role(Role::Label)
-                .aria_label(note.clone())
-                .px_3()
-                .pb_2()
-                .text_size(px(12.0))
-                .text_color(cx.theme().colors.warning)
-                .child(note),
-        );
-    }
-    if let Some(tree_root) = row.resolution.tree() {
-        let root = tree_root.clone();
-        tree.update(cx, |tree, cx| tree.set_root(root, cx));
-        card = card.child(
-            div()
-                .id("stats-descriptor-formula")
-                .h(px(320.0))
-                .min_h_0()
-                .child(tree),
-        );
-    } else if let Some(reason) = warning {
-        card = card.child(
-            div()
-                .id("stats-descriptor-warning")
-                .role(Role::Label)
-                .aria_label(reason.clone())
-                .px_3()
-                .pb_3()
-                .text_size(px(12.0))
-                .text_color(muted)
-                .child(reason),
-        );
-    }
-    card.into_any_element()
-}
-
-/// SA-04: the editable game inputs, the pending edits and the saved values.
-///
-/// There is no per-node editor, so the ledger rows carry the controls: each row
-/// shows the saved and current value, marks a pending edit and resets that one
-/// input, and `Reset all edits` clears the whole sandbox.
-fn input_ledger(state: &State, cx: &mut Context<AppState>) -> AnyElement {
-    let theme = cx.theme().colors.clone();
-    let entity = cx.entity();
-    let sandbox = state.sandbox.as_ref();
-    let status = sandbox
-        .map(stats::Sandbox::status)
-        .unwrap_or_else(|| "Game-input sandbox: no edits.".to_string());
-    let count = sandbox.map(stats::Sandbox::count).unwrap_or_default();
-    let error = state.input_error.clone();
-
-    let reset_all = entity.clone();
-    let mut rows = div().id("stats-input-rows").flex().flex_col().gap_1().p_3();
-    if let Some(sandbox) = sandbox {
-        if sandbox.inputs().is_empty() {
-            rows = rows.child(
-                div()
-                    .id("stats-input-empty")
-                    .role(Role::Label)
-                    .aria_label("This save carries none of the inputs the modelled formulas read.")
-                    .text_size(px(12.0))
-                    .text_color(theme.fg_muted)
-                    .child("This save carries none of the inputs the modelled formulas read."),
-            );
-        }
-        for input in sandbox.inputs() {
-            let id = input.id.clone();
-            let current = sandbox.value(&id).unwrap_or(input.saved);
-            let edited = sandbox.edited(&id);
-            let label = match edited {
-                true => format!(
-                    "{}: {} → {}",
-                    input.title(),
-                    stats::GameInput::show(input.saved),
-                    stats::GameInput::show(current)
-                ),
-                false => format!("{}: {}", input.title(), stats::GameInput::show(input.saved)),
-            };
-            let change = entity.clone();
-            let change_id = id.clone();
-            let reset = entity.clone();
-            let reset_id = id.clone();
-            let mut row = div()
-                .id(format!("stats-input-row-{id}"))
-                .role(Role::Label)
-                .aria_label(label)
-                .flex()
-                .items_center()
-                .gap_3()
-                .px_2()
-                .py_1()
-                .rounded_md()
-                .when(edited, |row| row.bg(theme.warning.opacity(0.12)));
-            row = row
-                .child(
-                    div()
-                        .flex_1()
-                        .min_w_0()
-                        .text_size(px(12.0))
-                        .child(input.name.clone()),
-                )
-                .child(
-                    Caption::new(input.label)
-                        .text_color(theme.fg_muted)
-                        .into_any_element(),
-                )
-                .child(
-                    div().w(px(140.0)).child(
-                        NumberInput::new(format!("stats-input-{id}"), current)
-                            .label(input.title())
-                            .range(0.0, input.max.unwrap_or(1e15))
-                            .step(1.0)
-                            .size(ControlSize::Sm)
-                            .on_change(move |value, _window, cx| {
-                                let id = change_id.clone();
-                                change.update(cx, |state, cx| state.set_stats_input(id, value, cx));
-                            }),
-                    ),
-                )
-                .child(
-                    div()
-                        .w(px(90.0))
-                        .text_size(px(12.0))
-                        .text_color(theme.fg_muted)
-                        .child(match edited {
-                            true => format!("Saved: {}", stats::GameInput::show(input.saved)),
-                            false => String::new(),
-                        }),
-                )
-                .when(edited, |row| {
-                    row.child(Badge::new("Changed").tone(Tone::Warning)).child(
-                        Button::new(format!("stats-input-reset-{id}"), "Reset")
-                            .size(ControlSize::Sm)
-                            .on_click(move |_event, _window, cx| {
-                                let id = reset_id.clone();
-                                reset.update(cx, |state, cx| state.reset_stats_input(id, cx));
-                            }),
-                    )
-                });
-            rows = rows.child(row);
-        }
-    }
-
-    Card::new()
-        .header(CardHeader::new("Game Input Sandbox").description(
-            "Edit a game input to resolve a hypothetical save. Nothing is written to the save: \
-             Reset puts every value back.",
-        ))
-        .child(
-            div()
-                .id("stats-input-status")
-                .role(Role::Label)
-                .aria_label(status.clone())
-                .px_3()
-                .pt_3()
-                .text_size(px(12.0))
-                .text_color(theme.fg_muted)
-                .child(status),
-        )
-        .when(!error.is_empty(), |card| {
-            card.child(
-                div()
-                    .id("stats-inputs-error")
-                    .role(Role::Label)
-                    .aria_label(error.clone())
-                    .px_3()
-                    .pt_2()
-                    .text_size(px(12.0))
-                    .text_color(theme.danger)
-                    .child(error),
-            )
-        })
-        .child(
-            div().px_3().pt_2().child(
-                Button::new("stats-inputs-reset", "Reset all edits")
-                    .size(ControlSize::Sm)
-                    .disabled(count == 0)
-                    .on_click(move |_event, _window, cx| {
-                        reset_all.update(cx, |state, cx| state.reset_stats_inputs(cx));
-                    }),
-            ),
-        )
-        .child(rows)
-        .into_any_element()
-}
-
-/// SA-04's other half: every descriptor the pending edits moved.
-///
-/// Each row links back to the descriptor it names, so the tab and the formula
-/// tree follow the click here too.
-fn affected_formulas(state: &State, cx: &mut Context<AppState>) -> AnyElement {
-    let theme = cx.theme().colors.clone();
-    let entity = cx.entity();
-    let rows = &state.affected;
-    let count = format!("Affected formulas ({})", rows.len());
-    let mut list = div()
-        .id("stats-affected-rows")
-        .flex()
-        .flex_col()
-        .gap_1()
-        .px_3()
-        .pb_3();
-    if rows.is_empty() {
-        let line = match state.sandbox.as_ref().map(stats::Sandbox::count) {
-            Some(0) | None => "No formula changed: every value resolves from the save.",
-            Some(_) => "The pending edits do not move a computed formula.",
-        };
-        list = list.child(
-            div()
-                .id("stats-affected-empty")
-                .role(Role::Label)
-                .aria_label(line)
-                .text_size(px(12.0))
-                .text_color(theme.fg_muted)
-                .child(line),
-        );
-    }
-    for row in rows {
-        let id = row.id.clone();
-        let line = row.line();
-        let pick = entity.clone();
-        list = list.child(
-            div()
-                .id(format!("stats-affected-{id}"))
-                .role(Role::Button)
-                .aria_label(format!("{}: {line}", row.name))
-                .flex()
-                .items_center()
-                .gap_3()
-                .px_2()
-                .py_1()
-                .rounded_md()
-                .cursor_pointer()
-                .hover(|style| style.bg(theme.hover))
-                .on_click(move |_event, _window, cx| {
-                    let id = id.clone();
-                    pick.update(cx, |state, cx| state.select_stats_descriptor(id, cx));
-                })
-                .child(div().flex_1().text_size(px(12.0)).child(row.name.clone()))
-                .child(
-                    div()
-                        .text_size(px(12.0))
-                        .text_color(theme.warning)
-                        .child(line),
-                ),
-        );
-    }
-
-    Card::new()
-        .header(CardHeader::new(count.clone()).description(
-            "The formulas whose value the pending edits move, with their saved value and \
-                 the hypothetical one.",
-        ))
-        .child(
-            div()
-                .id("stats-affected-count")
-                .role(Role::Label)
-                .aria_label(count.clone())
-                .px_3()
-                .pt_3()
-                .pb_2()
-                .text_size(px(12.0))
-                .text_color(theme.fg_muted)
-                .child(count),
-        )
-        .child(list)
+        .gap(PANEL_GAP)
+        .child(Skeleton::new().h(px(160.0)))
+        .child(Skeleton::new().h(px(64.0)))
+        .child(Skeleton::new().h(px(320.0)))
         .into_any_element()
 }
 
@@ -964,14 +459,12 @@ fn map_card(
                         .flex()
                         .flex_col()
                         .gap_1()
-                        .px_3()
-                        .pb_3()
                         .child(
                             div()
                                 .id("stats-map-class")
                                 .role(Role::Label)
                                 .aria_label(format!("Map class: {}", class.category.label()))
-                                .text_size(px(12.0))
+                                .text_size(TEXT_CAPTION)
                                 .child(format!(
                                     "{} · World {} · {}",
                                     class.name,
@@ -984,7 +477,7 @@ fn map_card(
                                 .id("stats-map-evidence")
                                 .role(Role::Label)
                                 .aria_label(format!("Map evidence: {evidence}"))
-                                .text_size(px(12.0))
+                                .text_size(TEXT_CAPTION)
                                 .text_color(muted)
                                 .child(evidence),
                         )
@@ -993,23 +486,40 @@ fn map_card(
                                 .id("stats-map-count")
                                 .role(Role::Label)
                                 .aria_label(summary.clone())
-                                .text_size(px(12.0))
+                                .text_size(TEXT_CAPTION)
                                 .text_color(muted)
                                 .child(summary),
                         ),
                 )
                 .child(
-                    div().px_3().pb_3().child(
-                        Caption::new(format!(
-                            "{} characters in this save · {} maps in the game data",
-                            snapshot.characters(),
-                            stats::map_count()
-                        ))
-                        .text_color(muted),
-                    ),
+                    Caption::new(format!(
+                        "{} characters in this save · {} maps in the game data",
+                        snapshot.characters(),
+                        stats::map_count()
+                    ))
+                    .text_color(muted),
                 ),
         )
         .into_any_element()
+}
+
+/// One labelled context select under its Ely id.
+fn context_select<D: SearchableListDelegate + 'static>(
+    select: Select<D>,
+    id: &'static str,
+    label: &'static str,
+    enabled: bool,
+    muted: gpui::Hsla,
+) -> gpui::Div {
+    field(label, muted).child(
+        div().flex_none().w(px(280.0)).child(
+            select
+                .id(id)
+                .accessibility_label(label)
+                .disabled(!enabled)
+                .small(),
+        ),
+    )
 }
 
 fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
@@ -1017,8 +527,16 @@ fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
         .flex()
         .flex_col()
         .gap_1()
-        .min_w(px(190.0))
         .child(Caption::new(label).text_color(muted))
+}
+
+/// A small status tag.
+pub(super) fn tag(label: &'static str, tone: Tone) -> Tag {
+    Tag::new()
+        .with_variant(tone.into())
+        .outline()
+        .small()
+        .child(label)
 }
 
 /// Restore a project file's context, warning about values the save cannot show.
@@ -1027,13 +545,21 @@ pub(crate) fn restore(state: &mut AppState, context: StatsContext, warnings: &mu
     state.stats_all.clamp(warnings);
     // The restored character and map re-resolve every breakdown on the next
     // render, so the page never shows the previous context's values.
-    state.stats_all.dirty = true;
+    state.stats_all.invalidate(true);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use idleon_stats::{ConstructionMode, MapVisibility, Skill};
     use serde_json::json;
+
+    /// Build what the state left pending, as the page does off the UI thread.
+    fn build(state: &mut State, save: &Save) {
+        if let Some(job) = state.job(save, &simulation(), &context()) {
+            state.adopt(job());
+        }
+    }
 
     fn simulation() -> Simulation {
         Simulation::default()
@@ -1062,12 +588,12 @@ mod tests {
         let mut state = State::default();
         let save = save();
         state.load(&save);
-        state.ensure_built(Some(&save), &simulation(), &context());
+        build(&mut state, &save);
         assert_eq!(state.context.character, 0);
         assert_eq!(state.context.map, 0);
         assert!(state.snapshot.is_some());
         assert_eq!(
-            state.options().first().map(|option| option.class.map),
+            state.options.first().map(|option| option.class.map),
             Some(0)
         );
     }
@@ -1077,7 +603,7 @@ mod tests {
         let mut state = State::default();
         let save = save();
         state.load(&save);
-        state.ensure_built(Some(&save), &simulation(), &context());
+        build(&mut state, &save);
         let mut warnings = Vec::new();
         state.context = StatsContext {
             character: 12,
@@ -1101,7 +627,7 @@ mod tests {
         let mut state = State::default();
         let save = save();
         state.load(&save);
-        state.ensure_built(Some(&save), &simulation(), &context());
+        build(&mut state, &save);
         let sheet = state.sheet.as_ref().expect("a save builds the sheet");
         assert_eq!(BreakdownCategory::ALL.len(), 9);
         for category in BreakdownCategory::ALL {
@@ -1123,19 +649,6 @@ mod tests {
         assert!(crit.warning().is_some_and(|warning| !warning.is_empty()));
     }
 
-    #[test]
-    fn every_category_tab_id_round_trips() {
-        for category in BreakdownCategory::ALL {
-            let id = category.tab_id();
-            assert_eq!(
-                BreakdownCategory::from_tab_id(id.as_ref()),
-                Some(category),
-                "{id}"
-            );
-        }
-        assert_eq!(BreakdownCategory::from_tab_id("stats-frogs-tab"), None);
-    }
-
     /// One character's bag row and four gem-shop purchases, so a hypothetical
     /// edit has a computed formula to move.
     fn capacity_save() -> Save {
@@ -1153,8 +666,8 @@ mod tests {
         let save = capacity_save();
         let mut state = State::default();
         state.load(&save);
-        state.ensure_built(Some(&save), &simulation(), &context());
-        state.ensure_built(Some(&save), &simulation(), &context());
+        build(&mut state, &save);
+        build(&mut state, &save);
         let value = |state: &State| {
             state
                 .sheet
@@ -1174,7 +687,8 @@ mod tests {
             .expect("a save builds the sandbox")
             .set("gem-items-58", 0.0)
             .expect("a purchase count");
-        state.rebuild(&save, &simulation(), &context());
+        state.invalidate(false);
+        build(&mut state, &save);
         assert!(value(&state) < saved, "the edit halves the value");
         assert_eq!(state.affected.len(), 1, "{:?}", state.affected);
         assert_eq!(state.affected[0].id, "carry-capacity-mining");
@@ -1192,7 +706,8 @@ mod tests {
             .as_mut()
             .expect("the sandbox survives")
             .reset_all();
-        state.rebuild(&save, &simulation(), &context());
+        state.invalidate(false);
+        build(&mut state, &save);
         assert_eq!(value(&state), saved);
         assert!(state.affected.is_empty());
     }
@@ -1205,8 +720,8 @@ mod tests {
         }));
         let mut state = State::default();
         state.load(&save);
-        state.ensure_built(Some(&save), &simulation(), &context());
-        state.ensure_built(Some(&save), &simulation(), &context());
+        build(&mut state, &save);
+        build(&mut state, &save);
         state.category = BreakdownCategory::Capacity;
         state.select_first();
         let row = state.selected_row().expect("the first capacity row");

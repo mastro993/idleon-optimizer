@@ -8,59 +8,105 @@
 //! damage descriptor, which this build does not carry yet, so the field opens
 //! on the save's highest recorded hit and the overkill tier follows what it
 //! holds.
+//!
+//! The evaluation is read once per change of the save, the character or the
+//! damage text ([`State::refresh`]), so a frame only formats it.
 
 mod actions;
 
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select, TextInput};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, App, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, Window, div,
-    px,
+    AnyElement, App, Context, Entity, Focusable as _, Hsla, IntoElement, ParentElement, Role,
+    SharedString, Styled, Subscription, Window, div, px,
 };
+use gpui_kit::component::input::{Input, InputEvent, InputState};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_coin_multi::{self as coin_multi, Character, Evaluation};
 use idleon_import::Imported;
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, ChoiceSelect, PANEL_GAP, TEXT_CAPTION, TEXT_KPI, Tone,
+};
 
 /// The section's state: the save slice, the selected character, the damage
-/// field and the breakdown tree.
+/// text, what they evaluate to, and the kit controls that show them.
 pub(crate) struct State {
     /// Every character's cards, from the last applied save.
     pub(crate) snapshot: Option<coin_multi::Snapshot>,
     pub(crate) character: usize,
-    /// The editable damage value; the save's highest recorded hit prefills it.
-    pub(crate) damage: Entity<TextInput>,
+    /// The damage field's text; the save's highest recorded hit prefills it.
+    pub(crate) damage: String,
+    /// The cards' calculation for `character` and `damage`.
+    evaluation: Result<Evaluation, String>,
+    /// The character selector's rows, built once per save.
+    choices: Vec<Choice<usize>>,
+    character_select: ChoiceSelect<usize>,
+    damage_field: Entity<InputState>,
     /// The `#tree` breakdown behind the total card.
     pub(crate) tree: Entity<FormulaTree>,
+    _subscriptions: [Subscription; 2],
 }
 
 impl State {
     pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let damage = crate::ui::text_input("Maximum damage", "Computed damage", window, cx);
+        let character_select = ChoiceSelect::new(Vec::new(), None, window, cx);
+        let damage_field = cx.new(|cx| InputState::new(window, cx).placeholder("Maximum damage"));
+        let subscriptions = [
+            cx.subscribe(
+                character_select.state(),
+                |state, _, event: &SelectEvent<Vec<Choice<usize>>>, cx| {
+                    let SelectEvent::Confirm(Some(character)) = event else {
+                        return;
+                    };
+                    state.set_coin_character(*character, cx);
+                },
+            ),
+            cx.subscribe(&damage_field, |state, field, event: &InputEvent, cx| {
+                if matches!(event, InputEvent::Change) {
+                    let text = field.read(cx).value().to_string();
+                    state.set_coin_damage(text, cx);
+                }
+            }),
+        ];
         Self {
             snapshot: None,
             character: 0,
-            damage,
+            damage: String::new(),
+            evaluation: Err(NO_SAVE.into()),
+            choices: Vec::new(),
+            character_select,
+            damage_field,
             tree: crate::ui::formula_tree("coin-formula", window, cx),
+            _subscriptions: subscriptions,
         }
     }
 
     /// Take a freshly imported save: character one, its saved target and the
     /// save's highest recorded damage.
-    pub(crate) fn load(&mut self, imported: &Imported, cx: &mut Context<AppState>) {
+    pub(crate) fn load(&mut self, imported: &Imported, cx: &mut App) {
         self.character = 0;
         let prefill = imported
             .coin
             .character(0)
             .map(|character| character.highest_damage)
             .unwrap_or(0.0);
-        let text = format!("{prefill}");
-        self.damage.update(cx, |input, cx| input.set_text(text, cx));
+        self.damage = format!("{prefill}");
+        self.choices = choices(&imported.coin);
         self.snapshot = Some(imported.coin.clone());
+        self.refresh(cx);
+    }
+
+    /// Read the cards' calculation again and hand its tree to the breakdown.
+    pub(crate) fn refresh(&mut self, cx: &mut App) {
+        self.evaluation = self.evaluate();
+        if let Ok(evaluation) = &self.evaluation {
+            let root = coin_multi::tree(evaluation);
+            self.tree.update(cx, |tree, cx| tree.set_root(root, cx));
+        }
     }
 
     /// The selected character's cards, when the save carries it.
@@ -68,28 +114,9 @@ impl State {
         self.snapshot.as_ref()?.character(self.character)
     }
 
-    /// One character's choices for the selector.
-    pub(crate) fn choices(&self) -> Vec<Choice> {
-        match self.snapshot.as_ref() {
-            None => Vec::new(),
-            Some(snapshot) => snapshot
-                .characters
-                .iter()
-                .enumerate()
-                .map(|(index, character)| {
-                    let mut choice = Choice::new(index.to_string(), character.name.clone());
-                    if !character.class_name.is_empty() && character.class_name != "0" {
-                        choice = choice.note(character.class_name.replace('_', " "));
-                    }
-                    choice
-                })
-                .collect(),
-        }
-    }
-
     /// The damage field's value, or why it cannot be read.
-    pub(crate) fn damage_value(&self, cx: &App) -> Result<f64, String> {
-        let text = self.damage.read(cx).text().trim().to_string();
+    fn damage_value(&self) -> Result<f64, String> {
+        let text = self.damage.trim();
         if text.is_empty() {
             return Err("Damage is required; the overkill tier and the total read it.".into());
         }
@@ -101,60 +128,83 @@ impl State {
     }
 
     /// The cards' calculation for the selected character and damage.
-    pub(crate) fn evaluation(&self, cx: &App) -> Result<Evaluation, String> {
+    fn evaluate(&self) -> Result<Evaluation, String> {
         let Some(snapshot) = self.snapshot.as_ref() else {
-            return Err("Load a save to calculate the coin multiplier.".into());
+            return Err(NO_SAVE.into());
         };
         let mut inputs = snapshot
             .inputs(self.character)
             .ok_or_else(|| format!("Character {} is not in the save.", self.character + 1))?;
-        inputs.damage = self.damage_value(cx)?;
+        inputs.damage = self.damage_value()?;
         coin_multi::evaluate(snapshot, &inputs)
     }
+
+    /// Bring the selector and the damage field in line with the section's
+    /// values (`docs/ui-kit/forms.md`); a field the user is typing in is left
+    /// alone.
+    fn show(&self, window: &mut Window, cx: &mut App) {
+        self.character_select
+            .show(self.choices.clone(), Some(&self.character), window, cx);
+        let field = &self.damage_field;
+        if !field.focus_handle(cx).is_focused(window) && field.read(cx).value() != self.damage {
+            let text = self.damage.clone();
+            field.update(cx, |field, cx| field.set_value(text, window, cx));
+        }
+    }
+}
+
+const NO_SAVE: &str = "Load a save to calculate the coin multiplier.";
+
+/// One choice per character, its class beside its name.
+fn choices(snapshot: &coin_multi::Snapshot) -> Vec<Choice<usize>> {
+    snapshot
+        .characters
+        .iter()
+        .enumerate()
+        .map(|(index, character)| {
+            let label = if character.class_name.is_empty() || character.class_name == "0" {
+                character.name.clone()
+            } else {
+                format!(
+                    "{} · {}",
+                    character.name,
+                    character.class_name.replace('_', " ")
+                )
+            };
+            Choice::new(index, label)
+        })
+        .collect()
 }
 
 /// The section page.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let entity = cx.entity();
-    let muted = cx.theme().colors.fg_muted;
-    let snapshot_missing = state.coin_multi.snapshot.is_none();
-    let choices = state.coin_multi.choices();
-    let selected = state.coin_multi.character;
-    let character = entity.clone();
-    let damage_focus = state.coin_multi.damage.read(cx).focus().clone();
-    // The tree's root is set before the palette is borrowed: updating the child
-    // entity needs the context mutably.
-    let tree = state.coin_multi.tree.clone();
-    let evaluation = state.coin_multi.evaluation(cx);
-    if let Ok(evaluation) = &evaluation {
-        let root = coin_multi::tree(evaluation);
-        tree.update(cx, |tree, cx| tree.set_root(root, cx));
-    }
-    let character_row = state.coin_multi.character().cloned();
+    let coin = &state.coin_multi;
+    coin.show(window, cx);
+    let muted = cx.theme().muted_foreground;
+    let snapshot_missing = coin.snapshot.is_none();
+    let damage_focus = coin.damage_field.focus_handle(cx);
+    let evaluation = coin.evaluation.as_ref();
+    let character_row = coin.character();
 
     let selector = div()
         .id("coin-context-controls")
         .flex()
-        .flex_wrap()
         .items_end()
         .gap_3()
-        .p_3()
         .child(
             field("Character", muted).child(
-                Select::new("coin-character", choices)
-                    .label("Character")
-                    .placeholder("Load a save first")
-                    .selected(selected.to_string())
-                    .disabled(snapshot_missing)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            character.update(cx, |state, cx| state.set_coin_character(index, cx));
-                        }
-                    }),
+                div().flex_none().w(px(220.0)).child(
+                    Select::new(coin.character_select.state())
+                        .id("coin-character")
+                        .accessibility_label("Character")
+                        .placeholder("Load a save first")
+                        .disabled(snapshot_missing)
+                        .small(),
+                ),
             ),
         )
         .child(
@@ -165,14 +215,18 @@ pub(crate) fn view(
                 .flex()
                 .flex_col()
                 .gap_1()
-                .min_w(px(220.0))
+                .w(px(220.0))
                 .child(Caption::new("Computed damage").text_color(muted))
                 .on_click(move |_event, window, cx| window.focus(&damage_focus, cx))
-                .child(state.coin_multi.damage.clone()),
+                .child(
+                    Input::new(&coin.damage_field)
+                        .aria_label("Computed damage")
+                        .small(),
+                ),
         );
 
-    let character_note = match (&character_row, &evaluation) {
-        (None, _) => "Load a save to calculate the coin multiplier.".to_string(),
+    let character_note = match (character_row, evaluation) {
+        (None, _) => NO_SAVE.to_string(),
         (Some(character), Ok(evaluation)) => format!(
             "{} · {} · overkill tier {} ({}× thresholds)",
             character.name,
@@ -183,7 +237,7 @@ pub(crate) fn view(
         (Some(character), Err(error)) => format!("{} · {error}", character.name),
     };
 
-    let mut page = div().flex().flex_col().gap_3().child(
+    let mut page = div().flex().flex_col().gap(PANEL_GAP).child(
         Card::new()
             .header(CardHeader::new("Calculation Context").description(
                 "The saved character's map, AFK target and combat values, which every card and the total read.",
@@ -194,34 +248,26 @@ pub(crate) fn view(
                     .id("coin-context-note")
                     .role(Role::Label)
                     .aria_label(character_note.clone())
-                    .px_3()
-                    .pb_3()
-                    .text_size(px(12.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child(character_note),
             ),
     );
 
     let missing = character_row.is_none();
-    let cards = cards(
-        character_row.as_ref(),
-        evaluation.as_ref().ok(),
-        snapshot_missing,
-        muted,
-    );
     page = page.child(
         Card::new()
             .header(CardHeader::new("Current Calculation").description(
                 "The saved target's HP, the damage the overkill tier compares, the tier itself and the total multiplier.",
             ))
-            .child(cards),
+            .child(cards(character_row, evaluation.ok(), snapshot_missing, cx)),
     );
 
-    match &evaluation {
+    match evaluation {
         Ok(evaluation) => {
             page = page
                 .child(partial_card(evaluation, muted))
-                .child(formula_card(tree.clone()));
+                .child(formula_card(coin.tree.clone()));
         }
         Err(error) => {
             page = page
@@ -230,9 +276,7 @@ pub(crate) fn view(
                         .id("coin-total-state")
                         .role(Role::Label)
                         .aria_label(error.clone())
-                        .px_3()
-                        .pb_3()
-                        .text_size(px(12.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(error.clone()),
                 )
@@ -244,9 +288,7 @@ pub(crate) fn view(
             div()
                 .id("coin-missing-character")
                 .role(Role::Label)
-                .px_3()
-                .pb_3()
-                .text_size(px(12.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child("The save has no rows for this character."),
         );
@@ -258,11 +300,12 @@ pub(crate) fn view(
         .size_full()
         .min_h_0()
         .child(
-            ScrollArea::new("coin-multi-scroll")
-                .vertical()
+            div()
                 .flex_1()
                 .min_h_0()
-                .child(page),
+                .child(page)
+                .overflow_y_scrollbar()
+                .id("coin-multi-scroll"),
         )
         .into_any_element()
 }
@@ -297,9 +340,7 @@ fn formula_gap(message: &str, muted: Hsla) -> AnyElement {
                 .id("coin-formula-gap")
                 .role(Role::Label)
                 .aria_label(message.to_string())
-                .px_3()
-                .pb_3()
-                .text_size(px(12.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(message.to_string()),
         )
@@ -311,15 +352,16 @@ fn cards(
     character: Option<&Character>,
     evaluation: Option<&Evaluation>,
     snapshot_missing: bool,
-    muted: Hsla,
+    cx: &App,
 ) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let overkill = evaluation.map(|evaluation| evaluation.overkill.tier);
     let partial = evaluation
         .map(|evaluation| evaluation.overkill.partial)
         .unwrap_or(false);
     let damage = evaluation.map(|evaluation| evaluation.overkill.damage);
 
-    let mut grid = div().id("coin-cards").flex().flex_wrap().gap_3().p_3();
+    let mut grid = div().id("coin-cards").flex().flex_wrap().gap(PANEL_GAP);
     grid = grid.child(text_card(
         "coin-map",
         "Current Map",
@@ -419,8 +461,6 @@ fn cards(
                             .flex()
                             .flex_col()
                             .gap_1()
-                            .px_3()
-                            .pb_3()
                             .child(
                                 div()
                                     .flex()
@@ -431,11 +471,12 @@ fn cards(
                                             .id("coin-total")
                                             .role(Role::Label)
                                             .aria_label(total_text.clone())
-                                            .text_size(px(22.0))
+                                            .text_size(TEXT_KPI)
+                                            .font_family(cx.theme().mono_font_family.clone())
                                             .child(total_text),
                                     )
                                     .when(partial_state, |row| {
-                                        row.child(Badge::new("Partial").tone(Tone::Warning))
+                                        row.child(tag("Partial", Tone::Warning))
                                     }),
                             )
                             .child(Caption::new(caption).text_color(muted)),
@@ -455,22 +496,16 @@ fn partial_card(evaluation: &Evaluation, muted: Hsla) -> AnyElement {
         "Where the total is incomplete, and why. The badge marks a total that counts only the resolved sources.",
     ));
     if !evaluation.complete {
+        let line = format!(
+            "Partial total: {} of 23 sources are not modelled yet, so the figure is a lower bound.",
+            evaluation.excluded.len()
+        );
         card = card.child(
             div()
                 .id("coin-partial")
                 .role(Role::Label)
-                .aria_label(format!(
-                    "Partial total: {} of 23 sources are not modelled yet, so the figure is a lower bound.",
-                    evaluation.excluded.len()
-                ))
-                .px_3()
-                .child(
-                    Caption::new(format!(
-                        "Partial total: {} of 23 sources are not modelled yet, so the figure is a lower bound.",
-                        evaluation.excluded.len()
-                    ))
-                    .text_color(muted),
-                ),
+                .aria_label(line.clone())
+                .child(Caption::new(line).text_color(muted)),
         );
         for group in evaluation
             .groups
@@ -479,9 +514,7 @@ fn partial_card(evaluation: &Evaluation, muted: Hsla) -> AnyElement {
         {
             card = card.child(
                 div()
-                    .px_3()
-                    .pb_1()
-                    .text_size(px(12.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child(format!("{}: {}.", group.name, group.reason)),
             );
@@ -493,9 +526,7 @@ fn partial_card(evaluation: &Evaluation, muted: Hsla) -> AnyElement {
                 .id("coin-warning")
                 .role(Role::Label)
                 .aria_label(warning.clone())
-                .px_3()
-                .pb_1()
-                .text_size(px(12.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(warning.clone()),
         );
@@ -509,7 +540,6 @@ fn field(label: &'static str, muted: Hsla) -> gpui::Div {
         .flex()
         .flex_col()
         .gap_1()
-        .min_w(px(190.0))
         .child(Caption::new(label).text_color(muted))
 }
 
@@ -535,8 +565,6 @@ fn text_card(
                     .flex()
                     .flex_col()
                     .gap_1()
-                    .px_3()
-                    .pb_3()
                     .child(
                         div()
                             .id(id)
@@ -563,6 +591,15 @@ fn figure_card(
         None => "Unavailable".to_string(),
     };
     text_card(id, title, &text, caption, muted)
+}
+
+/// A small status tag.
+fn tag(label: impl Into<SharedString>, tone: Tone) -> Tag {
+    Tag::new()
+        .with_variant(tone.into())
+        .outline()
+        .small()
+        .child(label.into())
 }
 
 #[cfg(test)]
@@ -602,6 +639,11 @@ mod tests {
         assert_eq!(coin.characters[0].highest_damage, 123_456_789.0);
         assert_eq!(coin.characters[1].class_name, "WARRIOR");
         assert_eq!(coin.characters[1].map, 50);
+        let labels: Vec<_> = choices(&coin)
+            .into_iter()
+            .map(|choice| gpui_kit::component::searchable_list::SearchableListItem::title(&choice))
+            .collect();
+        assert_eq!(labels[1], "Bo · WARRIOR");
     }
 
     #[test]

@@ -1,7 +1,7 @@
 //! What the window does when the stats all section is edited or run.
 
 use crate::state::AppState;
-use gpui::Context;
+use gpui::{AppContext as _, Context};
 use idleon_stats::{ConstructionMode, MapVisibility, Skill};
 
 impl AppState {
@@ -24,7 +24,7 @@ impl AppState {
     pub(crate) fn set_stats_map(&mut self, map: usize, cx: &mut Context<Self>) {
         if !self
             .stats_all
-            .options()
+            .options
             .iter()
             .any(|option| option.class.map == map)
         {
@@ -135,8 +135,7 @@ impl AppState {
                 return;
             }
         }
-        self.rebuild_stats_breakdowns();
-        self.stats_sandbox_changed(cx);
+        self.stats_sandbox_edited(cx);
     }
 
     /// Put one game input back to the value the imported save carries.
@@ -145,8 +144,7 @@ impl AppState {
             sandbox.reset(&id);
         }
         self.stats_all.input_error.clear();
-        self.rebuild_stats_breakdowns();
-        self.stats_sandbox_changed(cx);
+        self.stats_sandbox_edited(cx);
     }
 
     /// Drop every pending edit (`Reset all edits`).
@@ -155,8 +153,7 @@ impl AppState {
             sandbox.reset_all();
         }
         self.stats_all.input_error.clear();
-        self.rebuild_stats_breakdowns();
-        self.stats_sandbox_changed(cx);
+        self.stats_sandbox_edited(cx);
     }
 
     /// Show one descriptor from the affected-formula list: the tab follows it,
@@ -176,13 +173,39 @@ impl AppState {
         cx.notify();
     }
 
-    /// Re-resolve the breakdowns from the save and the context.
-    pub(crate) fn rebuild_stats_breakdowns(&mut self) {
+    /// Build the sheets a load, a restore, a context change or an edit left,
+    /// off the UI thread; `then` runs once they land.
+    pub(crate) fn resolve_stats(
+        &mut self,
+        then: Option<fn(&mut Self, &mut Context<Self>)>,
+        cx: &mut Context<Self>,
+    ) {
         let Some(save) = self.save.as_ref() else {
             return;
         };
-        self.stats_all
-            .rebuild(save, &self.simulation, &self.context);
+        let Some(job) = self.stats_all.job(save, &self.simulation, &self.context) else {
+            return;
+        };
+        let task = cx.spawn(async move |this, cx| {
+            let sheets = cx.background_spawn(async move { job() }).await;
+            this.update(cx, |state, cx| {
+                state.stats_all.adopt(sheets);
+                if let Some(then) = then {
+                    then(state, cx);
+                }
+                cx.notify();
+            })
+            .ok();
+        });
+        self.stats_all.pending = Some(task);
+    }
+
+    /// A sandbox edit keeps the sheets on screen until the edited ones land,
+    /// then names what moved.
+    fn stats_sandbox_edited(&mut self, cx: &mut Context<Self>) {
+        self.stats_all.invalidate(false);
+        self.resolve_stats(Some(Self::stats_sandbox_changed), cx);
+        cx.notify();
     }
 
     /// The status line a sandbox edit leaves: what is hypothetical and how far
@@ -208,7 +231,9 @@ impl AppState {
 
     /// A context change refreshes every value the page derives from it.
     pub(crate) fn stats_context_changed(&mut self, cx: &mut Context<Self>) {
-        self.rebuild_stats_breakdowns();
+        self.stats_all.refresh_options();
+        self.stats_all.invalidate(true);
+        self.resolve_stats(None, cx);
         let class = idleon_stats::classify(self.stats_all.context.map);
         let character = self
             .stats_all

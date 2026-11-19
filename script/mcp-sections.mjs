@@ -2619,7 +2619,7 @@ const INTERACTIONS = {
     await waitForNode(lane, 'cooking-mastery-summary', 'cooking-mastery: the EXP tab reopens');
   },
   pickle: async (lane) => {
-    await lane.call('focus_element', { id: 'ely-text-input' });
+    await lane.call('click_element', { id: 'pickle-dps' });
     await lane.call('type_text', { text: '50000000' });
     await waitFor(
       lane,
@@ -2628,7 +2628,14 @@ const INTERACTIONS = {
         (labelOf(nodes, 'pickle-row-slimeB') ?? '').includes('max pickles 125'),
       'pickle: DPS updates the table',
     );
-    await lane.call('set_value', { id: 'thumb-0', value: '120' });
+    // A press on the kit slider seeks and focuses it; End takes the 120 s cap.
+    const slider = (await lane.tree()).find((node) => node.id === 'pickle-ttk')?.bounds;
+    if (!slider) throw new Error('pickle: the kill-time slider is not in the tree');
+    await lane.call('click_coordinates', {
+      x: slider.x + slider.width / 2,
+      y: slider.y + slider.height / 2,
+    });
+    await lane.call('keyboard', { keystroke: 'end' });
     await waitFor(
       lane,
       (nodes) =>
@@ -3549,7 +3556,7 @@ const INTERACTIONS = {
     await lane.call('keyboard', { keystroke: 'secondary-a' });
     await lane.call('keyboard', { keystroke: 'backspace' });
     // A layer switch moves the card to that layer's title.
-    await lane.call('click_element', { id: 'segment-1' });
+    await lane.call('click_element', { id: 'damage-layer-ddl1' });
     await waitFor(
       lane,
       (nodes) =>
@@ -3665,7 +3672,7 @@ const INTERACTIONS = {
       if (!summary.includes(label)) {
         throw new Error(`stats-all: ${label} is missing from the summary: ${summary}`);
       }
-      await bringIntoView(lane, `stats-${key}-tab`);
+      await bringIntoView(lane, `stats-${key}-tab`, await wheelPoint(lane, 'stats-all-scroll'));
       await lane.call('click_element', { id: `stats-${key}-tab` });
       await waitFor(
         lane,
@@ -3675,10 +3682,12 @@ const INTERACTIONS = {
     }
 
     // The capacity rows read the character's own saved bag row, so the check
-    // below needs the character this save carries: Home opens on the first slot.
+    // below needs the character this save carries: the list opens on Bo, and
+    // Up walks back to the first slot.
+    await bringIntoView(lane, 'stats-character', await wheelPoint(lane, 'stats-all-scroll'));
     await lane.call('focus_element', { id: 'stats-character' });
     await lane.call('keyboard', { keystroke: 'down' });
-    await lane.call('keyboard', { keystroke: 'home' });
+    await lane.call('keyboard', { keystroke: 'up' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
       lane,
@@ -3689,6 +3698,10 @@ const INTERACTIONS = {
     );
 
     // The capacity rows resolve against the save and show their formula tree.
+    // A context change re-resolves off the UI thread, so the tabs return once
+    // the new sheet lands.
+    await waitForNode(lane, 'stats-capacity-tab', 'stats-all: the new context resolves');
+    await bringIntoView(lane, 'stats-capacity-tab', await wheelPoint(lane, 'stats-all-scroll'));
     await lane.call('click_element', { id: 'stats-capacity-tab' });
     await waitFor(
       lane,
@@ -3725,12 +3738,12 @@ const INTERACTIONS = {
 
     // The breakdown card shows the same descriptor the explorer card will, so
     // the two values below come from one resolution rather than two.
-    await bringIntoView(lane, 'stats-capacity-tab');
+    await bringIntoView(lane, 'stats-capacity-tab', await wheelPoint(lane, 'stats-all-scroll'));
     await lane.call('click_element', { id: 'stats-capacity-tab' });
 
     // Search reaches the saved inputs behind the terms: the eight capacity
     // formulas read the vault row and nothing else does.
-    await bringIntoView(lane, 'stats-explorer-search');
+    await bringIntoView(lane, 'stats-explorer-search', await wheelPoint(lane, 'stats-all-scroll'));
     await lane.call('click_element', { id: 'stats-explorer-search' });
     await lane.call('type_text', { text: 'vault' });
     await waitFor(
@@ -3743,7 +3756,7 @@ const INTERACTIONS = {
     );
 
     // The status filter keeps the formulas this build computes.
-    await bringIntoView(lane, 'stats-explorer-status');
+    await bringIntoView(lane, 'stats-explorer-status', await wheelPoint(lane, 'stats-all-scroll'));
     await lane.call('keyboard', { keystroke: 'secondary-a' });
     await lane.call('keyboard', { keystroke: 'backspace' });
     await lane.call('focus_element', { id: 'stats-explorer-status' });
@@ -3773,7 +3786,7 @@ const INTERACTIONS = {
         has(nodes, 'stats-formula-carry-capacity-mining'),
       'stats-all: the category filter keeps one category',
     );
-    await bringIntoView(lane, 'stats-formula-carry-capacity-mining');
+    await bringIntoView(lane, 'stats-formula-carry-capacity-mining', await wheelPoint(lane, 'stats-all-scroll'));
     await lane.call('click_element', { id: 'stats-formula-carry-capacity-mining' });
     await waitFor(
       lane,
@@ -3788,7 +3801,7 @@ const INTERACTIONS = {
 
     // The game-input sandbox starts on the saved values, with nothing to list
     // as changed and nothing to reset.
-    await bringIntoView(lane, 'stats-input-status');
+    await bringIntoView(lane, 'stats-input-status', await wheelPoint(lane, 'stats-all-scroll'));
     await waitFor(
       lane,
       (nodes) =>
@@ -3799,8 +3812,10 @@ const INTERACTIONS = {
 
     // The gem-shop capacity input doubles as the ledger's first edit: one
     // purchase takes the factor to x1.25, so every capacity row moves.
-    await bringIntoView(lane, 'stats-input-gem-items-58');
-    await lane.call('click_element', { id: 'stats-input-gem-items-58-up' });
+    // A press on the kit number field focuses it; Up steps it by one.
+    await bringIntoView(lane, 'stats-input-gem-items-58', await wheelPoint(lane, 'stats-all-scroll'));
+    await lane.call('click_element', { id: 'stats-input-gem-items-58' });
+    await lane.call('keyboard', { keystroke: 'up' });
     await waitFor(
       lane,
       (nodes) =>
@@ -3821,7 +3836,7 @@ const INTERACTIONS = {
     if (!marked.includes('Saved: 35,000')) {
       throw new Error(`stats-all: the descriptor row keeps the saved value as ${marked}`);
     }
-    await bringIntoView(lane, 'stats-descriptor-saved');
+    await bringIntoView(lane, 'stats-descriptor-saved', await wheelPoint(lane, 'stats-all-scroll'));
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'stats-descriptor-saved') ?? '').includes('Saved: 35,000'),
@@ -3829,7 +3844,7 @@ const INTERACTIONS = {
     );
 
     // An affected formula links back to its descriptor, tab included.
-    await bringIntoView(lane, 'stats-affected-carry-capacity-mining');
+    await bringIntoView(lane, 'stats-affected-carry-capacity-mining', await wheelPoint(lane, 'stats-all-scroll'));
     await lane.call('click_element', { id: 'stats-affected-carry-capacity-mining' });
     await waitFor(
       lane,
@@ -3841,7 +3856,7 @@ const INTERACTIONS = {
 
     // Resetting one input restores its saved value, and resetting all of them
     // leaves the saved save exactly as it was.
-    await bringIntoView(lane, 'stats-input-reset-gem-items-58');
+    await bringIntoView(lane, 'stats-input-reset-gem-items-58', await wheelPoint(lane, 'stats-all-scroll'));
     await lane.call('click_element', { id: 'stats-input-reset-gem-items-58' });
     await waitFor(
       lane,
@@ -3850,7 +3865,9 @@ const INTERACTIONS = {
         (labelOf(nodes, 'stats-descriptor-summary') ?? '').includes('35,000'),
       'stats-all: resetting an input restores the saved value',
     );
-    await lane.call('click_element', { id: 'stats-input-gem-items-58-up' });
+    await bringIntoView(lane, 'stats-input-gem-items-58', await wheelPoint(lane, 'stats-all-scroll'));
+    await lane.call('click_element', { id: 'stats-input-gem-items-58' });
+    await lane.call('keyboard', { keystroke: 'up' });
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'stats-affected-count') ?? '') === 'Affected formulas (8)',
@@ -4028,7 +4045,9 @@ const INTERACTIONS = {
     }
 
     // Character two follows its own target, which the monster table lacks.
+    // The first Down opens the kit select, the second walks to the next row.
     await lane.call('focus_element', { id: 'coin-character' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
