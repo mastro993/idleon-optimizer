@@ -183,14 +183,14 @@ fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// A small speed or toggle button, primary while it is the current pick.
+/// A small speed or toggle button, primary while it is the current pick and
+/// the bordered kit default otherwise: the secondary fill is too close to the
+/// card for an unpicked option to read as a button.
 fn pick_button(id: impl Into<gpui::ElementId>, label: String, picked: bool) -> Button {
-    let button = Button::new(id).label(label).small();
-    if picked {
-        button.primary()
-    } else {
-        button.secondary()
-    }
+    Button::new(id)
+        .label(label)
+        .small()
+        .when(picked, |button| button.primary())
 }
 
 fn controls(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {

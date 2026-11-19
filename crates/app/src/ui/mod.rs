@@ -10,6 +10,7 @@ pub(crate) mod import;
 pub(crate) mod layout;
 pub(crate) mod mark;
 pub(crate) mod section;
+pub(crate) mod segmented;
 pub(crate) mod shell;
 pub(crate) mod sidebar;
 pub(crate) mod theme;
