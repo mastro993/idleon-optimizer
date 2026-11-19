@@ -576,7 +576,10 @@ the marble planner and marble optimizer, and the simulated run. `idleon_fountain
 the cavern rows and names every bonus source the save does not carry. The simulation
 has no randomness or wall clock, so the same cavern and limit replay the same timeline, and both
 optimizers and the run go through the shared task runner, whose cancel keeps the previous result
-and leaves the section's controls untouched.
+and leaves the section's controls untouched. The section draws with GPUI Kit: each tab's rankings and
+tables are read from the cavern when the save or a selection changes, and a stored plan or run
+becomes table rows once, so the optimizer's steps and the whole simulated timeline scroll in
+virtualized tables.
 Details: [`docs/sections/fountain.md`](sections/fountain.md).
 
 The Jar Calculator implements JR-01 to JR-04: the overview and its rupie balances, the shared
@@ -806,7 +809,9 @@ ranked by the gain one more point buys, and the EXP rate breakdown in the shared
 figure comes from the imported save, through `CookMaster`, `Meals[0][73]`, `Ribbon[28..]` and the
 external multipliers (grid node 190, superbit 68, companion 87, menagerie 21, the Cook
 Maxxing fountain upgrade, the Canteen Read vial, arcade 69 and salt lick 10). The daily distribution
-(CK-02) and the yellow point allocator (CK-03) are built on the same crate. Details:
+(CK-02) and the yellow point allocator (CK-03) are built on the same crate. The section draws with
+GPUI Kit: its budgets are number fields that take typed values, and the ranking, distribution and
+allocation are planned when the save or an input changes, not on every frame. Details:
 [`docs/sections/cooking-mastery.md`](sections/cooking-mastery.md).
 
 The Ladle Optimizer implements LD-01 to LD-03: the per-character ladle rates with the claim plan
@@ -909,7 +914,8 @@ God Rank: the tier's success chance, the paid cost and the expected spend for on
 with a caption that turns the Y4 free chance and the planning confidence into the attempts and
 worst-case spend the plan reserves. The current-levels table adds each upgrade's unlock status, and
 both cards name the save fields they read as zero (Y4, DivCostAfter3, and the Coral Kid and
-Singularity level pages) instead of hiding the gap. Details:
+Singularity level pages) instead of hiding the gap. The section draws with GPUI Kit; a stored plan's
+actions are built into a virtualized table once, when the run lands. Details:
 [`docs/sections/coral-god-rank.md`](sections/coral-god-rank.md).
 
 ## 10. Verification

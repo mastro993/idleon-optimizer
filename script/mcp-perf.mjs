@@ -64,6 +64,7 @@ const SCROLL_TARGET = {
   'royal-guardian': 'royal-pane',
   spelunking: 'spelunking-pane',
   sneaking: 'sneaking-pane',
+  fountain: 'fountain-pane',
 };
 
 /// Cards the pointer crosses on Home.
