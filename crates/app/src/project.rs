@@ -882,7 +882,7 @@ pub(crate) fn assign(
                     config.character + 1
                 ));
             }
-            state.statue.set_plan(config.targets, config.rates, cx);
+            state.statue.set_plan(config.targets, config.rates);
             if config.breakdown_statue < idleon_statue::count() {
                 state.statue.breakdown_statue = config.breakdown_statue;
             }

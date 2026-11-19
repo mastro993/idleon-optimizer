@@ -1245,7 +1245,9 @@ const INTERACTIONS = {
     // the steps toward the next Armory shelf.
     await lane.call('click_element', { id: 'royal-tab-unit-exp' });
     await waitForNode(lane, 'royal-unit-exp', 'royal-guardian: the unit EXP pane renders');
-    await lane.call('click_element', { id: 'royal-unit-exp-target-command-more' });
+    // The kit number field steps with Up; its own buttons carry no unique id.
+    await lane.call('click_element', { id: 'royal-unit-exp-target-command' });
+    await lane.call('keyboard', { keystroke: 'up' });
     await bringIntoView(lane, 'royal-unit-exp-run');
     await lane.call('click_element', { id: 'royal-unit-exp-run' });
     await waitForNode(

@@ -7,31 +7,36 @@
 //! breakdown behind one statue's row.
 
 mod actions;
+mod table;
 
 use crate::state::AppState;
 use crate::ui::layout;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::feedback::{Banner, EmptyState};
-use ely_gpui_component::forms::{Choice, Input, InputEvent, SearchInput, Select, TextInput};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::motion::ProgressBar;
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, App, Context, Entity, FontWeight, IntoElement, ParentElement, Role, SharedString,
-    Styled, Subscription, Window, div, px,
+    AnyElement, App, Context, Entity, Focusable as _, IntoElement, ParentElement, Role, Styled,
+    Subscription, Window, div, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::empty::{Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle};
+use gpui_kit::component::input::{Input, InputEvent, InputState};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::table::{DataTable, TableState};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Icon, Sizable as _, h_flex, v_flex};
 use idleon_statue::{
     self as statue, Estimate, Leveling, NextLevel, Plan, Progress, RateError, StatueInfo,
     StatueSave, TargetCost, Unavailable,
 };
 use idleon_ui::format;
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, ChoiceSelect, KpiStrip, PANEL_GAP, Statistic, TEXT_CAPTION,
+    Tone, number_state, number_value, search_input,
+};
 use std::cmp::Ordering;
+use std::rc::Rc;
 
 /// How the table is ordered when it is not in game order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -48,14 +53,6 @@ pub(crate) enum Sort {
 impl Sort {
     const ALL: [Sort; 3] = [Sort::Game, Sort::Level, Sort::Remaining];
 
-    fn id(self) -> &'static str {
-        match self {
-            Sort::Game => "game",
-            Sort::Level => "level",
-            Sort::Remaining => "remaining",
-        }
-    }
-
     fn label(self) -> &'static str {
         match self {
             Sort::Game => "Game order",
@@ -63,25 +60,37 @@ impl Sort {
             Sort::Remaining => "Least EXP to next level",
         }
     }
-
-    fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|sort| sort.id() == id)
-    }
 }
 
-/// The deposit estimate's id, label and id lookup, matching the selector's two
-/// options.
-fn estimate_id(estimate: Estimate) -> &'static str {
-    match estimate {
-        Estimate::Guaranteed => "guaranteed",
-        Estimate::Average => "average",
-    }
+/// The inputs the table's rows are computed from.
+#[derive(Clone, PartialEq)]
+struct RowsKey {
+    generation: u64,
+    character: usize,
+    estimate: Estimate,
+    plan: Plan,
 }
 
-fn estimate_from_id(id: &str) -> Option<Estimate> {
-    Estimate::ALL
-        .into_iter()
-        .find(|estimate| estimate_id(*estimate) == id)
+/// The inputs the farming breakdown is built from.
+#[derive(Clone, PartialEq)]
+struct BreakdownKey {
+    generation: u64,
+    character: usize,
+    statue: usize,
+    target: Option<u32>,
+    estimate: Estimate,
+    rate: String,
+}
+
+/// The rows a frame draws, built when what they read changes.
+struct Rows {
+    key: RowsKey,
+    /// Every statue, in game order.
+    all: Rc<[Row]>,
+    /// The search and sort the shown order was built for.
+    view: (String, Sort),
+    /// Indices into `all`: the statues the search keeps, in the sort's order.
+    shown: Rc<[usize]>,
 }
 
 /// The section's own state: the imported statue rows, the account multipliers,
@@ -96,39 +105,75 @@ pub(crate) struct State {
     /// The statue the farming breakdown describes.
     pub(crate) breakdown_statue: usize,
     pub(crate) breakdown: Entity<FormulaTree>,
-    pub(crate) search: Entity<TextInput>,
-    /// One raw statues/hour field per statue, mirroring [`Plan::rates`].
-    pub(crate) rate_inputs: Vec<Entity<TextInput>>,
+    pub(crate) search: Entity<InputState>,
     /// The Set all targets entry, read when its button is pressed.
-    pub(crate) batch_input: Entity<TextInput>,
+    pub(crate) batch_text: String,
     /// Why the last batch entry was rejected, or `None` when it applied.
     pub(crate) batch_error: Option<String>,
     /// What the last batch action did, shown under its buttons.
     pub(crate) batch_status: Option<String>,
-    _rate_subscriptions: Vec<Subscription>,
+    /// Bumped by every import, so the cached rows know the save changed.
+    generation: u64,
+    rows: Option<Rows>,
+    breakdown_key: Option<BreakdownKey>,
+    character_select: ChoiceSelect<usize>,
+    estimate_select: ChoiceSelect<Estimate>,
+    sort_select: ChoiceSelect<Sort>,
+    breakdown_select: ChoiceSelect<usize>,
+    batch_input: Entity<InputState>,
+    /// The statue rows, with one target and one rate field per statue.
+    table: Entity<TableState<table::Rows>>,
+    _subscriptions: Vec<Subscription>,
 }
 
 impl State {
     pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let search = crate::ui::text_input("Name or effect", "Find a statue", window, cx);
-        let batch_input = crate::ui::text_input("Level", "Set all targets", window, cx);
+        let search = crate::ui::input_state("Name or effect", window, cx);
+        let batch_input = crate::ui::input_state("Level", window, cx);
         let breakdown = crate::ui::formula_tree("statue-breakdown", window, cx);
-        let rate_inputs: Vec<Entity<TextInput>> = (0..statue::count())
-            .map(|_| crate::ui::text_input("e.g. 1M", "Raw statues per hour", window, cx))
+        let target_inputs: Vec<Entity<InputState>> = (0..statue::count())
+            .map(|_| number_state(0.0, 1_000_000.0, 1.0, window, cx))
             .collect();
-        let rate_subscriptions = rate_inputs
-            .iter()
-            .enumerate()
-            .map(|(index, input)| {
-                cx.subscribe(input, move |state, input, event: &InputEvent, cx| {
-                    if *event == InputEvent::Changed {
-                        let text = input.read(cx).text().trim().to_string();
-                        state.statue.plan.set_rate(index, text);
-                        cx.notify();
-                    }
-                })
-            })
+        let rate_inputs: Vec<Entity<InputState>> = (0..statue::count())
+            .map(|_| crate::ui::input_state("e.g. 1M", window, cx))
             .collect();
+        let character_select = ChoiceSelect::new(Vec::new(), None, window, cx);
+        let estimate_select = ChoiceSelect::new(estimate_choices(), None, window, cx);
+        let sort_select = ChoiceSelect::new(sort_choices(), None, window, cx);
+        let breakdown_select = ChoiceSelect::new(breakdown_choices(), None, window, cx);
+
+        // Edits flow control -> section value, through the section's setters.
+        let mut subscriptions = vec![
+            pick(cx, &character_select, AppState::set_statue_character),
+            pick(cx, &estimate_select, AppState::set_statue_estimate),
+            pick(cx, &sort_select, AppState::set_statue_sort),
+            pick(cx, &breakdown_select, AppState::set_statue_breakdown),
+            cx.subscribe(&batch_input, |state, input, event: &InputEvent, cx| {
+                if matches!(event, InputEvent::Change) {
+                    state.statue.batch_text = input.read(cx).value().to_string();
+                    cx.notify();
+                }
+            }),
+        ];
+        for (index, input) in target_inputs.iter().enumerate() {
+            subscriptions.push(cx.subscribe(input, move |state, input, event, cx| {
+                if matches!(event, InputEvent::Change)
+                    && let Some(target) = number_value(input.read(cx))
+                    && target >= 0.0
+                {
+                    state.set_statue_target(index, target.round() as u32, cx);
+                }
+            }));
+        }
+        for (index, input) in rate_inputs.iter().enumerate() {
+            subscriptions.push(cx.subscribe(input, move |state, input, event, cx| {
+                if matches!(event, InputEvent::Change) {
+                    let text = input.read(cx).value().trim().to_string();
+                    state.statue.plan.set_rate(index, text);
+                    cx.notify();
+                }
+            }));
+        }
         Self {
             save: StatueSave::default(),
             character: 0,
@@ -138,18 +183,27 @@ impl State {
             breakdown_statue: 0,
             breakdown,
             search,
-            rate_inputs,
-            batch_input,
+            batch_text: String::new(),
             batch_error: None,
             batch_status: None,
-            _rate_subscriptions: rate_subscriptions,
+            generation: 0,
+            rows: None,
+            breakdown_key: None,
+            character_select,
+            estimate_select,
+            sort_select,
+            breakdown_select,
+            batch_input,
+            table: table::state(table::Rows::new(target_inputs, rate_inputs), window, cx),
+            _subscriptions: subscriptions,
         }
     }
 
     /// Replace the saved rows after an import, keeping the selected character
     /// when the new save still carries it and clearing the plan inputs.
-    pub(crate) fn load(&mut self, save: StatueSave, cx: &mut Context<AppState>) {
+    pub(crate) fn load(&mut self, save: StatueSave) {
         self.save = save;
+        self.generation = self.generation.wrapping_add(1);
         if !self.save.has_character(self.character) {
             self.character = self.save.first_character().unwrap_or(0);
         }
@@ -157,43 +211,28 @@ impl State {
         {
             self.breakdown_statue = self.save.first_character().unwrap_or(0);
         }
-        self.clear_inputs(cx);
+        self.clear_inputs();
     }
 
     /// Change the table's character and clear its plan inputs.
-    pub(crate) fn select_character(&mut self, character: usize, cx: &mut Context<AppState>) {
+    pub(crate) fn select_character(&mut self, character: usize) {
         self.character = character;
-        self.clear_inputs(cx);
+        self.clear_inputs();
     }
 
-    fn clear_inputs(&mut self, cx: &mut Context<AppState>) {
+    fn clear_inputs(&mut self) {
         self.plan.clear();
         self.batch_error = None;
         self.batch_status = None;
-        self.batch_input
-            .update(cx, |input, cx| input.set_text(String::new(), cx));
-        self.sync_rates(cx);
+        self.batch_text.clear();
     }
 
     /// Replace the plan inputs from a project config, keeping one entry per
-    /// statue and syncing the fields on screen.
-    pub(crate) fn set_plan(
-        &mut self,
-        targets: Vec<Option<u32>>,
-        rates: Vec<String>,
-        cx: &mut Context<AppState>,
-    ) {
+    /// statue. The fields on screen follow on the next frame.
+    pub(crate) fn set_plan(&mut self, targets: Vec<Option<u32>>, rates: Vec<String>) {
         self.plan.reset(targets, rates);
         self.batch_error = None;
         self.batch_status = None;
-        self.sync_rates(cx);
-    }
-
-    fn sync_rates(&mut self, cx: &mut Context<AppState>) {
-        for (index, input) in self.rate_inputs.iter().enumerate() {
-            let text = self.plan.rate(index).to_string();
-            input.update(cx, |input, cx| input.set_text(text, cx));
-        }
     }
 
     /// The target level for a statue: the entered target, else the saved level
@@ -226,8 +265,136 @@ impl State {
     }
 
     pub(crate) fn query(&self, cx: &App) -> String {
-        self.search.read(cx).text().to_string()
+        self.search.read(cx).value().to_string()
     }
+
+    /// Bring the cached rows, the table and the breakdown tree in line with
+    /// the save, the plan, the search and the sort. Each rebuilds only when
+    /// what it reads changed, so most frames make a few comparisons.
+    fn sync(&mut self, save_loaded: bool, cx: &mut Context<AppState>) {
+        let key = RowsKey {
+            generation: self.generation,
+            character: self.character,
+            estimate: self.estimate,
+            plan: self.plan.clone(),
+        };
+        let view = (self.query(cx), self.sort);
+        let all = match self.rows.take() {
+            Some(rows) if rows.key == key => {
+                if rows.view == view {
+                    self.rows = Some(rows);
+                    None
+                } else {
+                    Some(rows.all)
+                }
+            }
+            _ => Some(build_rows(self).into()),
+        };
+        if let Some(all) = all {
+            let mut shown: Vec<&Row> = all
+                .iter()
+                .filter(|row| matches(row.info, &view.0))
+                .collect();
+            sort_rows(&mut shown, view.1);
+            let shown = shown.iter().map(|row| row.index).collect();
+            self.rows = Some(Rows {
+                key,
+                all,
+                view,
+                shown,
+            });
+        }
+
+        let rows = self.rows();
+        let (all, shown) = (rows.all.clone(), rows.shown.clone());
+        let (estimate, flair_available) = (self.estimate, self.save.leveling().flair_available);
+        self.table.update(cx, |table, cx| {
+            let rows = table.delegate_mut();
+            if !Rc::ptr_eq(&rows.all, &all)
+                || !Rc::ptr_eq(&rows.shown, &shown)
+                || rows.estimate != estimate
+                || rows.flair_available != flair_available
+                || rows.no_save == save_loaded
+            {
+                rows.all = all;
+                rows.shown = shown;
+                rows.estimate = estimate;
+                rows.flair_available = flair_available;
+                rows.no_save = !save_loaded;
+                cx.notify();
+            }
+        });
+
+        let statue = self.breakdown_statue();
+        let key = BreakdownKey {
+            generation: self.generation,
+            character: self.character,
+            statue,
+            target: self.target(statue),
+            estimate: self.estimate,
+            rate: self.rate_text(statue),
+        };
+        if self.breakdown_key.as_ref() != Some(&key) {
+            let tree = statue::breakdown_tree(
+                &self.save,
+                self.character,
+                statue,
+                key.target,
+                self.estimate,
+                self.rate(statue).unwrap_or(0.0),
+            );
+            self.breakdown
+                .update(cx, |breakdown, cx| breakdown.set_root(tree, cx));
+            self.breakdown_key = Some(key);
+        }
+    }
+}
+
+/// A select whose pick calls `set`.
+fn pick<V: Clone + PartialEq + 'static>(
+    cx: &mut Context<AppState>,
+    select: &ChoiceSelect<V>,
+    set: fn(&mut AppState, V, &mut Context<AppState>),
+) -> Subscription {
+    cx.subscribe(
+        select.state(),
+        move |state, _, event: &SelectEvent<Vec<Choice<V>>>, cx| {
+            let SelectEvent::Confirm(value) = event;
+            if let Some(value) = value.clone() {
+                set(state, value, cx);
+            }
+        },
+    )
+}
+
+fn estimate_choices() -> Vec<Choice<Estimate>> {
+    Estimate::ALL
+        .into_iter()
+        .map(|estimate| Choice::new(estimate, estimate.label()))
+        .collect()
+}
+
+fn sort_choices() -> Vec<Choice<Sort>> {
+    Sort::ALL
+        .into_iter()
+        .map(|sort| Choice::new(sort, sort.label()))
+        .collect()
+}
+
+fn breakdown_choices() -> Vec<Choice<usize>> {
+    (0..statue::count())
+        .filter_map(|index| Some(Choice::new(index, statue::info(index)?.name.clone())))
+        .collect()
+}
+
+/// Show `text` in `field` unless it already holds it or is being typed in.
+/// Writing emits no `InputEvent::Change`, so the section value stays put.
+fn show_text(field: &Entity<InputState>, text: &str, window: &mut Window, cx: &mut App) {
+    if field.focus_handle(cx).is_focused(window) || field.read(cx).value() == text {
+        return;
+    }
+    let text = text.to_owned();
+    field.update(cx, |input, cx| input.set_value(text, window, cx));
 }
 
 /// One table row: static data plus what this save and plan say about it.
@@ -277,7 +444,7 @@ impl Row {
     }
 }
 
-fn rows(state: &State) -> Vec<Row> {
+fn build_rows(state: &State) -> Vec<Row> {
     let leveling = state.save.leveling();
     (0..statue::count())
         .filter_map(|index| {
@@ -318,11 +485,12 @@ fn matches(info: &StatueInfo, query: &str) -> bool {
         || info.effect.to_lowercase().contains(&query)
 }
 
-fn sort_rows(rows: &mut [Row], sort: Sort) {
+fn sort_rows<R: std::borrow::Borrow<Row>>(rows: &mut [R], sort: Sort) {
     match sort {
         Sort::Game => {}
-        Sort::Level => rows.sort_by_key(|row| (row.level_key(), row.index)),
+        Sort::Level => rows.sort_by_key(|row| (row.borrow().level_key(), row.borrow().index)),
         Sort::Remaining => rows.sort_by(|a, b| {
+            let (a, b) = (a.borrow(), b.borrow());
             a.remaining_key()
                 .partial_cmp(&b.remaining_key())
                 .unwrap_or(Ordering::Equal)
@@ -337,35 +505,16 @@ pub(crate) fn view(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let query = state.statue.query(cx);
+    let save_loaded = state.save_loaded;
+    state.statue.sync(save_loaded, cx);
     let save_empty = state.statue.save.is_empty();
-    let all_rows = rows(&state.statue);
-    let summary_cards = summary(&state.statue, &all_rows, cx);
-    let mut rows = all_rows.clone();
-    let total = all_rows.len();
-    rows.retain(|row| matches(row.info, &query));
-    sort_rows(&mut rows, state.statue.sort);
     let table_height = layout::table_height(f32::from(window.viewport_size().height));
     let flair_missing = state.save_loaded && !state.statue.save.leveling().flair_available;
-    let breakdown_statue = state.statue.breakdown_statue();
-    let breakdown_tree = statue::breakdown_tree(
-        &state.statue.save,
-        state.statue.character,
-        breakdown_statue,
-        state.statue.target(breakdown_statue),
-        state.statue.estimate,
-        state.statue.rate(breakdown_statue).unwrap_or(0.0),
-    );
-    state
-        .statue
-        .breakdown
-        .update(cx, |tree, cx| tree.set_root(breakdown_tree, cx));
+    let state = &*state;
 
-    let page = div()
+    let page = v_flex()
         .id("statue-pane")
-        .flex()
-        .flex_col()
-        .gap_3()
+        .gap(PANEL_GAP)
         .p_3()
         .when(!state.save_loaded, |page| {
             page.child(div().id("statue-no-save").child(Caption::new(
@@ -373,40 +522,47 @@ pub(crate) fn view(
             )))
         })
         .when(state.save_loaded && save_empty, |page| {
+            let entity = cx.entity();
             page.child(
-                Banner::new(
-                    "statue-no-rows",
-                    Severity::Warning,
-                    "This save carries no StatueLevels_<n> rows, so no statue level is available.",
-                )
-                .action("Import another save", {
-                    let entity = cx.entity();
-                    move |window, cx| {
-                        entity.update(cx, |state, cx| state.open_import(window, cx));
-                    }
-                }),
+                h_flex()
+                    .gap_2()
+                    .child(
+                        Alert::new(
+                            "statue-no-rows",
+                            "This save carries no StatueLevels_<n> rows, so no statue level is \
+                             available.",
+                        )
+                        .with_variant(Tone::Warning.into())
+                        .banner()
+                        .flex_1(),
+                    )
+                    .child(
+                        Button::new("statue-import")
+                            .label("Import another save")
+                            .small()
+                            .on_click(move |_event, window, cx| {
+                                entity.update(cx, |state, cx| state.open_import(window, cx));
+                            }),
+                    ),
             )
         })
         .when(flair_missing, |page| {
-            page.child(Banner::new(
-                "statue-no-flair",
-                Severity::Warning,
-                "Royal Guardian data is missing: saved Flair levels are unknown, so estimates assume no Flair bonus.",
-            ))
+            page.child(
+                Alert::new(
+                    "statue-no-flair",
+                    "Royal Guardian data is missing: saved Flair levels are unknown, so estimates \
+                     assume no Flair bonus.",
+                )
+                .with_variant(Tone::Warning.into())
+                .banner(),
+            )
         })
-        .child(toolbar(state, cx))
+        .child(toolbar(state, window, cx))
         .when(state.save_loaded && !save_empty, |page| {
-            page.child(summary_cards)
+            page.child(summary(&state.statue))
         })
-        .child(statues_card(
-            state,
-            cx,
-            &all_rows,
-            &rows,
-            (rows.len(), total),
-            table_height,
-        ))
-        .child(farming_card(state, breakdown_statue, cx));
+        .child(statues_card(state, table_height, window, cx))
+        .child(farming_card(state, window, cx));
 
     div()
         .id("statue-section")
@@ -415,112 +571,106 @@ pub(crate) fn view(
         .size_full()
         .min_h_0()
         .child(
-            ScrollArea::new("statue-scroll")
-                .vertical()
+            div()
                 .flex_1()
                 .min_h_0()
-                .child(page),
+                .child(page)
+                .overflow_y_scrollbar()
+                .id("statue-scroll"),
         )
         .into_any_element()
 }
 
+impl State {
+    fn rows(&self) -> &Rows {
+        self.rows.as_ref().expect("the view syncs the rows first")
+    }
+}
+
 /// Character, estimate, search and sort controls.
-fn toolbar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let choices: Vec<Choice> = state
-        .statue
+fn toolbar(state: &AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let statue = &state.statue;
+    let characters: Vec<Choice<usize>> = statue
         .save
         .character_indices()
-        .map(|index| Choice::new(index.to_string(), state.statue.save.name(index)))
+        .map(|index| Choice::new(index, statue.save.name(index)))
         .collect();
-    let has_characters = !choices.is_empty();
-    let entity = cx.entity();
-    let character = entity.clone();
-    let estimate = entity.clone();
-    let sort = entity.clone();
-    let search_focus = state.statue.search.read(cx).focus().clone();
+    let has_characters = !characters.is_empty();
+    statue
+        .character_select
+        .show(characters, Some(&statue.character), window, cx);
+    statue
+        .estimate_select
+        .show(estimate_choices(), Some(&statue.estimate), window, cx);
+    statue
+        .sort_select
+        .show(sort_choices(), Some(&statue.sort), window, cx);
+    let search = statue.search.clone();
 
-    div()
+    h_flex()
         .id("statue-toolbar")
-        .flex()
         .flex_wrap()
         .items_end()
         .gap_3()
         .child(
-            field("Character", muted).child(
-                Select::new("statue-character", choices)
-                    .label("Character")
+            field("Character").child(
+                Select::new(statue.character_select.state())
+                    .id("statue-character")
+                    .accessibility_label("Character")
                     .placeholder("No characters")
-                    .selected(state.statue.character.to_string())
                     .disabled(!has_characters)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            character.update(cx, |state, cx| state.set_statue_character(index, cx));
-                        }
-                    }),
+                    .small()
+                    .w(px(200.0)),
             ),
         )
         .child(
-            field("Deposit estimate", muted).child(
-                Select::new(
-                    "statue-estimate",
-                    Estimate::ALL
-                        .map(|estimate| Choice::new(estimate_id(estimate), estimate.label())),
-                )
-                .label("Deposit estimate")
-                .selected(estimate_id(state.statue.estimate))
-                .on_change(move |value, _window, cx| {
-                    if let Some(next) = estimate_from_id(value.as_ref()) {
-                        estimate.update(cx, |state, cx| state.set_statue_estimate(next, cx));
-                    }
-                }),
+            field("Deposit estimate").child(
+                Select::new(statue.estimate_select.state())
+                    .id("statue-estimate")
+                    .accessibility_label("Deposit estimate")
+                    .small()
+                    .w(px(240.0)),
             ),
         )
         .child(
-            field("Find a statue", muted).child(
+            field("Find a statue").child(
                 div()
                     .id("statue-search")
                     .role(Role::Search)
                     .aria_label("Find a statue")
                     .w(px(280.0))
-                    .on_click(move |_event, window, cx| window.focus(&search_focus, cx))
-                    .child(SearchInput::new(
-                        "statue-search-field",
-                        &state.statue.search,
-                    )),
+                    .on_click(move |_event, window, cx| {
+                        search.update(cx, |field, cx| field.focus(window, cx));
+                    })
+                    .child(
+                        search_input(&statue.search)
+                            .id("statue-search-field")
+                            .aria_label("Find a statue")
+                            .small(),
+                    ),
             ),
         )
         .child(
-            field("Sort", muted).child(
-                Select::new(
-                    "statue-sort",
-                    Sort::ALL.map(|sort| Choice::new(sort.id(), sort.label())),
-                )
-                .label("Sort statues")
-                .selected(state.statue.sort.id())
-                .on_change(move |value, _window, cx| {
-                    if let Some(next) = Sort::from_id(value.as_ref()) {
-                        sort.update(cx, |state, cx| state.set_statue_sort(next, cx));
-                    }
-                }),
+            field("Sort").child(
+                Select::new(statue.sort_select.state())
+                    .id("statue-sort")
+                    .accessibility_label("Sort statues")
+                    .small()
+                    .w(px(220.0)),
             ),
         )
         .into_any_element()
 }
 
-fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(Caption::new(label).text_color(muted))
+fn field(label: &'static str) -> gpui::Div {
+    v_flex().gap_1().child(Caption::new(label))
 }
 
-/// The four summary cards: statues needed, retention, the tier
-/// multiplier and the parallel completion time.
-fn summary(state: &State, rows: &[Row], cx: &mut Context<AppState>) -> AnyElement {
+/// The four summary figures: statues needed, retention, the tier multiplier
+/// and the parallel completion time.
+fn summary(state: &State) -> AnyElement {
     let leveling: &Leveling = state.save.leveling();
-    let muted = cx.theme().colors.fg_muted;
+    let rows = &state.rows().all;
     let missing = rows.iter().filter(|row| row.cost.is_err()).count();
     let needed: u64 = rows.iter().filter_map(|row| row.statues).sum();
     let unmeasured = rows
@@ -559,91 +709,68 @@ fn summary(state: &State, rows: &[Row], cx: &mut Context<AppState>) -> AnyElemen
             leveling.retention_pct,
             format::fmt_val(leveling.tier_multiplier)
         ))
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(text_kpi(
-            "kpi-statues-needed",
-            "Statues needed",
-            &format::fmt_val(needed as f64),
-            &needed_caption,
-            muted,
-        ))
-        .child(text_kpi(
-            "kpi-retention",
-            "EXP retention",
-            &format!("{:.1}%", leveling.retention_pct),
-            &format!(
-                "STARTUE {}% · retention capped at 50%",
-                format::fmt_val(leveling.bubble_pct)
-            ),
-            muted,
-        ))
-        .child(text_kpi(
-            "kpi-tier",
-            "Onyx / Zenith EXP",
-            &format!("{}x", format::fmt_val(leveling.tier_multiplier)),
-            &format!("{} Onyx+ and {} Zenith statues", leveling.onyx, leveling.zenith),
-            muted,
-        ))
-        .child(text_kpi(
-            "kpi-parallel",
-            "Parallel completion",
-            &parallel,
-            &if unmeasured > 0 {
-                format!("{unmeasured} target rates missing")
-            } else {
-                "All target rates maintained together".to_string()
-            },
-            muted,
-        ))
-        .into_any_element()
-}
-
-fn text_kpi(
-    id: &'static str,
-    label: &'static str,
-    value: &str,
-    caption: &str,
-    muted: gpui::Hsla,
-) -> AnyElement {
-    Card::new()
         .child(
-            div()
-                .id(id)
-                .role(Role::Label)
-                .aria_label(format!("{label} {value}"))
-                .flex()
-                .flex_col()
-                .gap_1()
-                .p_3()
-                .child(Caption::new(label).text_color(muted))
+            KpiStrip::new()
                 .child(
-                    div()
-                        .text_size(px(20.0))
-                        .font_weight(FontWeight::MEDIUM)
-                        .child(value.to_string()),
+                    Statistic::new(
+                        "kpi-statues-needed",
+                        "Statues needed",
+                        format::fmt_val(needed as f64),
+                    )
+                    .caption(needed_caption),
                 )
-                .child(Caption::new(caption.to_string()).text_color(muted)),
+                .child(
+                    Statistic::new(
+                        "kpi-retention",
+                        "EXP retention",
+                        format!("{:.1}%", leveling.retention_pct),
+                    )
+                    .caption(format!(
+                        "STARTUE {}% · retention capped at 50%",
+                        format::fmt_val(leveling.bubble_pct)
+                    )),
+                )
+                .child(
+                    Statistic::new(
+                        "kpi-tier",
+                        "Onyx / Zenith EXP",
+                        format!("{}x", format::fmt_val(leveling.tier_multiplier)),
+                    )
+                    .caption(format!(
+                        "{} Onyx+ and {} Zenith statues",
+                        leveling.onyx, leveling.zenith
+                    )),
+                )
+                .child(
+                    Statistic::new("kpi-parallel", "Parallel completion", parallel).caption(
+                        if unmeasured > 0 {
+                            format!("{unmeasured} target rates missing")
+                        } else {
+                            "All target rates maintained together".to_string()
+                        },
+                    ),
+                ),
         )
         .into_any_element()
 }
 
 fn statues_card(
-    state: &mut AppState,
-    cx: &mut Context<AppState>,
-    all: &[Row],
-    rows: &[Row],
-    (shown, total): (usize, usize),
+    state: &AppState,
     table_height: gpui::Pixels,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let character = state.statue.save.name(state.statue.character);
-    let save_empty = state.statue.save.is_empty();
+    let statue = &state.statue;
+    let (all, shown) = (statue.rows().all.clone(), statue.rows().shown.clone());
+    let total = all.len();
+    let theme = cx.theme();
+    let (muted, danger) = (theme.muted_foreground, theme.danger);
+    let character = statue.save.name(statue.character);
+    let save_empty = statue.save.is_empty();
     let missing = if save_empty {
         0
     } else {
-        state.statue.save.missing_rows(state.statue.character)
+        statue.save.missing_rows(statue.character)
     };
     let description = if save_empty {
         "No saved statue rows; import a save to fill the table.".to_string()
@@ -655,9 +782,6 @@ fn statues_card(
     } else {
         format!("{character} · all {total} statues available")
     };
-    let entity = cx.entity();
-    let estimate = state.statue.estimate;
-    let flair_available = state.statue.save.leveling().flair_available;
     let rate_error = all.iter().find_map(|row| row.rate.as_ref().err().copied());
     let rates_entered = all.iter().any(|row| !row.rate_text.is_empty());
     let rate_source = if rates_entered {
@@ -666,76 +790,57 @@ fn statues_card(
         format!("Rate source: none yet for {character}.")
     };
 
-    let mut table = Table::new([
-        "Statue / effect",
-        "Level / progress",
-        "Availability",
-        "Target",
-        "EXP per statue",
-        "Statues needed",
-        "Raw statues/hr",
-        "Time",
-    ]);
-    for row in rows {
-        let target = entity.clone();
-        table = table.row([
-            statue_cell(row),
-            level_cell(row),
-            availability_cell(row, !state.save_loaded),
-            target_cell(row, target),
-            exp_cell(row, estimate, flair_available),
-            needed_cell(row),
-            rate_cell(state, row),
-            time_cell(row),
-        ]);
-    }
-
-    let body = if rows.is_empty() {
-        EmptyState::new(
-            "statue-empty",
-            IconName::SearchX,
-            "No statues match your search.",
-        )
-        .body("Try a statue name or effect, such as POWER or MOVE SPEED.")
-        .into_any_element()
+    let body = if shown.is_empty() {
+        div()
+            .id("statue-empty")
+            .child(
+                Empty::new().header(
+                    EmptyHeader::new()
+                        .media(
+                            EmptyMedia::new().child(Icon::new(IconName::SearchX).text_color(muted)),
+                        )
+                        .title(EmptyTitle::new().child("No statues match your search."))
+                        .description(
+                            EmptyDescription::new()
+                                .child("Try a statue name or effect, such as POWER or MOVE SPEED."),
+                        ),
+                ),
+            )
+            .into_any_element()
     } else {
-        ScrollArea::new("statue-table-scroll")
-            .vertical()
+        div()
+            .id("statue-table-scroll")
             .h(table_height)
-            .child(div().min_w_0().child(table))
+            // A row holds a name over its effect and a level over its bar.
+            .child(DataTable::new(&statue.table).with_size(px(ROW_HEIGHT)))
             .into_any_element()
     };
 
     Card::new()
         .header(
-            CardHeader::new("Statues")
-                .description(description)
-                .action(
-                    div()
-                        .id("statue-count")
-                        .role(Role::Label)
-                        .aria_label(format!("{shown} of {total} statues shown"))
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(format!("{shown} / {total} shown")),
-                ),
+            CardHeader::new("Statues").description(description).action(
+                div()
+                    .id("statue-count")
+                    .role(Role::Label)
+                    .aria_label(format!("{} of {total} statues shown", shown.len()))
+                    .text_size(TEXT_CAPTION)
+                    .text_color(muted)
+                    .child(format!("{} / {total} shown", shown.len())),
+            ),
         )
         .child(
-            div()
-                .flex()
-                .flex_col()
+            v_flex()
                 .gap_2()
                 .min_h_0()
-                .p_3()
-                .child(batch_row(state, cx))
-                .child(batch_messages(state, cx))
+                .child(batch_row(state, window, cx))
+                .child(batch_messages(statue, cx))
                 .child(body)
                 .child(
                     div()
                         .id("statue-rate-source")
                         .role(Role::Label)
                         .aria_label(rate_source.clone())
-                        .text_size(px(11.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(rate_source),
                 )
@@ -745,8 +850,8 @@ fn statues_card(
                             .id("statue-rate-error")
                             .role(Role::Label)
                             .aria_label(error.message())
-                            .text_size(px(11.0))
-                            .text_color(cx.theme().colors.danger)
+                            .text_size(TEXT_CAPTION)
+                            .text_color(danger)
                             .child(error.message()),
                     )
                 })
@@ -754,7 +859,7 @@ fn statues_card(
                     div()
                         .id("statue-note")
                         .role(Role::Label)
-                        .text_size(px(11.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(
                             "Requirements are the full EXP bar for the saved level; remaining EXP uses the saved progress. \
@@ -767,22 +872,25 @@ fn statues_card(
         .into_any_element()
 }
 
+/// The height of a statue row: three lines of the level cell.
+const ROW_HEIGHT: f32 = 68.0;
+
 /// The batch controls: Set all targets, Next level for all, and the
 /// undo step the batch actions leave.
-fn batch_row(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let disabled = !state.save_loaded || state.statue.save.is_empty();
-    let input = state.statue.batch_input.clone();
-    let focus = input.read(cx).focus().clone();
+fn batch_row(state: &AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let statue = &state.statue;
+    let disabled = !state.save_loaded || statue.save.is_empty();
+    let input = statue.batch_input.clone();
+    show_text(&input, &statue.batch_text, window, cx);
+    let focus = input.clone();
     let entity = cx.entity();
     let apply = entity.clone();
     let next = entity.clone();
     let undo = entity.clone();
-    let undo_label = state.statue.plan.undo_label();
+    let undo_label = statue.plan.undo_label();
 
-    div()
+    h_flex()
         .id("statue-batch")
-        .flex()
         .flex_wrap()
         .items_end()
         .gap_2()
@@ -792,20 +900,24 @@ fn batch_row(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .role(Role::Label)
                 .aria_label("Set all targets")
                 .w(px(120.0))
-                .on_click(move |_event, window, cx| window.focus(&focus, cx))
-                .child(Input::new(&input).size(ControlSize::Sm)),
+                .on_click(move |_event, window, cx| {
+                    focus.update(cx, |field, cx| field.focus(window, cx));
+                })
+                .child(Input::new(&input).aria_label("Set all targets").small()),
         )
         .child(
-            Button::new("statue-apply-all", "Set targets")
-                .size(ControlSize::Sm)
+            Button::new("statue-apply-all")
+                .label("Set targets")
+                .small()
                 .disabled(disabled)
                 .on_click(move |_event, _window, cx| {
                     apply.update(cx, |state, cx| state.set_statue_targets_all(cx));
                 }),
         )
         .child(
-            Button::new("statue-next-level", "Next level for all")
-                .size(ControlSize::Sm)
+            Button::new("statue-next-level")
+                .label("Next level for all")
+                .small()
                 .disabled(disabled)
                 .on_click(move |_event, _window, cx| {
                     next.update(cx, |state, cx| state.set_statue_next_level(cx));
@@ -813,8 +925,9 @@ fn batch_row(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         )
         .when_some(undo_label, |row, label| {
             row.child(
-                Button::new("statue-undo-batch", format!("Undo {label}"))
-                    .size(ControlSize::Sm)
+                Button::new("statue-undo-batch")
+                    .label(format!("Undo {label}"))
+                    .small()
                     .on_click(move |_event, _window, cx| {
                         undo.update(cx, |state, cx| state.undo_statue_batch(cx));
                     }),
@@ -823,38 +936,35 @@ fn batch_row(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .child(Caption::new(
             "Set targets costs the level for every statue first; a level this save cannot plan changes nothing. \
              Rates are raw statues/hour, so K, M, B, T and scientific notation work.",
-        )
-        .text_color(muted))
+        ))
         .into_any_element()
 }
 
 /// What the last batch action did, and why one was rejected.
-fn batch_messages(state: &AppState, cx: &Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let danger = cx.theme().colors.danger;
-    div()
+fn batch_messages(state: &State, cx: &App) -> AnyElement {
+    let theme = cx.theme();
+    let (muted, danger) = (theme.muted_foreground, theme.danger);
+    v_flex()
         .id("statue-batch-messages")
-        .flex()
-        .flex_col()
         .gap_1()
-        .when_some(state.statue.batch_status.clone(), |column, status| {
+        .when_some(state.batch_status.clone(), |column, status| {
             column.child(
                 div()
                     .id("statue-batch-status")
                     .role(Role::Label)
                     .aria_label(status.clone())
-                    .text_size(px(11.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child(status),
             )
         })
-        .when_some(state.statue.batch_error.clone(), |column, error| {
+        .when_some(state.batch_error.clone(), |column, error| {
             column.child(
                 div()
                     .id("statue-batch-error")
                     .role(Role::Label)
                     .aria_label(error.clone())
-                    .text_size(px(11.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(danger)
                     .child(error),
             )
@@ -864,247 +974,36 @@ fn batch_messages(state: &AppState, cx: &Context<AppState>) -> AnyElement {
 
 /// The farming breakdown behind one statue's row: the deposit terms the
 /// detail block names, plus the statues, rate and time the table shows.
-fn farming_card(state: &AppState, selected: usize, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
-    let choices: Vec<Choice> = (0..statue::count())
-        .filter_map(|index| {
-            let info = statue::info(index)?;
-            Some(Choice::new(index.to_string(), info.name.clone()))
-        })
-        .collect();
+fn farming_card(state: &AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let statue = &state.statue;
+    statue.breakdown_select.show(
+        breakdown_choices(),
+        Some(&statue.breakdown_statue()),
+        window,
+        cx,
+    );
     Card::new()
         .header(
             CardHeader::new("Farming breakdown")
                 .description("Where one statue's deposit EXP and farm time come from")
                 .action(
-                    Select::new("statue-breakdown-statue", choices)
-                        .label("Break down statue")
-                        .size(ControlSize::Sm)
-                        .selected(selected.to_string())
-                        .on_change(move |value, _window, cx| {
-                            if let Ok(index) = value.parse::<usize>() {
-                                entity
-                                    .update(cx, |state, cx| state.set_statue_breakdown(index, cx));
-                            }
-                        }),
+                    Select::new(statue.breakdown_select.state())
+                        .id("statue-breakdown-statue")
+                        .accessibility_label("Break down statue")
+                        .small()
+                        .w(px(200.0)),
                 ),
         )
         .child(
-            div()
-                .id("statue-farming")
-                .flex()
-                .flex_col()
-                .gap_2()
-                .min_h_0()
-                .p_3()
-                .child(
-                    div()
-                        .id("statue-breakdown")
-                        .h(px(300.0))
-                        .min_h_0()
-                        .child(state.statue.breakdown.clone()),
-                ),
-        )
-        .into_any_element()
-}
-
-fn statue_cell(row: &Row) -> AnyElement {
-    div()
-        .id(SharedString::from(format!("statue-row-{}", row.index)))
-        .role(Role::Label)
-        .aria_label(format!("{} · {}", row.info.name, row.info.effect))
-        .flex()
-        .flex_col()
-        .gap_0p5()
-        .child(
-            div()
-                .text_size(px(13.0))
-                .font_weight(FontWeight::SEMIBOLD)
-                .child(row.info.name.clone()),
-        )
-        .child(Caption::new(row.info.effect.clone()))
-        .into_any_element()
-}
-
-fn level_cell(row: &Row) -> AnyElement {
-    let Some(progress) = row.progress else {
-        return unavailable_cell().into_any_element();
-    };
-    let Ok(next) = &row.next else {
-        return div()
-            .id(SharedString::from(format!("statue-level-{}", row.index)))
-            .role(Role::Label)
-            .aria_label(format!(
-                "Level {} · requirement unavailable",
-                progress.level
-            ))
-            .flex()
-            .flex_col()
-            .gap_0p5()
-            .child(
+            div().id("statue-farming").child(
                 div()
-                    .text_size(px(13.0))
-                    .font_weight(FontWeight::MEDIUM)
-                    .child(format!("Lv {}", progress.level)),
-            )
-            .child(Caption::new("Requirement unavailable"))
-            .into_any_element();
-    };
-    let required = next.required;
-    let share = if required > 0.0 {
-        (progress.exp / required).clamp(0.0, 1.0) as f32
-    } else {
-        0.0
-    };
-    div()
-        .id(SharedString::from(format!("statue-level-{}", row.index)))
-        .role(Role::Label)
-        .aria_label(format!(
-            "Level {} · {:.1}% · {} of {} EXP",
-            progress.level,
-            share * 100.0,
-            format::rate(progress.exp),
-            format::rate(required)
-        ))
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(
-            div()
-                .text_size(px(13.0))
-                .font_weight(FontWeight::MEDIUM)
-                .child(format!("Lv {}", progress.level)),
-        )
-        .child(
-            div()
-                .w(px(96.0))
-                .child(ProgressBar::new(("statue-progress", row.index), share)),
-        )
-        .child(Caption::new(format!(
-            "{:.1}% · {} / {}",
-            share * 100.0,
-            format::rate(progress.exp),
-            format::rate(required)
-        )))
-        .into_any_element()
-}
-
-fn target_cell(row: &Row, entity: Entity<AppState>) -> AnyElement {
-    let Some(target) = row.target else {
-        return unavailable_cell().into_any_element();
-    };
-    let index = row.index;
-    div()
-        .w(px(88.0))
-        .child(
-            ely_gpui_component::forms::NumberInput::new(
-                ("statue-target-field", row.index),
-                f64::from(target),
-            )
-            .label(format!("{} target level", row.info.name))
-            .range(0.0, 1_000_000.0)
-            .precision(0)
-            .size(ControlSize::Sm)
-            .on_change(move |value, _window, cx| {
-                if value.is_finite() && value >= 0.0 {
-                    let target = value.round() as u32;
-                    entity.update(cx, |state, cx| state.set_statue_target(index, target, cx));
-                }
-            }),
+                    .id("statue-breakdown")
+                    .h(px(300.0))
+                    .min_h_0()
+                    .child(statue.breakdown.clone()),
+            ),
         )
         .into_any_element()
-}
-
-fn exp_cell(row: &Row, estimate: Estimate, flair_available: bool) -> AnyElement {
-    let Ok(cost) = &row.cost else {
-        return unavailable_cell().into_any_element();
-    };
-    let deposit = estimate.deposit(cost);
-    let flair = if flair_available {
-        format!(
-            "Flair {} · {}x",
-            cost.flair_level,
-            format::fmt_val(cost.flair_multiplier)
-        )
-    } else {
-        "Flair unknown".to_string()
-    };
-    div()
-        .id(SharedString::from(format!("statue-exp-{}", row.index)))
-        .role(Role::Label)
-        .aria_label(format!(
-            "{} EXP per statue, {flair}",
-            format::fmt_val(deposit)
-        ))
-        .flex()
-        .flex_col()
-        .gap_0p5()
-        .child(div().text_size(px(13.0)).child(format::fmt_val(deposit)))
-        .child(Caption::new(flair))
-        .into_any_element()
-}
-
-fn needed_cell(row: &Row) -> AnyElement {
-    let Some(statues) = row.statues else {
-        return unavailable_cell().into_any_element();
-    };
-    div()
-        .id(SharedString::from(format!("statue-needed-{}", row.index)))
-        .role(Role::Label)
-        .aria_label(format!("{statues} statues needed"))
-        .child(format::fmt_val(statues as f64))
-        .into_any_element()
-}
-
-fn rate_cell(state: &AppState, row: &Row) -> AnyElement {
-    let Some(input) = state.statue.rate_inputs.get(row.index) else {
-        return unavailable_cell().into_any_element();
-    };
-    let invalid = row.rate.is_err();
-    let field = input.clone();
-    div()
-        .id(SharedString::from(format!("statue-rate-{}", row.index)))
-        .role(Role::Label)
-        .aria_label(format!("{} raw statues per hour", row.info.name))
-        .w(px(112.0))
-        .on_click(move |_event, window, cx| {
-            let focus = field.read(cx).focus().clone();
-            window.focus(&focus, cx);
-        })
-        .child(Input::new(input).size(ControlSize::Sm).invalid(invalid))
-        .into_any_element()
-}
-
-fn time_cell(row: &Row) -> AnyElement {
-    let label = if row.statues.is_none() || row.rate.is_err() {
-        "—".to_string()
-    } else {
-        format::statue_time(row.hours)
-    };
-    div()
-        .id(SharedString::from(format!("statue-time-{}", row.index)))
-        .role(Role::Label)
-        .aria_label(format!("Time to target: {label}"))
-        .child(label)
-        .into_any_element()
-}
-
-fn availability_cell(row: &Row, no_save: bool) -> AnyElement {
-    let (label, tone) = row.availability(no_save);
-    div()
-        .id(SharedString::from(format!(
-            "statue-availability-{}",
-            row.index
-        )))
-        .role(Role::Label)
-        .aria_label(label.clone())
-        .flex()
-        .child(Badge::new(label).tone(tone).dot())
-        .into_any_element()
-}
-
-fn unavailable_cell() -> impl IntoElement {
-    div().child("—")
 }
 
 #[cfg(test)]

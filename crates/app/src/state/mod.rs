@@ -45,8 +45,8 @@ use crate::sections::research::minehead::{
     OptimizeInputs as MineheadOptimizeInputs, RunInputs as MineheadRunInputs,
 };
 use crate::sections::research::tree::{Outcome as TreeOutcome, RunInputs as TreeRunInputs};
+use crate::sections::royal_guardian::Controls as RoyalControls;
 use crate::sections::royal_guardian::State as RoyalState;
-use crate::sections::royal_guardian::forecast::Inputs as RoyalForecastInputs;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Trees as SailingTrees;
 use crate::sections::sailing::simulation::RunInputs as SailingSimInputs;
@@ -343,8 +343,8 @@ pub(crate) struct AppState {
     pub(crate) royal_state: RoyalState,
     /// The shared formula tree on the Royal Guardian breakdowns pane.
     pub(crate) royal_breakdown: Entity<FormulaTree>,
-    /// The Royal Guardian forecast's live collect and window fields.
-    pub(crate) royal_forecast_inputs: RoyalForecastInputs,
+    /// The Royal Guardian section's kit controls, run requests and cached results.
+    pub(crate) royal_controls: RoyalControls,
     /// The forecast for the current inputs, kept until they move.
     pub(crate) royal_forecast: Option<idleon_royal_guardian::Forecast>,
     /// The inputs `royal_forecast` was computed from.
@@ -1271,7 +1271,7 @@ impl AppState {
             royal: None,
             royal_state: RoyalState::default(),
             royal_breakdown: crate::ui::formula_tree("royal-breakdown", window, cx),
-            royal_forecast_inputs: RoyalForecastInputs::new(window, cx),
+            royal_controls: RoyalControls::new(window, cx),
             royal_forecast: None,
             royal_forecast_key: None,
             royal_optimizer,

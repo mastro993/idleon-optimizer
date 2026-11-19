@@ -10,7 +10,7 @@ impl AppState {
     /// cannot be selected, so the table always has a valid subject.
     pub(crate) fn set_statue_character(&mut self, character: usize, cx: &mut Context<Self>) {
         if self.statue.save.has_character(character) {
-            self.statue.select_character(character, cx);
+            self.statue.select_character(character);
             cx.notify();
         }
     }
@@ -37,11 +37,10 @@ impl AppState {
     /// Set every statue's target to the level in the batch entry, or show why
     /// the plan left it alone.
     pub(crate) fn set_statue_targets_all(&mut self, cx: &mut Context<Self>) {
-        let text = self.statue.batch_input.read(cx).text().to_string();
-        match self
-            .statue
+        let statue = &mut self.statue;
+        match statue
             .plan
-            .set_all(&self.statue.save, self.statue.character, &text)
+            .set_all(&statue.save, statue.character, &statue.batch_text)
         {
             Ok(level) => {
                 self.statue.batch_error = None;

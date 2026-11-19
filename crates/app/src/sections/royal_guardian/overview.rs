@@ -1,68 +1,69 @@
 //! The Overview tab: counters, world progress, raw clearing values and range
 //! targets.
 
+use super::table::{Col, table, text};
 use super::world_rail;
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use idleon_ui::format;
-
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
+};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_royal_guardian::RoyalGuardian;
 use idleon_royal_guardian::{self as royal_guardian, Clear, ClearState, RangeTarget};
+use idleon_ui::format;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, Statistic, TEXT_KPI, Tone,
+};
 
 /// The overview pane, in order: counters, world progress, the
 /// clearing values and the range targets.
-pub(crate) fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn overview(
+    state: &AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let royal = state
         .royal
         .as_ref()
         .expect("the section renders its import prompt without a save");
     let world = state.royal_state.world.min(royal_guardian::WORLDS - 1);
-    let mut pane = div().id("royal-overview").flex().flex_col().gap_3();
-    if !royal.missing_sources().is_empty() {
-        pane = pane.child(missing(royal, cx));
-    }
-    pane.child(counters(royal))
-        .child(world_progress(royal, cx))
+    v_flex()
+        .id("royal-overview")
+        .gap(PANEL_GAP)
+        .when(!royal.missing_sources().is_empty(), |pane| {
+            pane.child(missing(royal))
+        })
+        .child(counters(state, royal))
+        .child(world_progress(state, royal, cx))
         .child(world_rail(world, cx))
         .child(clearing_values(royal, world, cx))
-        .child(range_targets(royal, world, state.royal_state.outpost, cx))
+        .child(range_targets(state, royal, world, window, cx))
         .child(rate_note(royal, cx))
         .into_any_element()
 }
 
 /// The bonus sources this save does not carry.
-fn missing(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mut lines = div().flex().flex_col().gap_1();
-    for source in royal.missing_sources() {
-        lines = lines.child(Caption::new(source.clone()).text_color(muted));
-    }
+fn missing(royal: &RoyalGuardian) -> AnyElement {
     Card::new()
         .header(
             CardHeader::new("Inputs this save does not carry")
                 .description("These factors read as zero or one instead of being guessed"),
         )
         .child(
-            div()
+            v_flex()
                 .id("royal-missing")
-                .flex()
-                .flex_col()
                 .gap_1()
-                .child(lines),
+                .children(royal.missing_sources().iter().cloned().map(Caption::new)),
         )
         .into_any_element()
 }
 
-/// The first card row: what the save holds.
-fn counters(royal: &RoyalGuardian) -> AnyElement {
-    let counters = royal.counters();
+/// The first strip: what the save holds.
+fn counters(state: &AppState, royal: &RoyalGuardian) -> AnyElement {
+    let counters = state.royal_controls.derived.counters(royal);
     let outposts = format!(
         "{} of {} maps carry an outpost",
         counters.built_outposts, counters.outposts
@@ -71,23 +72,19 @@ fn counters(royal: &RoyalGuardian) -> AnyElement {
         "{} purified · {} support · {} savage",
         counters.purified, counters.support, counters.savage
     );
-    div()
-        .id("royal-counters")
-        .flex()
-        .flex_wrap()
-        .gap_3()
+    let strip = KpiStrip::new()
         .child(kpi(
             "royal-kpi-built",
             "Built outposts",
             counters.built_outposts as f64,
-            "0",
+            "",
             outposts,
         ))
         .child(kpi(
             "royal-kpi-worlds",
             "Worlds unlocked",
             counters.worlds_unlocked as f64,
-            "0",
+            "",
             format!("of {}", royal_guardian::WORLDS),
         ))
         .child(kpi(
@@ -108,7 +105,7 @@ fn counters(royal: &RoyalGuardian) -> AnyElement {
             "royal-kpi-clearing",
             "Militia clearing",
             counters.militia_clearing as f64,
-            "0",
+            "",
             kinds,
         ))
         .child(kpi(
@@ -117,70 +114,68 @@ fn counters(royal: &RoyalGuardian) -> AnyElement {
             counters.militia_clears_per_hour,
             "",
             "Across every clearing outpost",
-        ))
-        .into_any_element()
+        ));
+    div().id("royal-counters").child(strip).into_any_element()
 }
 
 /// The world progress cards: built outposts and militia clearing per world.
-fn world_progress(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mut grid = div().id("royal-worlds").flex().flex_wrap().gap_2();
-    for world in 0..royal_guardian::WORLDS {
-        let outposts = royal.world_outposts(world);
-        let built = outposts.iter().filter(|outpost| outpost.built).count();
-        let clearing = outposts
-            .iter()
-            .filter(|outpost| {
-                !outpost.built && royal.clear(outpost.map).state == ClearState::Clearing
-            })
-            .count();
-        let unlocked = royal.world_unlocked(world);
+fn world_progress(
+    state: &AppState,
+    royal: &RoyalGuardian,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let theme = cx.theme();
+    let (muted, mono) = (theme.muted_foreground, theme.mono_font_family.clone());
+    let worlds = state.royal_controls.derived.progress(royal);
+    let cells = worlds.iter().enumerate().map(|(world, progress)| {
         let label = format!(
-            "W{}: {built} / {} built, {clearing} militia clearing{}",
+            "W{}: {} / {} built, {} militia clearing{}",
             world + 1,
-            outposts.len(),
-            if unlocked { "" } else { ", locked" }
+            progress.built,
+            progress.outposts,
+            progress.clearing,
+            if progress.unlocked { "" } else { ", locked" }
         );
-        grid = grid.child(
-            div()
-                .id(format!("royal-world-card-{world}"))
-                .role(gpui::Role::Label)
-                .aria_label(label)
-                .flex()
-                .flex_col()
-                .gap_1()
-                .min_w(px(150.0))
-                .flex_1()
-                .child(
-                    div()
-                        .flex()
-                        .items_center()
-                        .gap_2()
-                        .child(Caption::new(format!("W{}", world + 1)))
-                        .when(!unlocked, |row| {
-                            row.child(Badge::new("Locked").tone(Tone::Danger))
-                        }),
-                )
-                .child(
-                    div()
-                        .text_size(px(18.0))
-                        .child(format!("{built} / {}", outposts.len())),
-                )
-                .child(Caption::new(format!("{clearing} militia clearing")).text_color(muted)),
-        );
-    }
+        v_flex()
+            .id(SharedString::from(format!("royal-world-card-{world}")))
+            .role(gpui::Role::Label)
+            .aria_label(label)
+            .gap_1()
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(Caption::new(format!("W{}", world + 1)))
+                    .when(!progress.unlocked, |row| {
+                        row.child(tag("Locked", Tone::Danger))
+                    }),
+            )
+            .child(
+                div()
+                    .font_family(mono.clone())
+                    .text_size(TEXT_KPI)
+                    .child(format!("{} / {}", progress.built, progress.outposts)),
+            )
+            .child(
+                Caption::new(format!("{} militia clearing", progress.clearing)).text_color(muted),
+            )
+    });
     Card::new()
         .header(CardHeader::new("World progress").description(
             "Built outposts against the worlds the Armory has opened; a world page lists the \
-                 outposts the game data carries",
+             outposts the game data carries",
         ))
-        .child(div().id("royal-world-progress").child(grid))
+        .child(
+            div().id("royal-world-progress").child(
+                div()
+                    .id("royal-worlds")
+                    .child(KpiStrip::new().children(cells)),
+            ),
+        )
         .into_any_element()
 }
 
 /// The raw clearing values every unbuilt outpost in the world reports.
 fn clearing_values(royal: &RoyalGuardian, world: usize, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
     let outposts: Vec<_> = royal
         .world_outposts(world)
         .into_iter()
@@ -194,36 +189,21 @@ fn clearing_values(royal: &RoyalGuardian, world: usize, cx: &mut Context<AppStat
             .child(
                 div()
                     .id("royal-clear-empty")
-                    .child(Caption::new("Every outpost in this world is built.").text_color(muted)),
+                    .child(Caption::new("Every outpost in this world is built.")),
             )
             .into_any_element();
     }
-    let mut table = Table::new([
-        "Outpost",
-        "State",
-        "Progress",
-        "Requirement",
-        "Remaining",
-        "Militia",
-        "Clears /hr",
-        "ETA",
-    ]);
-    for outpost in outposts {
+    let rows = outposts.iter().map(|outpost| {
         let clear = royal.clear(outpost.map);
-        table = table.row([
-            div()
-                .id(format!("royal-clear-{}", outpost.map))
-                .flex()
-                .flex_col()
+        vec![
+            v_flex()
+                .id(SharedString::from(format!("royal-clear-{}", outpost.map)))
                 .gap_1()
                 .child(outpost.name.replace('_', " "))
-                .child(
-                    Caption::new(match &clear.reason {
-                        Some(reason) => reason.clone(),
-                        None => outpost.reason.unwrap_or("").to_owned(),
-                    })
-                    .text_color(muted),
-                )
+                .child(Caption::new(match &clear.reason {
+                    Some(reason) => reason.clone(),
+                    None => outpost.reason.unwrap_or("").to_owned(),
+                }))
                 .into_any_element(),
             state_cell(&clear),
             number_cell(clear.progress),
@@ -232,20 +212,35 @@ fn clearing_values(royal: &RoyalGuardian, world: usize, cx: &mut Context<AppStat
             number_cell(clear.assignments),
             rate_cell(clear.rate_per_hour),
             eta_cell(clear.eta_hours),
-        ]);
-    }
+        ]
+    });
+    let table = table(
+        "royal-clear-row",
+        &[
+            Col::Text("Outpost"),
+            Col::Text("State"),
+            Col::Number("Progress"),
+            Col::Number("Requirement"),
+            Col::Number("Remaining"),
+            Col::Number("Militia"),
+            Col::Number("Clears /hr"),
+            Col::Number("ETA"),
+        ],
+        rows,
+        cx,
+    );
     card.child(div().id("royal-clear-values").child(table))
         .into_any_element()
 }
 
 /// The range targets: the selected outpost's next node and the world's table.
 fn range_targets(
+    state: &AppState,
     royal: &RoyalGuardian,
     world: usize,
-    saved: Option<usize>,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
     let built: Vec<_> = royal
         .world_outposts(world)
         .into_iter()
@@ -253,72 +248,64 @@ fn range_targets(
         .collect();
     let card = Card::new().header(CardHeader::new("Range targets").description(
         "The nearest resource node an outpost cannot link yet, and the Advanced Logistics \
-             levels that reach it",
+         levels that reach it",
     ));
     if built.is_empty() {
         return card
             .child(
                 div()
                     .id("royal-range-empty")
-                    .child(Caption::new("No built outpost in this world.").text_color(muted)),
+                    .child(Caption::new("No built outpost in this world.")),
             )
             .into_any_element();
     }
-    let selected = selected_outpost(royal, world, saved);
-    let entity = cx.entity();
-    let choices: Vec<Choice> = built
+    let selected = selected_outpost(royal, world, state.royal_state.outpost);
+    let choices: Vec<Choice<usize>> = built
         .iter()
-        .map(|outpost| Choice::new(outpost.map.to_string(), outpost.name.replace('_', " ")))
+        .map(|outpost| Choice::new(outpost.map, outpost.name.replace('_', " ")))
         .collect();
-    let select = Select::new("royal-outpost", choices)
-        .label("Outpost")
-        .selected(selected.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(map) = value.parse::<usize>() {
-                entity.update(cx, |state, cx| state.set_royal_outpost(map, cx));
-            }
-        });
-    let mut table = Table::new([
-        "Outpost",
-        "Type",
-        "Guards",
-        "Range",
-        "Next node",
-        "Distance",
-        "Plan",
-    ]);
-    for outpost in &built {
+    let select = &state.royal_controls.outpost;
+    select.show(choices, Some(&selected), window, cx);
+    let select = Select::new(select.state())
+        .id("royal-outpost")
+        .accessibility_label("Outpost")
+        .small()
+        .w(px(280.0));
+    let rows = built.iter().map(|outpost| {
         let target = royal.next_range_target(outpost.map);
-        table = table.row([
-            div()
-                .child(outpost.name.replace('_', " "))
-                .into_any_element(),
-            div()
-                .child(type_label(royal.outpost_type(outpost.map)))
-                .into_any_element(),
+        vec![
+            text(outpost.name.replace('_', " ")),
+            text(type_label(royal.outpost_type(outpost.map))),
             number_cell(royal.units_by_type(outpost.map)[2]),
             number_cell(royal.range(outpost.map)),
-            div()
-                .child(match &target {
-                    Some(target) => format!("Resource {}", target.resource + 1),
-                    None => "None".to_owned(),
-                })
-                .into_any_element(),
-            div()
-                .child(match &target {
-                    Some(target) => format::value(target.distance),
-                    None => "—".to_owned(),
-                })
-                .into_any_element(),
-            div().child(plan_text(target.as_ref())).into_any_element(),
-        ]);
-    }
+            text(match &target {
+                Some(target) => format!("Resource {}", target.resource + 1),
+                None => "None".to_owned(),
+            }),
+            text(match &target {
+                Some(target) => format::value(target.distance),
+                None => "—".to_owned(),
+            }),
+            text(plan_text(target.as_ref())),
+        ]
+    });
+    let table = table(
+        "royal-range-row",
+        &[
+            Col::Text("Outpost"),
+            Col::Text("Type"),
+            Col::Number("Guards"),
+            Col::Number("Range"),
+            Col::Text("Next node"),
+            Col::Number("Distance"),
+            Col::Text("Plan"),
+        ],
+        rows,
+        cx,
+    );
     card.child(
-        div()
+        v_flex()
             .id("royal-range")
-            .flex()
-            .flex_col()
             .gap_3()
             .child(select)
             .child(panel(royal, selected))
@@ -330,11 +317,9 @@ fn range_targets(
 /// The selected outpost's next range target, as the panel draws it.
 fn panel(royal: &RoyalGuardian, map: usize) -> AnyElement {
     let outpost = royal.outpost(map);
-    let mut body = div()
+    let body = v_flex()
         .id("royal-range-target")
         .role(gpui::Role::Label)
-        .flex()
-        .flex_col()
         .gap_1();
     let Some(target) = royal.next_range_target(map) else {
         let label = format!("{}: every resource node is within range", outpost.name);
@@ -351,8 +336,7 @@ fn panel(royal: &RoyalGuardian, map: usize) -> AnyElement {
         format::value(target.distance),
         format::value(target.reach)
     );
-    body = body
-        .aria_label(label)
+    body.aria_label(label)
         .child(Caption::new("Next range target"))
         .child(
             div()
@@ -366,23 +350,21 @@ fn panel(royal: &RoyalGuardian, map: usize) -> AnyElement {
             format::value(target.plan.current_level)
         ))
         .child(
-            div()
+            h_flex()
                 .id("royal-range-plan")
-                .flex()
-                .items_center()
                 .gap_2()
                 .child(plan_text(Some(&target)))
                 .when(
                     target.plan.possible && target.plan.levels_needed.unwrap_or(0.0) > 0.0,
                     |row| {
-                        row.child(
-                            Badge::new(format!("{} points", format::value(target.plan.points())))
-                                .tone(Tone::Accent),
-                        )
+                        row.child(tag(
+                            format!("{} points", format::value(target.plan.points())),
+                            Tone::Accent,
+                        ))
                     },
                 ),
-        );
-    body.into_any_element()
+        )
+        .into_any_element()
 }
 
 /// The plan as the panel words it.
@@ -408,17 +390,15 @@ pub(super) fn plan_text(target: Option<&RangeTarget>) -> String {
 
 /// The clearing rate's factors, and the one factor this build does not read yet.
 fn rate_note(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     Card::new()
         .header(
             CardHeader::new("Clearing rate")
                 .description("Militia clearing is assignments × 4,000 × the Armory and talent factors"),
         )
         .child(
-            div()
+            v_flex()
                 .id("royal-rate-note")
-                .flex()
-                .flex_col()
                 .gap_1()
                 .child(format!(
                     "Xtra Clear Killz: talent 231 at level {} (×{:.4}), ×{:.4} from the clearing rate",
@@ -439,26 +419,24 @@ fn rate_note(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyElement {
 
 // ----- shared formatting and cells -----
 
-/// A headline figure as a KPI card, labelled so the harness reads the number.
+/// A headline figure for a [`KpiStrip`], labelled so the harness reads the
+/// number from `<id>-figure`.
 pub(super) fn kpi(
     id: &'static str,
     label: &'static str,
     value: f64,
     suffix: &'static str,
-    caption: impl Into<gpui::SharedString>,
+    caption: impl Into<SharedString>,
 ) -> AnyElement {
-    let mut statistic = Statistic::new(id, label, value).size(TextSize::Xl);
+    let mut statistic = Statistic::new(id, label, figure_text(value)).caption(caption);
     if !suffix.is_empty() {
         statistic = statistic.suffix(suffix);
     }
     div()
-        .id(format!("{id}-figure"))
+        .id(SharedString::from(format!("{id}-figure")))
         .role(gpui::Role::Label)
         .aria_label(format!("{label}: {}", figure_text(value)))
-        .flex()
-        .flex_1()
-        .min_w(px(170.0))
-        .child(KpiCard::new(statistic).caption(caption.into()))
+        .child(statistic)
         .into_any_element()
 }
 
@@ -471,7 +449,16 @@ pub(super) fn figure_text(value: f64) -> String {
     }
 }
 
-/// An outpost's clearing state, badged.
+/// A small status tag.
+pub(super) fn tag(label: impl Into<SharedString>, tone: Tone) -> Tag {
+    Tag::new()
+        .with_variant(tone.into())
+        .outline()
+        .small()
+        .child(label.into())
+}
+
+/// An outpost's clearing state, tagged.
 fn state_cell(clear: &Clear) -> AnyElement {
     let tone = match clear.state {
         ClearState::Clearing => Tone::Success,
@@ -479,53 +466,33 @@ fn state_cell(clear: &Clear) -> AnyElement {
         ClearState::Built => Tone::Accent,
         ClearState::NonAccruing | ClearState::Unavailable => Tone::Danger,
     };
-    div()
-        .flex()
-        .items_center()
+    h_flex()
         .gap_1()
-        .child(Badge::new(clear.state.label()).tone(tone))
+        .child(tag(clear.state.label(), tone))
         .when(clear.active, |cell| cell.child(Caption::new("active")))
         .into_any_element()
 }
 
-/// A right-aligned number.
+/// A number, for a [`Col::Number`] column.
 pub(super) fn number_cell(value: f64) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .items_end()
-        .w_full()
-        .child(format::value(value))
-        .into_any_element()
+    text(format::value(value))
 }
 
-/// A rate, dimmed when nothing is clearing.
+/// A rate, or a dash when nothing is clearing.
 pub(super) fn rate_cell(value: f64) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .items_end()
-        .w_full()
-        .child(if value > 0.0 {
-            format::value(value)
-        } else {
-            "—".to_owned()
-        })
-        .into_any_element()
+    text(if value > 0.0 {
+        format::value(value)
+    } else {
+        "—".to_owned()
+    })
 }
 
 /// An ETA in hours, or a dash when the outpost is not clearing.
-pub(super) fn eta_cell(hours: Option<f64>) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .items_end()
-        .w_full()
-        .child(match hours {
-            Some(hours) if hours.is_finite() => format!("{}h", format::value(hours)),
-            _ => "—".to_owned(),
-        })
-        .into_any_element()
+fn eta_cell(hours: Option<f64>) -> AnyElement {
+    text(match hours {
+        Some(hours) if hours.is_finite() => format!("{}h", format::value(hours)),
+        _ => "—".to_owned(),
+    })
 }
 
 /// An outpost's type, by its game name.

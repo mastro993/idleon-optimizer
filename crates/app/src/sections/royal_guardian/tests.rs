@@ -93,21 +93,26 @@ use super::resources::selected_resource;
 fn the_node_inspector_falls_back_to_a_drained_node_in_the_world() {
     let royal = royal();
     // The save's only built outpost links the first W1 node it reaches.
-    let streams = royal.resource_streams().0;
-    assert!(!streams.is_empty(), "the fixture links a node");
-    let linked = streams[0].resource;
+    let streamed: Vec<usize> = royal
+        .resource_streams()
+        .0
+        .iter()
+        .map(|stream| stream.resource)
+        .collect();
+    assert!(!streamed.is_empty(), "the fixture links a node");
+    let linked = streamed[0];
     assert_eq!(RoyalGuardian::resource_world(linked), 0, "a W1 node");
-    assert_eq!(selected_resource(&royal, 0, None), linked);
+    assert_eq!(selected_resource(&royal, &streamed, 0, None), linked);
     // A saved node in another world falls back to this world's stream.
     let other = royal_guardian::resource_count() - 1;
-    assert_eq!(selected_resource(&royal, 0, Some(other)), linked);
+    assert_eq!(selected_resource(&royal, &streamed, 0, Some(other)), linked);
     // A saved node in the world wins over the stream.
     let first = royal.world_resources(0)[0].resource;
-    assert_eq!(selected_resource(&royal, 0, Some(first)), first);
+    assert_eq!(selected_resource(&royal, &streamed, 0, Some(first)), first);
     // A world with nothing draining still lists its first node.
     let world = royal_guardian::resource_count() / 20 - 1;
     let first = royal.world_resources(world)[0].resource;
-    assert_eq!(selected_resource(&royal, world, None), first);
+    assert_eq!(selected_resource(&royal, &streamed, world, None), first);
 }
 
 #[test]

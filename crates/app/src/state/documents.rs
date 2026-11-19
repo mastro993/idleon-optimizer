@@ -274,7 +274,7 @@ impl AppState {
             .load(self.save.as_ref(), &self.simulation);
         self.save_revision = self.save_revision.wrapping_add(1);
         self.prisma.adopt(self.save.as_ref());
-        self.statue.load(imported.statues, cx);
+        self.statue.load(imported.statues);
         self.coral.adopt(&imported.coral);
         self.worship_adopt(imported.worship);
         self.fleet = imported.fleet;

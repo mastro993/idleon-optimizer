@@ -7,20 +7,21 @@
 //! their hours.
 
 use super::overview::{figure_text, kpi};
+use super::table::{Col, table, text, text_id};
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::forms::{Choice, Input, Select, TextInput};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, Styled, Subscription, Window, div,
+    AnyElement, App, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window,
+    div, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::input::{Input, InputState};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{Sizable as _, h_flex, v_flex};
 use idleon_royal_guardian::{Forecast, ForecastOptions, HORIZON, RoyalGuardian};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP};
 
 /// The horizons the selector offers, in hours, with their labels.
 const HORIZONS: [(u32, &str); 5] = [
@@ -31,39 +32,12 @@ const HORIZONS: [(u32, &str); 5] = [
     (336, "14d"),
 ];
 
-/// The forecast tab's live fields.
-pub(crate) struct Inputs {
-    pub(crate) collect: Entity<TextInput>,
-    pub(crate) window_start: Entity<TextInput>,
-    pub(crate) window_end: Entity<TextInput>,
-    _subscriptions: Vec<Subscription>,
-}
-
-impl Inputs {
-    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let mut field = |placeholder, label, cx: &mut Context<AppState>| {
-            cx.new(|cx| {
-                TextInput::new(window, cx)
-                    .filter(|ch: char| ch.is_ascii_digit() || ch == '.')
-                    .placeholder(placeholder)
-                    .label(label)
-            })
-        };
-        let collect = field("e.g. 6", "Collect at hour", cx);
-        let window_start = field("e.g. 20", "Menu opens at hour", cx);
-        let window_end = field("e.g. 22", "Menu closes at hour", cx);
-        let subscriptions = vec![
-            crate::state::redraw_on_edit(cx, &collect),
-            crate::state::redraw_on_edit(cx, &window_start),
-            crate::state::redraw_on_edit(cx, &window_end),
-        ];
-        Self {
-            collect,
-            window_start,
-            window_end,
-            _subscriptions: subscriptions,
-        }
-    }
+/// The horizon selector's options.
+pub(super) fn horizon_choices() -> Vec<Choice<u32>> {
+    HORIZONS
+        .iter()
+        .map(|(hours, label)| Choice::new(*hours, *label))
+        .collect()
 }
 
 /// A read of a field as an hour, or `None` when it is blank or invalid.
@@ -73,7 +47,11 @@ pub(crate) fn hours(text: &str) -> Option<f64> {
 }
 
 /// The Forecast pane.
-pub(crate) fn forecast(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn forecast(
+    state: &AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let royal = state
         .royal
         .as_ref()
@@ -84,68 +62,66 @@ pub(crate) fn forecast(state: &AppState, cx: &mut Context<AppState>) -> AnyEleme
             .child(Caption::new("The forecast could not run on this save."))
             .into_any_element();
     };
-    div()
+    v_flex()
         .id("royal-forecast")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .child(controls(state, cx))
-        .child(summary(result, cx))
+        .gap(PANEL_GAP)
+        .child(controls(state, window, cx))
+        .child(summary(result))
         .child(agenda(royal, result, cx))
-        .child(currency(result))
-        .child(resets(result))
+        .child(currency(result, cx))
+        .child(resets(result, cx))
         .into_any_element()
 }
 
 /// The horizon and the collect and window fields.
-fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
-    let choices: Vec<Choice> = HORIZONS
-        .iter()
-        .map(|(hours, label)| Choice::new(hours.to_string(), *label))
-        .collect();
+fn controls(state: &AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let controls = &state.royal_controls;
     let selected = state.royal_state.forecast_hours.round() as u32;
-    let horizon = Select::new("royal-forecast-horizon", choices)
-        .label("Horizon")
-        .selected(selected.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(hours) = value.parse::<f64>() {
-                entity.update(cx, |state, cx| state.set_royal_forecast_hours(hours, cx));
-            }
-        });
-    let inputs = &state.royal_forecast_inputs;
-    let field = |id: &'static str, input: &Entity<TextInput>| {
-        let focus = input.read(cx).focus().clone();
-        div()
-            .id(id)
-            .w_24()
-            .on_click(move |_event, window, cx| window.focus(&focus, cx))
-            .child(Input::new(input).size(ControlSize::Sm))
-            .into_any_element()
-    };
+    controls
+        .horizon
+        .show(horizon_choices(), Some(&selected), window, cx);
+    // A kit select grows in a row; the box keeps it to its width.
+    let horizon = div().flex_none().w(px(96.0)).child(
+        Select::new(controls.horizon.state())
+            .id("royal-forecast-horizon")
+            .accessibility_label("Horizon")
+            .small(),
+    );
     let add_collect = cx.entity();
     let add_window = cx.entity();
-    div()
+    h_flex()
         .id("royal-forecast-controls")
-        .flex()
-        .flex_wrap()
-        .items_end()
         .gap_2()
         .child(horizon)
-        .child(field("royal-forecast-collect", &inputs.collect))
+        .child(hours_field(
+            "royal-forecast-collect",
+            &controls.collect,
+            "Collect at hour",
+        ))
         .child(
-            Button::new("royal-forecast-add-collect", "Add collect")
+            Button::new("royal-forecast-add-collect")
+                .label("Add collect")
                 .icon(IconName::Plus)
+                .small()
                 .on_click(move |_event, _window, cx| {
                     add_collect.update(cx, |state, cx| state.add_royal_collect(cx));
                 }),
         )
-        .child(field("royal-forecast-window-start", &inputs.window_start))
-        .child(field("royal-forecast-window-end", &inputs.window_end))
+        .child(hours_field(
+            "royal-forecast-window-start",
+            &controls.window_start,
+            "Menu opens at hour",
+        ))
+        .child(hours_field(
+            "royal-forecast-window-end",
+            &controls.window_end,
+            "Menu closes at hour",
+        ))
         .child(
-            Button::new("royal-forecast-add-window", "Add menu window")
+            Button::new("royal-forecast-add-window")
+                .label("Add menu window")
                 .icon(IconName::Plus)
+                .small()
                 .on_click(move |_event, _window, cx| {
                     add_window.update(cx, |state, cx| state.add_royal_window(cx));
                 }),
@@ -153,10 +129,23 @@ fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
+/// An hour field under the element id the harness presses; a press focuses it.
+fn hours_field(id: &'static str, field: &Entity<InputState>, label: &'static str) -> AnyElement {
+    let focus = field.clone();
+    div()
+        .id(id)
+        .flex_none()
+        .w(px(110.0))
+        .on_click(move |_event, window, cx| {
+            focus.update(cx, |field, cx| field.focus(window, cx));
+        })
+        .child(Input::new(field).aria_label(label).small())
+        .into_any_element()
+}
+
 /// The summary cards: what the horizon commits.
-fn summary(result: &Forecast, cx: &mut Context<AppState>) -> AnyElement {
+fn summary(result: &Forecast) -> AnyElement {
     let summary = &result.summary;
-    let muted = cx.theme().colors.fg_muted;
     let horizon = format!(
         "{} · {}",
         if result.banks {
@@ -174,14 +163,8 @@ fn summary(result: &Forecast, cx: &mut Context<AppState>) -> AnyElement {
     );
     div()
         .id("royal-forecast-summary")
-        .flex()
-        .flex_col()
-        .gap_2()
         .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .gap_3()
+            KpiStrip::new()
                 .child(kpi(
                     "royal-kpi-forecast-collects",
                     "Collects",
@@ -223,18 +206,16 @@ fn summary(result: &Forecast, cx: &mut Context<AppState>) -> AnyElement {
                     "Uncollected time",
                 ))
                 .child(
-                    div()
+                    v_flex()
                         .id("royal-forecast-horizon-note")
                         .role(gpui::Role::Label)
                         .aria_label(horizon.clone())
-                        .flex()
-                        .flex_col()
                         .gap_1()
                         .child(Caption::new(format!(
                             "Horizon {}h",
                             figure_text(result.horizon_hours)
                         )))
-                        .child(Caption::new(horizon).text_color(muted)),
+                        .child(Caption::new(horizon)),
                 ),
         )
         .into_any_element()
@@ -242,11 +223,10 @@ fn summary(result: &Forecast, cx: &mut Context<AppState>) -> AnyElement {
 
 /// What each collect would commit, and what the segments expect next.
 fn agenda(royal: &RoyalGuardian, result: &Forecast, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mut list = div().id("royal-forecast-agenda").flex().flex_col().gap_2();
+    let mut list = v_flex().id("royal-forecast-agenda").gap_2();
     for (index, commit) in result.collects.iter().enumerate() {
         let remove = cx.entity();
-        let mut chips = div().flex().flex_wrap().items_center().gap_2();
+        let mut chips = h_flex().flex_wrap().gap_2();
         for (slot, value) in &commit.currency {
             chips = chips.child(Caption::new(format!(
                 "slot {slot} +{}",
@@ -272,24 +252,22 @@ fn agenda(royal: &RoyalGuardian, result: &Forecast, cx: &mut Context<AppState>) 
             )));
         }
         if commit.banked == 0.0 {
-            chips = chips.child(Caption::new("Nothing banked").text_color(muted));
+            chips = chips.child(Caption::new("Nothing banked"));
         }
         list = list.child(
-            div()
-                .id(format!("royal-forecast-collect-{index}"))
+            v_flex()
+                .id(SharedString::from(format!(
+                    "royal-forecast-collect-{index}"
+                )))
                 .role(gpui::Role::Label)
                 .aria_label(format!(
                     "Collect at {}h: banked {}h",
                     figure_text(commit.at),
                     figure_text(commit.banked)
                 ))
-                .flex()
-                .flex_col()
                 .gap_1()
                 .child(
-                    div()
-                        .flex()
-                        .items_center()
+                    h_flex()
                         .justify_between()
                         .child(format!(
                             "Collect at {}h · banked {}h",
@@ -297,13 +275,15 @@ fn agenda(royal: &RoyalGuardian, result: &Forecast, cx: &mut Context<AppState>) 
                             figure_text(commit.banked)
                         ))
                         .child(
-                            Button::new(format!("royal-forecast-remove-collect-{index}"), "Remove")
-                                .size(ControlSize::Sm)
-                                .on_click(move |_event, _window, cx| {
-                                    remove.update(cx, |state, cx| {
-                                        state.remove_royal_collect(index, cx)
-                                    });
-                                }),
+                            Button::new(SharedString::from(format!(
+                                "royal-forecast-remove-collect-{index}"
+                            )))
+                            .label("Remove")
+                            .small()
+                            .on_click(move |_event, _window, cx| {
+                                remove
+                                    .update(cx, |state, cx| state.remove_royal_collect(index, cx));
+                            }),
                         ),
                 )
                 .child(chips),
@@ -312,8 +292,8 @@ fn agenda(royal: &RoyalGuardian, result: &Forecast, cx: &mut Context<AppState>) 
     for (index, window) in result.windows.iter().enumerate() {
         let remove = cx.entity();
         list = list.child(
-            div()
-                .id(format!("royal-forecast-window-{index}"))
+            v_flex()
+                .id(SharedString::from(format!("royal-forecast-window-{index}")))
                 .role(gpui::Role::Label)
                 .aria_label(format!(
                     "Menu open from {}h to {}h in {} steps",
@@ -321,13 +301,9 @@ fn agenda(royal: &RoyalGuardian, result: &Forecast, cx: &mut Context<AppState>) 
                     figure_text(window.end),
                     window.steps
                 ))
-                .flex()
-                .flex_col()
                 .gap_1()
                 .child(
-                    div()
-                        .flex()
-                        .items_center()
+                    h_flex()
                         .justify_between()
                         .child(format!(
                             "Menu open {}h–{}h · {} steps",
@@ -336,13 +312,16 @@ fn agenda(royal: &RoyalGuardian, result: &Forecast, cx: &mut Context<AppState>) 
                             window.steps
                         ))
                         .child(
-                            Button::new(format!("royal-forecast-remove-window-{index}"), "Remove")
-                                .size(ControlSize::Sm)
-                                .on_click(move |_event, _window, cx| {
-                                    remove.update(cx, |state, cx| {
-                                        state.remove_royal_window(index, cx);
-                                    });
-                                }),
+                            Button::new(SharedString::from(format!(
+                                "royal-forecast-remove-window-{index}"
+                            )))
+                            .label("Remove")
+                            .small()
+                            .on_click(move |_event, _window, cx| {
+                                remove.update(cx, |state, cx| {
+                                    state.remove_royal_window(index, cx);
+                                });
+                            }),
                         ),
                 )
                 .child(Caption::new(format!(
@@ -366,8 +345,7 @@ fn agenda(royal: &RoyalGuardian, result: &Forecast, cx: &mut Context<AppState>) 
     }
     let next = next_ghosts(royal, result);
     if !next.is_empty() {
-        list =
-            list.child(div().child(Caption::new("Next events if collected: ").text_color(muted)));
+        list = list.child(Caption::new("Next events if collected:"));
         for (label, at) in next {
             list = list.child(Caption::new(format!("{label} at {}h", figure_text(at))));
         }
@@ -429,30 +407,38 @@ fn map_name(royal: &RoyalGuardian, map: usize) -> String {
 }
 
 /// The currency balance track: start, at the horizon and what was collected.
-fn currency(result: &Forecast) -> AnyElement {
-    let mut table = Table::new(["Currency", "Start", "At the horizon", "Collected"]);
-    for (slot, value) in &result.summary.currency {
+fn currency(result: &Forecast, cx: &App) -> AnyElement {
+    let rows = result.summary.currency.iter().map(|(slot, value)| {
         // The projected balance across every segment: the first point is the
         // saved balance and the last is where the horizon leaves it.
-        let points: Vec<(f64, f64)> = result
+        let mut points = result
             .segments
             .iter()
             .filter_map(|segment| segment.currency.get(slot))
-            .flatten()
-            .copied()
-            .collect();
-        let start = points.first().map(|(_, value)| *value).unwrap_or(0.0);
-        let end = points.last().map(|(_, value)| *value).unwrap_or(0.0);
-        table = table.row([
-            div()
-                .id(format!("royal-forecast-currency-{slot}"))
-                .child(format!("Currency slot {slot}"))
-                .into_any_element(),
-            div().child(format::value(start)).into_any_element(),
-            div().child(format::value(end)).into_any_element(),
-            div().child(format::value(*value)).into_any_element(),
-        ]);
-    }
+            .flatten();
+        let start = points.next().map(|(_, value)| *value).unwrap_or(0.0);
+        let end = points.last().map(|(_, value)| *value).unwrap_or(start);
+        vec![
+            text_id(
+                SharedString::from(format!("royal-forecast-currency-{slot}")),
+                format!("Currency slot {slot}"),
+            ),
+            text(format::value(start)),
+            text(format::value(end)),
+            text(format::value(*value)),
+        ]
+    });
+    let table = table(
+        "royal-forecast-currency",
+        &[
+            Col::Text("Currency"),
+            Col::Number("Start"),
+            Col::Number("At the horizon"),
+            Col::Number("Collected"),
+        ],
+        rows,
+        cx,
+    );
     Card::new()
         .header(CardHeader::new("Currency").description(
             "The balance at the start, the last projected point and what the collects credit",
@@ -462,25 +448,28 @@ fn currency(result: &Forecast) -> AnyElement {
 }
 
 /// The resets and what they refilled.
-fn resets(result: &Forecast) -> AnyElement {
-    let mut table = Table::new(["Reset", "Refills", "Refilled", "Grades", "Missed"]);
-    for event in &result.reset_events {
-        table = table.row([
-            div().child(format!("{:.0}h", event.at)).into_any_element(),
-            div()
-                .child(if event.refills { "Yes" } else { "No" })
-                .into_any_element(),
-            div()
-                .child(format::count(event.refilled.len() as u64))
-                .into_any_element(),
-            div()
-                .child(format::count(event.grade_gains as u64))
-                .into_any_element(),
-            div()
-                .child(format::count(event.missed.len() as u64))
-                .into_any_element(),
-        ]);
-    }
+fn resets(result: &Forecast, cx: &App) -> AnyElement {
+    let rows = result.reset_events.iter().map(|event| {
+        vec![
+            text(format!("{:.0}h", event.at)),
+            text(if event.refills { "Yes" } else { "No" }),
+            text(format::count(event.refilled.len() as u64)),
+            text(format::count(event.grade_gains as u64)),
+            text(format::count(event.missed.len() as u64)),
+        ]
+    });
+    let table = table(
+        "royal-forecast-reset",
+        &[
+            Col::Text("Reset"),
+            Col::Text("Refills"),
+            Col::Number("Refilled"),
+            Col::Number("Grades"),
+            Col::Number("Missed"),
+        ],
+        rows,
+        cx,
+    );
     Card::new()
         .header(CardHeader::new("Daily resets"))
         .child(div().id("royal-forecast-resets").child(table))
@@ -496,7 +485,7 @@ pub(crate) fn options(hours: f64, collects: &[f64], windows: &[(f64, f64)]) -> F
     }
 }
 
-/// The first field's text, or an empty string when the input is unavailable.
-pub(crate) fn text(input: &Entity<TextInput>, cx: &Context<AppState>) -> String {
-    input.read(cx).text().to_string()
+/// What an hour field holds.
+pub(crate) fn field_text(input: &Entity<InputState>, cx: &App) -> String {
+    input.read(cx).value().to_string()
 }

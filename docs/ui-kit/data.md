@@ -17,6 +17,12 @@ and the choice is not a matter of taste:
 When in doubt, ask whether the row count depends on the save, a run or user input. If it does, it
 is unbounded.
 
+A `DataTable` scrolls itself, so it needs a pane of its own (see [Scrolling](#scrolling)). Where a
+page already scrolls as a whole and its tables sit in it, as Royal Guardian's panes do, the tables
+stay `Table`s: their rows are bounded by a game catalog (the 69 Armory shelves, a world's outposts
+or nodes) or by the run's own caps, and the engine results behind them are cached in section state
+so a frame only formats them.
+
 ### Small tables: `Table`
 
 ```rust
