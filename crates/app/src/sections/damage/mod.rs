@@ -15,25 +15,32 @@ mod actions;
 
 use crate::state::AppState;
 use crate::ui::layout::figure;
-use ely_gpui_component::buttons::SegmentedControl;
-use ely_gpui_component::feedback::{Callout, EmptyState};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::motion::ProgressBar;
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, Window, div, px,
+    AnyElement, App, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, Subscription,
+    Task, Window, div, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Toggle, ToggleGroup, ToggleVariants as _};
+use gpui_kit::component::empty::{Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle};
+use gpui_kit::component::progress::Progress;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::{Select, SelectEvent};
+use gpui_kit::component::skeleton::Skeleton;
+use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _};
 use idleon_common::ValueFormat;
 use idleon_common::formula::FormulaNode;
 use idleon_damage::{self as damage, Context as DamageContext, LayerId, MapRow, Summary};
+use idleon_research::model::Simulation;
 use idleon_save::Save;
 use idleon_stats::{self as stats, Snapshot};
 use idleon_ui::format;
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{
+    Callout, Caption, Card, CardHeader, Choice, ChoiceSelect, PANEL_GAP, TEXT_CAPTION, TEXT_KPI,
+    Tone,
+};
+use std::sync::Arc;
 
 /// The section's own state: the context, the save slice it reads and the layer
 /// tab the page has open.
@@ -41,17 +48,78 @@ use idleon_ui::formula::FormulaTree;
 pub(crate) struct State {
     pub(crate) context: DamageContext,
     pub(crate) snapshot: Option<Snapshot>,
-    /// The last computed summary; `None` before a save loads.
+    /// The summary for `context`; `None` before a save loads and while it
+    /// resolves.
     pub(crate) summary: Option<Summary>,
     /// The damage layer the tabs show.
     pub(crate) layer: LayerId,
-    /// The save moved under `summary`, which the next render re-resolves.
-    /// Resolving is the expensive half of an import, so it waits for the page
-    /// instead of holding up the window that imported the save.
+    /// The context moved under `summary`. Resolving is the expensive half of
+    /// an import, so it waits for the page and then runs off the UI thread
+    /// ([`AppState::resolve_damage`]).
     dirty: bool,
+    /// The resolve in flight; replacing it drops a stale one.
+    pending: Option<Task<()>>,
     save: Option<Save>,
     /// The imported research grid, which the stat pipeline reads.
-    simulation: idleon_research::model::Simulation,
+    simulation: Arc<Simulation>,
+    /// The map selector's rows for the selected character: every named map,
+    /// not the accessible subset.
+    map_rows: Vec<MapRow>,
+    characters: Vec<Choice<usize>>,
+}
+
+/// The kit selects that show the context, built once (`docs/ui-kit/forms.md`).
+pub(crate) struct Controls {
+    character_select: ChoiceSelect<usize>,
+    map_select: ChoiceSelect<usize>,
+    _subscriptions: [Subscription; 2],
+}
+
+impl Controls {
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+        let character_select = ChoiceSelect::new(Vec::new(), None, window, cx);
+        let map_select = ChoiceSelect::new(Vec::new(), None, window, cx);
+        let subscriptions = [
+            cx.subscribe(
+                character_select.state(),
+                |state, _, event: &SelectEvent<Vec<Choice<usize>>>, cx| {
+                    if let SelectEvent::Confirm(Some(character)) = event {
+                        state.set_damage_character(*character, cx);
+                    }
+                },
+            ),
+            cx.subscribe(
+                map_select.state(),
+                |state, _, event: &SelectEvent<Vec<Choice<usize>>>, cx| {
+                    if let SelectEvent::Confirm(Some(map)) = event {
+                        state.set_damage_map(*map, cx);
+                    }
+                },
+            ),
+        ];
+        Self {
+            character_select,
+            map_select,
+            _subscriptions: subscriptions,
+        }
+    }
+
+    /// Bring both selects in line with the context.
+    fn show(&self, damage: &State, window: &mut Window, cx: &mut App) {
+        self.character_select.show(
+            damage.characters.clone(),
+            Some(&damage.context.character),
+            window,
+            cx,
+        );
+        let maps = damage
+            .map_rows
+            .iter()
+            .map(|row| Choice::new(row.map, row.label.clone()))
+            .collect();
+        self.map_select
+            .show(maps, Some(&damage.context.map), window, cx);
+    }
 }
 
 impl State {
@@ -74,29 +142,15 @@ impl State {
 
     /// Take a freshly imported save, opening on character one and its current
     /// map.
-    pub(crate) fn load(&mut self, save: &Save, simulation: &idleon_research::model::Simulation) {
+    pub(crate) fn load(&mut self, save: &Save, simulation: &Simulation) {
         let snapshot = Snapshot::from_save(save);
         self.context = DamageContext::from_snapshot(&snapshot);
+        self.characters = character_choices(&snapshot);
         self.snapshot = Some(snapshot);
         self.save = Some(save.clone());
-        self.simulation = simulation.clone();
+        self.simulation = Arc::new(simulation.clone());
         self.clamp(&mut Vec::new());
-        self.dirty = true;
-    }
-
-    /// Resolve the summary a load or a restore left for the next render.
-    pub(crate) fn ensure_summary(&mut self) {
-        if std::mem::take(&mut self.dirty) {
-            self.refresh();
-        }
-    }
-
-    /// The map selector's rows for the current character: every named map, not the accessible subset.
-    pub(crate) fn map_rows(&self) -> Vec<MapRow> {
-        self.snapshot
-            .as_ref()
-            .map(|snapshot| self.context.map_rows(snapshot))
-            .unwrap_or_default()
+        self.invalidate();
     }
 
     /// Keep the context inside the save and the map list; names a dropped map
@@ -119,14 +173,27 @@ impl State {
                 self.context.map
             ));
         }
+        self.map_rows = self.context.map_rows(snapshot);
     }
 
-    /// Recompute the summary for the current context.
-    pub(crate) fn refresh(&mut self) {
-        self.summary = self
-            .save
-            .as_ref()
-            .map(|save| damage::evaluate(save, &self.simulation, self.context));
+    /// The context moved: the summary describes another one, so it goes, and
+    /// the page resolves the new one.
+    fn invalidate(&mut self) {
+        self.summary = None;
+        self.pending = None;
+        self.dirty = true;
+    }
+
+    /// The evaluation the context needs, ready to run off the UI thread, or
+    /// `None` when nothing moved or no save is loaded.
+    fn job(&mut self) -> Option<impl FnOnce() -> Summary + Send + 'static> {
+        if !std::mem::take(&mut self.dirty) {
+            return None;
+        }
+        let save = self.save.clone()?;
+        let simulation = self.simulation.clone();
+        let context = self.context;
+        Some(move || damage::evaluate(&save, &simulation, context))
     }
 
     /// Pick a character; the map follows its current map.
@@ -138,44 +205,47 @@ impl State {
             return;
         }
         self.context.select_character(character, snapshot);
-        self.refresh();
+        self.map_rows = self.context.map_rows(snapshot);
+        self.invalidate();
     }
 
     /// Pick a map from the list the save allows.
     pub(crate) fn select_map(&mut self, map: usize) {
-        if !self.map_rows().iter().any(|row| row.map == map) {
+        if !self.map_rows.iter().any(|row| row.map == map) {
             return;
         }
         self.context.map = map;
-        self.refresh();
+        self.invalidate();
     }
+}
+
+/// The character selector's rows: every character with its class.
+fn character_choices(snapshot: &Snapshot) -> Vec<Choice<usize>> {
+    (0..snapshot.characters())
+        .map(|character| {
+            let class = stats::class_label(snapshot.class_id(character));
+            Choice::new(character, format!("{} ({class})", snapshot.name(character)))
+        })
+        .collect()
 }
 
 /// The section page: the context card, the summary cards, the damage layers and
 /// the mastery breakdown.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    state.damage.ensure_summary();
+    state.resolve_damage(cx);
     let entity = cx.entity();
-    let muted = cx.theme().colors.fg_muted;
-    // The tree's root is set before anything is borrowed: updating the child
-    // entity needs the context mutably.
-    let tree = state.damage_mastery.clone();
-    if let Some(root) = state.damage.mastery_tree() {
-        tree.update(cx, |tree, cx| tree.set_root(root, cx));
-    }
-    let formula = state.damage_formula.clone();
-    if let Some(root) = state.damage.layer_tree() {
-        formula.update(cx, |tree, cx| tree.set_root(root, cx));
-    }
+    let muted = cx.theme().muted_foreground;
     let damage = &state.damage;
+    let controls = &state.damage_controls;
+    controls.show(damage, window, cx);
     let context = damage.context;
     let snapshot = damage.snapshot.as_ref();
-    let summary = damage.summary.clone();
-    let note = match (snapshot, &summary) {
+    let summary = damage.summary.as_ref();
+    let note = match (snapshot, summary) {
         (None, _) => "Load a save to calculate damage.".to_string(),
         (Some(snapshot), Some(summary)) if !summary.reason.is_empty() => format!(
             "{} · {} · {}",
@@ -189,75 +259,48 @@ pub(crate) fn view(
             stats::classify(context.map).name
         ),
     };
-
-    let snapshot_choices: Vec<Choice> = match snapshot {
-        None => Vec::new(),
-        Some(snapshot) => (0..snapshot.characters())
-            .map(|character| {
-                let class = stats::class_label(snapshot.class_id(character));
-                Choice::new(
-                    character.to_string(),
-                    format!("{} ({class})", snapshot.name(character)),
-                )
-            })
-            .collect(),
-    };
-    let rows = damage.map_rows();
-    let map_choices: Vec<Choice> = rows
-        .iter()
-        .map(|row| Choice::new(row.map.to_string(), row.label.clone()))
-        .collect();
-
-    let character = entity.clone();
-    let map = entity.clone();
     let has_save = snapshot.is_some();
 
     let controls = div()
         .id("damage-context-controls")
         .flex()
-        .flex_wrap()
         .items_end()
         .gap_3()
-        .p_3()
-        .child(
-            field("Character", muted).child(
-                Select::new("damage-character", snapshot_choices)
-                    .label("Character")
-                    .placeholder("Load a save first")
-                    .selected(context.character.to_string())
-                    .disabled(!has_save)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            character.update(cx, |state, cx| state.set_damage_character(index, cx));
-                        }
-                    }),
-            ),
-        )
-        .child(
-            field("Map", muted).child(
-                Select::new("damage-map", map_choices)
-                    .label("Map")
-                    .placeholder("Load a save first")
-                    .selected(context.map.to_string())
-                    .disabled(!has_save)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            map.update(cx, |state, cx| state.set_damage_map(index, cx));
-                        }
-                    }),
-            ),
-        );
+        .child(field("Character", muted).child(select(
+            &controls.character_select,
+            "damage-character",
+            "Character",
+            has_save,
+        )))
+        .child(field("Map", muted).child(select(
+            &controls.map_select,
+            "damage-map",
+            "Map",
+            has_save,
+        )));
 
-    let summary_cards = summary_card(&summary, muted, cx);
-    let layers = summary
-        .as_ref()
-        .map(|summary| layers_card(summary, damage.layer, muted, entity.clone()));
-    let formula = summary
-        .as_ref()
-        .map(|summary| formula_breakdown(summary, damage.layer, formula, muted));
-    let mastery = summary
-        .as_ref()
-        .map(|summary| mastery_breakdown(summary, tree, muted));
+    let body = match (snapshot, summary) {
+        (_, Some(summary)) => div()
+            .flex()
+            .flex_col()
+            .gap(PANEL_GAP)
+            .child(summary_card(summary, muted, cx))
+            .child(layers_card(summary, damage.layer, muted, entity))
+            .child(formula_breakdown(
+                summary,
+                damage.layer,
+                state.damage_formula.clone(),
+                muted,
+            ))
+            .child(mastery_breakdown(
+                summary,
+                state.damage_mastery.clone(),
+                muted,
+            ))
+            .into_any_element(),
+        (Some(_), None) => resolving(),
+        (None, None) => empty_summary(muted),
+    };
 
     div()
         .id("damage-page")
@@ -266,16 +309,14 @@ pub(crate) fn view(
         .size_full()
         .min_h_0()
         .child(
-            ScrollArea::new("damage-scroll")
-                .vertical()
+            div()
                 .flex_1()
                 .min_h_0()
                 .child(
                     div()
                         .flex()
                         .flex_col()
-                        .gap_3()
-                        .p_3()
+                        .gap(PANEL_GAP)
                         .child(
                             Card::new()
                                 .header(CardHeader::new("Calculation Context").description(
@@ -287,19 +328,53 @@ pub(crate) fn view(
                                         .id("damage-context-note")
                                         .role(Role::Label)
                                         .aria_label(note.clone())
-                                        .px_3()
-                                        .pb_3()
-                                        .text_size(px(12.0))
+                                        .text_size(TEXT_CAPTION)
                                         .text_color(muted)
                                         .child(note),
                                 ),
                         )
-                        .child(summary_cards)
-                        .children(layers)
-                        .children(formula)
-                        .children(mastery),
-                ),
+                        .child(body),
+                )
+                .overflow_y_scrollbar()
+                .id("damage-scroll"),
         )
+        .into_any_element()
+}
+
+/// One context selector under its Ely id, disabled until a save loads.
+fn select(
+    select: &ChoiceSelect<usize>,
+    id: &'static str,
+    label: &'static str,
+    has_save: bool,
+) -> impl IntoElement {
+    div().flex_none().w(px(260.0)).child(
+        Select::new(select.state())
+            .id(id)
+            .accessibility_label(label)
+            .placeholder("Load a save first")
+            .disabled(!has_save)
+            .small(),
+    )
+}
+
+/// What the page shows while the summary resolves off the UI thread.
+fn resolving() -> AnyElement {
+    div()
+        .id("damage-resolving")
+        .role(Role::Label)
+        .aria_label("Resolving the damage summary")
+        .flex()
+        .flex_col()
+        .gap(PANEL_GAP)
+        .child(
+            div()
+                .flex()
+                .gap(PANEL_GAP)
+                .children((0..4).map(|_| Skeleton::new().flex_1().h(px(96.0)))),
+        )
+        .child(Skeleton::new().h(px(160.0)))
+        .child(Skeleton::new().h(px(320.0)))
         .into_any_element()
 }
 
@@ -312,16 +387,26 @@ fn layers_card(
     muted: Hsla,
     entity: Entity<AppState>,
 ) -> AnyElement {
-    let mut tabs = SegmentedControl::new("damage-layer-tabs", selected.id())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Some(layer) = LayerId::from_id(value) {
+    let tabs = ToggleGroup::new("damage-layer-tabs")
+        .segmented()
+        .single()
+        .outline()
+        .small()
+        .children(LayerId::ALL.map(|id| {
+            Toggle::new(gpui::SharedString::from(format!(
+                "damage-layer-{}",
+                id.id()
+            )))
+            .label(id.id().to_uppercase())
+            .checked(id == selected)
+        }))
+        .on_click(move |checked, _window, cx| {
+            // A click on the open tab clears every flag: keep it open.
+            if let Some(ix) = checked.iter().position(|checked| *checked) {
+                let layer = LayerId::ALL[ix];
                 entity.update(cx, |state, cx| state.set_damage_layer(layer, cx));
             }
         });
-    for id in LayerId::ALL {
-        tabs = tabs.segment(id.id(), id.id().to_uppercase(), None);
-    }
     let layer = summary.layers().map(|layers| layers.get(selected));
     let value = match layer {
         Some(layer) => match selected.format() {
@@ -346,7 +431,7 @@ fn layers_card(
             CardHeader::new("Damage Layers")
                 .description("The three layers the maximum damage multiplies"),
         )
-        .child(div().id("damage-layer-controls").px_3().child(tabs))
+        .child(div().id("damage-layer-controls").flex().child(tabs))
         .child(
             div()
                 .id("damage-layer")
@@ -355,14 +440,13 @@ fn layers_card(
                 .flex()
                 .flex_col()
                 .gap_1()
-                .p_3()
                 .child(Caption::new(selected.title()).text_color(muted))
                 .child(
                     div()
                         .id("damage-layer-value")
                         .role(Role::Label)
                         .aria_label(value.clone())
-                        .text_size(px(20.0))
+                        .text_size(TEXT_KPI)
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child(value),
                 )
@@ -371,7 +455,7 @@ fn layers_card(
                         .id("damage-layer-note")
                         .role(Role::Label)
                         .aria_label(note.clone())
-                        .text_size(px(12.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(note),
                 ),
@@ -408,8 +492,7 @@ fn formula_breakdown(
                     .id("damage-formula-gap")
                     .role(Role::Label)
                     .aria_label(summary.reason.clone())
-                    .p_3()
-                    .text_size(px(12.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child(summary.reason.clone()),
             )
@@ -439,9 +522,7 @@ fn mastery_breakdown(summary: &Summary, tree: Entity<FormulaTree>, muted: Hsla) 
                     .id("damage-mastery-gap")
                     .role(Role::Label)
                     .aria_label(summary.reason.clone())
-                    .px_3()
-                    .pb_3()
-                    .text_size(px(12.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child(summary.reason.clone()),
             )
@@ -449,28 +530,26 @@ fn mastery_breakdown(summary: &Summary, tree: Entity<FormulaTree>, muted: Hsla) 
     }
 }
 
+/// The page before a save loads.
+fn empty_summary(muted: Hsla) -> AnyElement {
+    div()
+        .id("damage-summary-empty")
+        .child(
+            Empty::new().header(
+                EmptyHeader::new()
+                    .media(EmptyMedia::new().child(Icon::new(IconName::SearchX).text_color(muted)))
+                    .title(EmptyTitle::new().child("No damage summary yet"))
+                    .description(EmptyDescription::new().child(
+                        "Import a save to open the character and map the summary resolves against.",
+                    )),
+            ),
+        )
+        .into_any_element()
+}
+
 /// The four summary cards. While the layers cannot be resolved they show a
 /// dash and the reason, never a made-up zero.
-fn summary_card(
-    summary: &Option<Summary>,
-    muted: gpui::Hsla,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let Some(summary) = summary else {
-        return div()
-            .flex()
-            .flex_col()
-            .gap_3()
-            .child(
-                EmptyState::new(
-                    "damage-summary-empty",
-                    IconName::SearchX,
-                    "No damage summary yet",
-                )
-                .body("Import a save to open the character and map the summary resolves against."),
-            )
-            .into_any_element();
-    };
+fn summary_card(summary: &Summary, muted: Hsla, cx: &mut Context<AppState>) -> AnyElement {
     let game = summary
         .game_range()
         .map(|(min, max)| format::damage_range(min, max))
@@ -512,14 +591,14 @@ fn summary_card(
     } else {
         "The mastery ratio needs the shared stat pipeline"
     };
-    let mastery_fill = (summary.mastery_fill() / 100.0) as f32;
+    let mastery_fill = summary.mastery_fill() as f32;
 
-    let mut body = div().flex().flex_col().gap_3().child(
+    let mut body = div().flex().flex_col().gap(PANEL_GAP).child(
         div()
             .id("damage-summary")
             .flex()
             .flex_wrap()
-            .gap_3()
+            .gap(PANEL_GAP)
             .child(figure(
                 "damage-game",
                 "Character Sheet Range",
@@ -533,13 +612,8 @@ fn summary_card(
     );
     if !summary.available {
         body = body.child(
-            Callout::new(Severity::Warning)
-                .title("Damage summary unavailable")
-                .child(
-                    Caption::new(summary.reason.clone())
-                        .text_color(muted)
-                        .into_any_element(),
-                ),
+            Callout::new(Tone::Warning, "Damage summary unavailable")
+                .child(Caption::new(summary.reason.clone()).text_color(muted)),
         );
     }
     // The import's own gap, reported beside the value: the
@@ -552,17 +626,16 @@ fn summary_card(
                 .role(Role::Label)
                 .aria_label(reason.clone())
                 .child(
-                    Callout::new(Severity::Warning)
-                        .title("Partial result")
-                        .child(Caption::new(reason).text_color(muted).into_any_element()),
+                    Callout::new(Tone::Warning, "Partial result")
+                        .child(Caption::new(reason).text_color(muted)),
                 ),
         );
     }
     body.into_any_element()
 }
 
-/// The mastery card: the ratio, its note and the bar.
-fn mastery_card(value: String, note: &'static str, fill: f32, muted: gpui::Hsla) -> AnyElement {
+/// The mastery card: the ratio, its note and the bar, filled to `percent`.
+fn mastery_card(value: String, note: &'static str, percent: f32, muted: Hsla) -> AnyElement {
     let ratio = value.clone();
     div()
         .id("damage-mastery-card")
@@ -581,7 +654,7 @@ fn mastery_card(value: String, note: &'static str, fill: f32, muted: gpui::Hsla)
                     .child(
                         div()
                             .id("damage-mastery")
-                            .text_size(px(20.0))
+                            .text_size(TEXT_KPI)
                             .font_weight(gpui::FontWeight::SEMIBOLD)
                             .child(value),
                     )
@@ -593,19 +666,18 @@ fn mastery_card(value: String, note: &'static str, fill: f32, muted: gpui::Hsla)
                             .id("damage-mastery-bar")
                             .role(Role::ProgressIndicator)
                             .aria_label(format!("Mastery bar: {ratio}"))
-                            .child(ProgressBar::new("damage-mastery-bar-fill", fill)),
+                            .child(Progress::new("damage-mastery-bar-fill").value(percent)),
                     ),
             ),
         )
         .into_any_element()
 }
 
-fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
+fn field(label: &'static str, muted: Hsla) -> gpui::Div {
     div()
         .flex()
         .flex_col()
         .gap_1()
-        .min_w(px(190.0))
         .child(Caption::new(label).text_color(muted))
 }
 
@@ -615,13 +687,20 @@ pub(crate) fn restore(state: &mut AppState, context: DamageContext, warnings: &m
     state.damage.context = context;
     state.damage.clamp(warnings);
     // The restored character and map re-resolve on the next render.
-    state.damage.dirty = true;
+    state.damage.invalidate();
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// Resolve what the context left pending, as the page does off the UI thread.
+    fn resolve(state: &mut State) {
+        if let Some(job) = state.job() {
+            state.summary = Some(job());
+        }
+    }
 
     fn save() -> Save {
         Save::new(json!({
@@ -641,11 +720,11 @@ mod tests {
     fn an_import_opens_on_character_one_and_its_current_map() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
-        state.ensure_summary();
+        resolve(&mut state);
         assert_eq!(state.context.character, 0);
         assert_eq!(state.context.map, 0);
         assert!(state.snapshot.is_some());
-        assert_eq!(state.map_rows().first().map(|row| row.map), Some(0));
+        assert_eq!(state.map_rows.first().map(|row| row.map), Some(0));
         let summary = state.summary.expect("the summary is computed");
         // The shared stat engine resolves the three layers, so the page opens
         // on real values instead of the missing-pipeline state.
@@ -664,8 +743,8 @@ mod tests {
     fn the_map_row_labels_carry_the_dungeon_and_current_markers() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
-        state.ensure_summary();
-        let rows = state.map_rows();
+        resolve(&mut state);
+        let rows = &state.map_rows;
         let current: Vec<&MapRow> = rows.iter().filter(|row| row.current).collect();
         assert_eq!(current.len(), 1);
         assert_eq!(current[0].map, 0);
@@ -681,7 +760,7 @@ mod tests {
     fn a_character_switch_follows_its_current_map() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
-        state.ensure_summary();
+        resolve(&mut state);
         state.select_character(1);
         assert_eq!(state.context.map, 50);
     }
@@ -690,8 +769,13 @@ mod tests {
     fn a_dungeon_map_reports_the_dungeon_reason() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
-        state.ensure_summary();
+        resolve(&mut state);
         state.select_map(39);
+        assert!(
+            state.summary.is_none(),
+            "a context change drops the old summary"
+        );
+        resolve(&mut state);
         let summary = state.summary.expect("the dungeon state is computed");
         assert!(!summary.available);
         assert!(summary.reason.contains("Dungeon"), "{summary:?}");
@@ -701,7 +785,7 @@ mod tests {
     fn the_layer_tabs_open_on_the_first_layer_and_switch() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
-        state.ensure_summary();
+        resolve(&mut state);
         assert_eq!(state.layer, LayerId::Base);
         state.select_layer(LayerId::Multiplier);
         assert_eq!(state.layer, LayerId::Multiplier);
@@ -712,7 +796,7 @@ mod tests {
     fn the_formula_tree_follows_the_selected_layer() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
-        state.ensure_summary();
+        resolve(&mut state);
         let expected = |state: &State, layer| {
             state
                 .summary
@@ -738,7 +822,7 @@ mod tests {
         // read the summary's own values from the imported save.
         let mut state = State::default();
         state.load(&save(), &Default::default());
-        state.ensure_summary();
+        resolve(&mut state);
         assert!(state.mastery_tree().is_some());
         assert!(state.summary.as_ref().unwrap().layers().is_some());
 
@@ -782,7 +866,7 @@ mod tests {
     fn a_restored_context_outside_the_save_is_clamped_and_named() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
-        state.ensure_summary();
+        resolve(&mut state);
         let mut warnings = Vec::new();
         state.context = DamageContext {
             character: 12,

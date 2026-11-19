@@ -253,7 +253,9 @@ expected. `crates/import/src/pipeline.rs` is the one pipeline every accepted for
    `idleon_save::Save` decodes each encoded field once, on its first read, and the decoders below it
    read that map: a decoder reads a cell, never a whole field's JSON text, per value.
    A section whose page resolves something expensive from the save (`stats-all`'s sheet, `damage`'s
-   summary) marks itself dirty instead of computing at import, and resolves on its next render.
+   summary) marks itself dirty instead of computing at import. When its page next renders it
+   starts the resolve on the background executor and shows a skeleton until the result lands; a
+   context change starts a new resolve and drops the stale one.
 2. Parse and detect the format; never mutate state before validation passes.
 3. Migrate older versions; unknown fields become warnings, not failures.
 4. Build a preview: format, save name if present, characters, research level, detected sections and
@@ -474,6 +476,11 @@ game's own formulas. Details: [`docs/sections/killroy.md`](sections/killroy.md).
 The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the nine Death Note
 minibosses, max pickles, effective HP and kill time, with formula tests and a section-harness
 interaction. Details: [`docs/sections/pickle.md`](sections/pickle.md).
+
+The five hidden tools (`stats-all`, `damage`, `drop-rate`, `coin-multi`, `pickle`) draw with GPUI
+Kit (#359). Their selects, number fields and slider are kit controls built once. The All Stats
+sheets and the damage summary resolve off the UI thread. The drop-rate total, the coin evaluation,
+the map lists and the formula-tree roots are read when an input changes, not on every frame.
 
 The Combat Simulator is built through CS-07. The loadout editor (CS-01) has the character picker,
 the 16 armor and 7 tool slots with their saved `EMm` upgrade deltas, the talent table from

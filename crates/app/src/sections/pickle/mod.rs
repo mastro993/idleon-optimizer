@@ -8,19 +8,22 @@ mod actions;
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::{NumberInput, Slider};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, FontWeight, IntoElement, ParentElement, Pixels, Role, SharedString,
-    Styled, Window, div, px,
+    AnyElement, Context, Entity, FontWeight, IntoElement, ParentElement, Pixels, Role,
+    SharedString, Styled, Subscription, Window, div, px,
 };
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::input::{InputEvent, InputState};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::slider::{Slider, SliderEvent, SliderState};
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
 use idleon_pickle::{self as pickle, DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, PANEL_GAP, TEXT_CAPTION, TEXT_MONO, Tone, number_value, show_number,
+};
 
 /// The section's live inputs, kept in `AppState` while the window is open.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -60,6 +63,76 @@ impl State {
     }
 }
 
+/// The kit controls that show [`State`], built once (`docs/ui-kit/forms.md`).
+/// Edits flow back through the section's setters; render brings the controls
+/// in line with a restored or clamped value.
+pub(crate) struct Controls {
+    dps: Entity<InputState>,
+    ttk: Entity<SliderState>,
+    _subscriptions: [Subscription; 2],
+}
+
+impl Controls {
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+        let dps = cx.new(|cx| {
+            InputState::new(window, cx)
+                .placeholder("e.g. 50000000")
+                .min(0.0)
+                .max(MAX_DPS)
+                .step(1_000_000.0)
+        });
+        let ttk = cx.new(|_| {
+            SliderState::new()
+                .min(MIN_TTK as f32)
+                .max(MAX_TTK as f32)
+                .step(1.0)
+                .default_value(DEFAULT_TTK as f32)
+        });
+        let subscriptions = [
+            cx.subscribe(&dps, |state, field, event: &InputEvent, cx| {
+                if !matches!(event, InputEvent::Change) {
+                    return;
+                }
+                // A cleared field means nothing entered, as the empty table says.
+                let field = field.read(cx);
+                let dps = match number_value(field) {
+                    Some(dps) => dps,
+                    None if field.value().trim().is_empty() => 0.0,
+                    None => return,
+                };
+                state.set_pickle_dps(dps, cx);
+            }),
+            cx.subscribe(&ttk, |state, _, event: &SliderEvent, cx| {
+                let (SliderEvent::Change(value) | SliderEvent::Release(value)) = event;
+                state.set_pickle_ttk(f64::from(value.end()), cx);
+            }),
+        ];
+        Self {
+            dps,
+            ttk,
+            _subscriptions: subscriptions,
+        }
+    }
+
+    /// Bring both controls in line with the section's values. Zero DPS shows
+    /// the blank field and its hint.
+    fn show(&self, pickle: State, window: &mut Window, cx: &mut Context<AppState>) {
+        if pickle.dps > 0.0 {
+            show_number(&self.dps, pickle.dps, 0, window, cx);
+        } else if number_value(self.dps.read(cx)).is_some_and(|dps| dps > 0.0)
+            && !self.dps.focus_handle(cx).is_focused(window)
+        {
+            self.dps
+                .update(cx, |field, cx| field.set_value("", window, cx));
+        }
+        if f64::from(self.ttk.read(cx).value().end()) != pickle.max_ttk {
+            self.ttk.update(cx, |slider, cx| {
+                slider.set_value(pickle.max_ttk as f32, window, cx);
+            });
+        }
+    }
+}
+
 /// The inputs and the miniboss table, side by side or stacked.
 pub(crate) fn view(
     state: &mut AppState,
@@ -67,40 +140,19 @@ pub(crate) fn view(
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let height = layout::table_height(f32::from(window.viewport_size().height));
-    let dps = state.pickle.dps;
-    let max_ttk = state.pickle.max_ttk;
+    let pickle = state.pickle;
+    state.pickle_controls.show(pickle, window, cx);
     layout::split_pane_reversed(
         "pickle-layout",
         Breakpoint::of(window, cx),
-        results(dps, max_ttk, height, cx),
-        controls(dps, max_ttk, cx),
+        results(pickle.dps, pickle.max_ttk, height, cx),
+        controls(&state.pickle_controls, pickle.max_ttk, cx),
         px(360.0),
     )
 }
 
-fn controls(dps: f64, max_ttk: f64, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let dps_entity = entity.clone();
-    let ttk_entity = entity;
-
-    let dps_input = NumberInput::new("pickle-dps", dps)
-        .range(0.0, MAX_DPS)
-        .step(1_000_000.0)
-        .precision(0)
-        .blank("e.g. 50000000")
-        .label("DPS")
-        .on_change(move |value, _window, cx| {
-            dps_entity.update(cx, |state, cx| state.set_pickle_dps(value, cx));
-        });
-    let ttk_slider = Slider::new("pickle-ttk", max_ttk)
-        .range(MIN_TTK, MAX_TTK)
-        .step(1.0)
-        .label("Max time to kill")
-        .on_change(move |value, _window, cx| {
-            ttk_entity.update(cx, |state, cx| state.set_pickle_ttk(value, cx));
-        });
-
+fn controls(controls: &Controls, max_ttk: f64, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     Card::new()
         .header(CardHeader::new("Combat inputs").description(
             "Hit the Shimmer Island target dummy and enter the damage per second it reports.",
@@ -110,15 +162,14 @@ fn controls(dps: f64, max_ttk: f64, cx: &mut Context<AppState>) -> AnyElement {
                 .id("pickle-controls")
                 .flex()
                 .flex_col()
-                .gap_3()
-                .p_3()
+                .gap(PANEL_GAP)
                 .child(
                     div()
                         .flex()
                         .flex_col()
                         .gap_1()
                         .child(Caption::new("Your DPS"))
-                        .child(dps_input),
+                        .child(crate::ui::number_field("pickle-dps", &controls.dps, "DPS").w_full()),
                 )
                 .child(
                     div()
@@ -132,11 +183,16 @@ fn controls(dps: f64, max_ttk: f64, cx: &mut Context<AppState>) -> AnyElement {
                                 .id("pickle-ttk-value")
                                 .role(Role::Label)
                                 .aria_label(format!("{max_ttk:.0} seconds"))
-                                .text_size(px(16.0))
+                                .text_size(TEXT_MONO)
+                                .font_family(cx.theme().mono_font_family.clone())
                                 .child(format!("{max_ttk:.0}s")),
                         ),
                 )
-                .child(ttk_slider)
+                .child(
+                    div()
+                        .id("pickle-ttk")
+                        .child(Slider::new(&controls.ttk).accessibility_label("Max time to kill")),
+                )
                 .child(Caption::new(
                     "Pickles only stack on the minibosses of the Revenge of the Pickle Death Note page, not dungeon or pet mobs.",
                 ).text_color(muted)),
@@ -145,27 +201,20 @@ fn controls(dps: f64, max_ttk: f64, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 fn results(dps: f64, max_ttk: f64, height: Pixels, cx: &mut Context<AppState>) -> AnyElement {
-    let colors = &cx.theme().colors;
-    let (success, warning, danger, muted) = (
-        colors.success,
-        colors.warning,
-        colors.danger,
-        colors.fg_muted,
-    );
+    let muted = cx.theme().muted_foreground;
     let show_effective = dps > 0.0;
 
-    let mut table = Table::new([
-        "Miniboss",
-        "Base HP",
-        "Max Pickles",
-        "Effective HP",
-        "Kill Time",
-    ]);
-    for row in pickle::rows(dps, max_ttk) {
+    let head = TableRow::new()
+        .child(TableHead::new().child("Miniboss"))
+        .child(TableHead::new().text_right().child("Base HP"))
+        .child(TableHead::new().text_right().child("Max Pickles"))
+        .child(TableHead::new().text_right().child("Effective HP"))
+        .child(TableHead::new().text_right().child("Kill Time"));
+    let rows = pickle::rows(dps, max_ttk).map(|row| {
         let (pickle_text, tone) = match row.max_pickles {
-            None => ("✗".to_string(), danger),
-            Some(0) => ("0".to_string(), warning),
-            Some(pickles) => (pickles.to_string(), success),
+            None => ("✗".to_string(), Tone::Danger),
+            Some(0) => ("0".to_string(), Tone::Warning),
+            Some(pickles) => (pickles.to_string(), Tone::Success),
         };
         let effective = if show_effective {
             pickle::compact(row.effective_hp)
@@ -182,51 +231,72 @@ fn results(dps: f64, max_ttk: f64, height: Pixels, cx: &mut Context<AppState>) -
             effective,
             kill_time
         );
-        table = table.row([
-            div()
-                .id(SharedString::from(format!(
-                    "pickle-row-{}",
-                    row.miniboss.code
-                )))
-                .role(Role::Label)
-                .aria_label(summary)
-                .flex()
-                .flex_col()
-                .gap_0p5()
-                .child(row.miniboss.name)
-                .child(Caption::new(row.miniboss.world))
-                .into_any_element(),
-            div()
-                .child(pickle::compact(row.miniboss.base_hp))
-                .into_any_element(),
-            div()
-                .text_color(tone)
-                .font_weight(FontWeight::SEMIBOLD)
-                .child(pickle_text)
-                .into_any_element(),
-            div().child(effective).into_any_element(),
-            div().child(kill_time).text_color(muted).into_any_element(),
-        ]);
-    }
+        TableRow::new()
+            .id(SharedString::from(format!(
+                "pickle-tr-{}",
+                row.miniboss.code
+            )))
+            .child(
+                TableCell::new().child(
+                    div()
+                        .id(SharedString::from(format!(
+                            "pickle-row-{}",
+                            row.miniboss.code
+                        )))
+                        .role(Role::Label)
+                        .aria_label(summary)
+                        .flex()
+                        .flex_col()
+                        .gap_0p5()
+                        .child(row.miniboss.name)
+                        .child(Caption::new(row.miniboss.world)),
+                ),
+            )
+            .child(
+                TableCell::new()
+                    .text_right()
+                    .child(pickle::compact(row.miniboss.base_hp)),
+            )
+            .child(
+                TableCell::new().text_right().child(
+                    div()
+                        .text_color(tone.color(cx))
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .child(pickle_text),
+                ),
+            )
+            .child(TableCell::new().text_right().child(effective))
+            .child(
+                TableCell::new()
+                    .text_right()
+                    .child(div().text_color(muted).child(kill_time)),
+            )
+    });
+    let table = Table::new()
+        .child(TableHeader::new().child(head))
+        .child(TableBody::new().children(rows.collect::<Vec<_>>()));
 
     let body = div()
         .flex()
         .flex_col()
-        .gap_3()
-        .p_3()
+        .gap(PANEL_GAP)
         .min_h_0()
         .when(!show_effective, |body| {
-            body.child(Banner::new(
-                "pickle-empty",
-                Severity::Info,
-                "Enter your DPS to see how many pickles each miniboss can stack and still die in time.",
-            ))
+            body.child(
+                Alert::new(
+                    "pickle-empty",
+                    "Enter your DPS to see how many pickles each miniboss can stack and still die in time.",
+                )
+                .with_variant(Tone::Info.into())
+                .banner(),
+            )
         })
         .child(
-            ScrollArea::new("pickle-table-scroll")
-                .vertical()
+            div()
                 .h(height)
-                .child(table),
+                .child(table)
+                .overflow_y_scrollbar()
+                .id("pickle-table-scroll"),
         );
 
     Card::new()
@@ -236,9 +306,7 @@ fn results(dps: f64, max_ttk: f64, height: Pixels, cx: &mut Context<AppState>) -
         .child(body)
         .child(
             div()
-                .px_3()
-                .pb_2()
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(
                     "Formula: HP × 1.10^pickles. The Revenge of the Pickle Jade Emporium upgrade is a separate bonus.",

@@ -16,7 +16,6 @@ pub(crate) mod theme;
 pub(crate) mod views;
 
 use crate::state::AppState;
-use ely_gpui_component::forms::TextInput;
 use gpui::{
     Action, App, AppContext as _, Context, Div, ElementId, Entity, InteractiveElement as _,
     IntoElement, KeyBinding, KeyBindingContextPredicate, ParentElement as _, Render, SharedString,
@@ -61,20 +60,6 @@ pub(crate) fn formula_tree(
     cx: &mut App,
 ) -> Entity<FormulaTree> {
     cx.new(|cx| FormulaTree::new(id, window, cx))
-}
-
-/// A one-line text field with its placeholder and accessible label.
-pub(crate) fn text_input(
-    placeholder: &'static str,
-    label: &'static str,
-    window: &mut Window,
-    cx: &mut App,
-) -> Entity<TextInput> {
-    cx.new(|cx| {
-        TextInput::new(window, cx)
-            .placeholder(placeholder)
-            .label(label)
-    })
 }
 
 /// A one-line kit text field showing `placeholder` while empty. The render

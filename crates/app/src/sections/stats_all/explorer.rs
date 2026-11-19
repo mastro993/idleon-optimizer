@@ -7,18 +7,15 @@
 //! coverage the registry can prove. The formula itself is the shared
 //! [`FormulaTree`], which carries each term's saved input, multiplier and source.
 
+use super::tag;
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::Focusable as _;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Role, Styled, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div, px};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_stats::{Breakdown, BreakdownCategory, ExplorerFilter, ExplorerStatus};
-use idleon_ui::formula::FormulaTree;
-use idleon_ui::widgets::search_input;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone, search_input};
 
 /// The explorer's own selection: its filters and the formula card it shows.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -54,8 +51,9 @@ impl State {
 
 /// The explorer region: the ledger line, the filters, the formula rows and the
 /// selected card.
-pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let tree = state.stats_explorer_formula.clone();
+pub(super) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let theme = cx.theme();
+    let (muted, accent) = (theme.muted_foreground, theme.primary);
     let search = state.stats_explorer_search.clone();
     let query = search.read(cx).value().trim().to_string();
     let stats = &mut state.stats_all;
@@ -70,10 +68,8 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
                     .id("stats-explorer-empty")
                     .role(Role::Label)
                     .aria_label("Load a save to explore the formulas")
-                    .px_3()
-                    .pb_3()
-                    .text_size(px(12.0))
-                    .text_color(cx.theme().colors.fg_muted)
+                    .text_size(TEXT_CAPTION)
+                    .text_color(muted)
                     .child("Load a save to explore the formulas."),
             )
             .into_any_element();
@@ -90,19 +86,13 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
         .and_then(|id| sheet.get(id));
 
     let entity = cx.entity();
-    let muted = cx.theme().colors.fg_muted;
-    let accent = cx.theme().colors.accent;
     let search_focus = search.focus_handle(cx);
-    let category = entity.clone();
-    let status = entity.clone();
-
-    let controls = div()
+    let controls = &state.stats_controls;
+    let filters = div()
         .id("stats-explorer-controls")
         .flex()
-        .flex_wrap()
         .items_end()
         .gap_3()
-        .p_3()
         .child(
             field("Search formulas", muted).child(
                 div()
@@ -116,88 +106,68 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
         )
         .child(
             field("Category", muted).child(
-                Select::new(
-                    "stats-explorer-category",
-                    std::iter::once(Choice::new("all", "All categories")).chain(
-                        BreakdownCategory::ALL.map(|entry| Choice::new(entry.id(), entry.label())),
-                    ),
-                )
-                .label("Formula category")
-                .selected(
-                    stats
-                        .explorer
-                        .category
-                        .map(BreakdownCategory::id)
-                        .unwrap_or("all"),
-                )
-                .on_change(move |value, _window, cx| {
-                    let next = BreakdownCategory::from_id(value.as_ref());
-                    category.update(cx, |state, cx| state.set_stats_explorer_category(next, cx));
-                }),
+                div().flex_none().w(px(200.0)).child(
+                    Select::new(controls.explorer_category.state())
+                        .id("stats-explorer-category")
+                        .accessibility_label("Formula category")
+                        .small(),
+                ),
             ),
         )
         .child(
             field("Status", muted).child(
-                Select::new(
-                    "stats-explorer-status",
-                    ExplorerStatus::ALL.map(|entry| Choice::new(entry.id(), entry.label())),
-                )
-                .label("Formula status")
-                .selected(stats.explorer.status.id())
-                .on_change(move |value, _window, cx| {
-                    if let Some(next) = ExplorerStatus::from_id(value.as_ref()) {
-                        status.update(cx, |state, cx| state.set_stats_explorer_status(next, cx));
-                    }
-                }),
+                div().flex_none().w(px(200.0)).child(
+                    Select::new(controls.explorer_status.state())
+                        .id("stats-explorer-status")
+                        .accessibility_label("Formula status")
+                        .small(),
+                ),
             ),
         );
 
     let has_query = !query.is_empty();
-    let list = rows.iter().fold(
-        div()
-            .id("stats-explorer-rows")
-            .flex()
-            .flex_col()
-            .gap_1()
-            .px_3()
-            .pb_3(),
-        |list, row| {
-            let id = row.id;
+    let none = rows.is_empty();
+    let matches = rows.len();
+    let list = div()
+        .id("stats-explorer-rows")
+        .flex()
+        .flex_col()
+        .gap_1()
+        .children(rows.into_iter().map(|row| {
             let value = row.display_value();
             let label = match &value {
                 Some(value) => format!("{}: {value}", row.name),
                 None => format!("{}: not modelled", row.name),
             };
-            let is_selected = selected.is_some_and(|selected| selected.id == id);
+            let is_selected = selected.is_some_and(|selected| selected.id == row.id);
             let click = entity.clone();
-            let row_id = id.to_string();
-            list.child(
-                div()
-                    .id(format!("stats-formula-{id}"))
-                    .role(Role::Button)
-                    .aria_label(format!("{label} · {}", row.category.label()))
-                    .flex()
-                    .items_center()
-                    .gap_3()
-                    .px_2()
-                    .py_1()
-                    .rounded_md()
-                    .cursor_pointer()
-                    .when(is_selected, |row| row.bg(accent.opacity(0.12)))
-                    .on_click(move |_, _window, cx| {
-                        let id = row_id.clone();
-                        click.update(cx, |state, cx| state.set_stats_formula(id, cx));
-                    })
-                    .child(div().flex_1().min_w_0().child(row.name))
-                    .child(Caption::new(row.category.label()).text_color(muted))
-                    .when_some(value, |row, value| row.child(div().child(value)))
-                    .when(row.display_value().is_none(), |row| {
-                        row.child(Badge::new("Not modelled").tone(Tone::Warning))
-                    }),
-            )
-        },
-    );
+            let row_id = row.id.to_string();
+            div()
+                .id(format!("stats-formula-{}", row.id))
+                .role(Role::Button)
+                .aria_label(format!("{label} · {}", row.category.label()))
+                .flex()
+                .items_center()
+                .gap_3()
+                .px_2()
+                .py_1()
+                .rounded(cx.theme().radius)
+                .cursor_pointer()
+                .when(is_selected, |line| line.bg(accent.opacity(0.12)))
+                .on_click(move |_, _window, cx| {
+                    let id = row_id.clone();
+                    click.update(cx, |state, cx| state.set_stats_formula(id, cx));
+                })
+                .child(div().flex_1().min_w_0().child(row.name))
+                .child(Caption::new(row.category.label()).text_color(muted))
+                .when_some(value, |line, value| line.child(div().child(value)))
+                .when(row.display_value().is_none(), |line| {
+                    line.child(tag("Not modelled", Tone::Warning))
+                })
+        }));
 
+    let selected = selected.cloned();
+    let card = formula_card(state, selected.as_ref(), cx);
     div()
         .flex()
         .flex_col()
@@ -214,33 +184,27 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
                         .id("stats-explorer-ledger")
                         .role(Role::Label)
                         .aria_label(coverage_line.clone())
-                        .px_3()
-                        .pb_1()
-                        .text_size(px(12.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(coverage_line),
                 )
-                .child(controls)
+                .child(filters)
                 .child(
                     div()
                         .id("stats-explorer-count")
                         .role(Role::Label)
                         .aria_label(count.clone())
-                        .px_3()
-                        .pb_2()
-                        .text_size(px(12.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(count),
                 )
-                .when(rows.is_empty(), |card| {
+                .when(none, |card| {
                     card.child(
                         div()
                             .id("stats-explorer-none")
                             .role(Role::Label)
                             .aria_label("No formula matches the filters")
-                            .px_3()
-                            .pb_3()
-                            .text_size(px(12.0))
+                            .text_size(TEXT_CAPTION)
                             .text_color(muted)
                             .child(if has_query {
                                 "No formula matches the search and the filters."
@@ -253,22 +217,22 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
                     div()
                         .id("stats-explorer-panel")
                         .role(Role::Label)
-                        .aria_label(format!("{} formulas", rows.len()))
+                        .aria_label(format!("{matches} formulas"))
                         .child(list),
                 ),
         )
-        .child(formula_card(selected, tree, cx))
+        .child(card)
         .into_any_element()
 }
 
 /// The selected formula's card: its value, its saved inputs and its tree, or
 /// why it is unavailable.
 fn formula_card(
+    state: &mut AppState,
     row: Option<&Breakdown>,
-    tree: Entity<FormulaTree>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let Some(row) = row else {
         return Card::new()
             .header(
@@ -280,9 +244,7 @@ fn formula_card(
                     .id("stats-formula-empty")
                     .role(Role::Label)
                     .aria_label("No formula selected")
-                    .px_3()
-                    .pb_3()
-                    .text_size(px(12.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child("Pick a formula above to read its terms."),
             )
@@ -291,21 +253,19 @@ fn formula_card(
     let value = row
         .display_value()
         .unwrap_or_else(|| "not modelled".to_string());
-    let scope = row.scope.label();
     let explanation = describe(row);
 
     let mut card = Card::new()
         .header(
-            CardHeader::new(format!("{} · {scope}", row.name)).description(row.category.label()),
+            CardHeader::new(format!("{} · {}", row.name, row.scope.label()))
+                .description(row.category.label()),
         )
         .child(
             div()
                 .id("stats-formula-value")
                 .role(Role::Label)
                 .aria_label(format!("{}: {value}", row.name))
-                .px_3()
-                .pb_1()
-                .text_size(px(12.0))
+                .text_size(TEXT_CAPTION)
                 .child(value),
         )
         .when(!explanation.is_empty(), |card| {
@@ -314,22 +274,27 @@ fn formula_card(
                     .id("stats-formula-explanation")
                     .role(Role::Label)
                     .aria_label(explanation.clone())
-                    .px_3()
-                    .pb_2()
-                    .text_size(px(12.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child(explanation),
             )
         });
     if let Some(root) = row.resolution.tree() {
-        let root = root.clone();
-        tree.update(cx, |tree, cx| tree.set_root(root, cx));
+        // Hand the tree its root only when the formula or the sheet changed.
+        let shown = (state.stats_all.revision, row.id.to_string());
+        if state.stats_controls.explorer_root.as_ref() != Some(&shown) {
+            let root = root.clone();
+            state
+                .stats_explorer_formula
+                .update(cx, |tree, cx| tree.set_root(root, cx));
+            state.stats_controls.explorer_root = Some(shown);
+        }
         card = card.child(
             div()
                 .id("stats-formula-tree")
                 .h(px(320.0))
                 .min_h_0()
-                .child(tree),
+                .child(state.stats_explorer_formula.clone()),
         );
     }
     card.into_any_element()

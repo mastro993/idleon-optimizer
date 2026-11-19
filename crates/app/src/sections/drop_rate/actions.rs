@@ -12,6 +12,7 @@ impl AppState {
         let mut selection = self.drop_rate.selection;
         selection.select_character(character, snapshot);
         self.drop_rate.selection = selection;
+        self.drop_rate.refresh_maps();
         self.drop_rate_changed(cx);
     }
 
@@ -28,6 +29,7 @@ impl AppState {
 
     /// A context change refreshes the total the page derives from it.
     pub(crate) fn drop_rate_changed(&mut self, cx: &mut Context<Self>) {
+        self.drop_rate.refresh(cx);
         let selection = self.drop_rate.selection;
         let character = self
             .drop_rate

@@ -403,6 +403,8 @@ pub(crate) struct AppState {
     pub(crate) sneaking_controls: crate::sections::sneaking::Controls,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub(crate) pickle: PickleState,
+    /// The BoneJoePickle section's kit DPS field and kill-time slider.
+    pub(crate) pickle_controls: crate::sections::pickle::Controls,
     /// The Prisma calculator's controls and the plan for the save.
     pub(crate) prisma: PrismaState,
     /// The statue section's saved rows, character and table controls.
@@ -415,6 +417,8 @@ pub(crate) struct AppState {
     pub(crate) combat_compare: Entity<TaskRunner<CombatComparison, CombatComparePlan>>,
     /// The All Stats Dashboard's calculation context, save slice and breakdowns.
     pub(crate) stats_all: StatsAllState,
+    /// The All Stats Dashboard's kit selects and sandbox fields.
+    pub(crate) stats_controls: crate::sections::stats_all::Controls,
     /// The shared formula tree on the All Stats breakdown card.
     pub(crate) stats_breakdown: Entity<FormulaTree>,
     /// The formula explorer's search field.
@@ -427,6 +431,8 @@ pub(crate) struct AppState {
     pub(crate) coin_multi: coin_multi::State,
     /// The Damage Breakdown's character/map context, layer tab and summary.
     pub(crate) damage: DamageState,
+    /// The damage section's kit character and map selects.
+    pub(crate) damage_controls: crate::sections::damage::Controls,
     /// The shared formula tree on the damage section's mastery breakdown card.
     pub(crate) damage_mastery: Entity<FormulaTree>,
     /// The shared formula tree on the damage section's formula breakdown card.
@@ -1397,18 +1403,21 @@ impl AppState {
             sneaking_breakdown,
             sneaking_controls,
             pickle: PickleState::default(),
+            pickle_controls: crate::sections::pickle::Controls::new(window, cx),
             prisma,
             statue,
             combat,
             combat_encounter,
             combat_compare,
             stats_all: StatsAllState::default(),
+            stats_controls: crate::sections::stats_all::Controls::new(window, cx),
             stats_breakdown,
             stats_explorer_search,
             stats_explorer_formula,
             drop_rate: DropRateState::new(window, cx),
             coin_multi: sections::coin_multi::State::new(window, cx),
             damage: DamageState::default(),
+            damage_controls: crate::sections::damage::Controls::new(window, cx),
             damage_mastery: crate::ui::formula_tree("damage-mastery", window, cx),
             damage_formula: crate::ui::formula_tree("damage-formula", window, cx),
             coral: CoralState::default(),
