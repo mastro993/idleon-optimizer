@@ -291,8 +291,8 @@ pub(super) fn count(value: f64) -> String {
     figure(value, 0)
 }
 
-/// A figure with `decimals` decimals, its whole part grouped by thousands, as
-/// the Ely statistics drew it; past `u64` it falls back to the short form.
+/// A figure with `decimals` decimals, its whole part grouped by thousands;
+/// past `u64` it falls back to the short form.
 pub(super) fn figure(value: f64, decimals: usize) -> String {
     if !value.is_finite() {
         return "—".into();

@@ -122,7 +122,7 @@ Acceptance:
 
 ### FND-08 — Shared layout, theme and responsive rules
 
-Ely-based shell, cards, tabs, tables and form controls shared by all sections, with one dark palette and spacing scale.
+GPUI Kit shell, cards, tabs, tables and form controls shared by all sections, with one theme and spacing scale.
 
 Depends on: FND-01 Dashboard card grid
 
@@ -130,7 +130,7 @@ Acceptance:
 
 - All sections use the shared page header, tab strip, card and table primitives.
 - Minimum window size keeps tables scrollable and cards readable.
-- No section reimplements a component that exists in Ely.
+- No section reimplements a component that exists in GPUI Kit or idleon_ui.
 
 ### FND-09 — Empty, loading, error and stale states
 

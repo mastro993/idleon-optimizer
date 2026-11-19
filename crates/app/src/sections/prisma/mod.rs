@@ -352,7 +352,7 @@ fn tag(label: impl Into<SharedString>, tone: Tone) -> Tag {
         .child(label.into())
 }
 
-/// The cauldron switch. Segment `n` keeps Ely's bare `segment-<n>` id, which
+/// The cauldron switch. Segment `n` keeps the bare `segment-<n>` id, which
 /// the harness clicks; a click on the checked segment keeps it.
 fn cauldron_switch(current: Cauldron, entity: &Entity<AppState>) -> ToggleGroup {
     let entity = entity.clone();
@@ -629,7 +629,7 @@ fn results_card(
         .into_any_element()
 }
 
-/// One bubble's cells; each keeps its Ely `prisma-<cell>-<cauldron>-<index>` id.
+/// One bubble's cells; each keeps its `prisma-<cell>-<cauldron>-<index>` id.
 fn row_cells(row: &Row) -> Vec<AnyElement> {
     let id = |cell: &str| SharedString::from(format!("prisma-{cell}-{}", row.key));
     vec![

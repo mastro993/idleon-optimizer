@@ -1,8 +1,9 @@
 # Buttons and forms
 
-How each Ely button and form control maps to GPUI Kit, and **the one pattern every section
+How each Ely button and form control mapped to GPUI Kit, and **the one pattern every section
 uses to own a kit control's state**. Written for #341; every section issue (#348–#359) and the
-shell issues follow it.
+shell issues followed it. Ely is gone since #361: the mapping stays as the record of what each
+kit control replaced, and the pattern is how a new control is built.
 
 ## Mapping
 
@@ -177,7 +178,7 @@ fn manual_input(
 ) -> impl IntoElement {
     let field = &state.opal.manual_fields[villager];
     show_number(field, state.opal.manual[villager], 0, window, cx);
-    // `NumberInput` has no `id`: a wrapper keeps the Ely control's id.
+    // `NumberInput` has no `id`: a wrapper carries the control's id.
     div().id(format!("opal-manual-{villager}")).child(
         NumberInput::new(field)
             .accessibility_label(format!("{} opals", NAMES[villager]))
@@ -209,6 +210,5 @@ section issues must not edit at the same time:
 | `farming_name` | `InputState` | `sections/farming/presets.rs`: `Input` in `farming-preset-name` |
 | `import.input` | `TextareaState` | `ui/import.rs`: `Textarea` in `import-input` |
 
-`ui::input_state(placeholder, window, cx)` builds a one-line field. `state::redraw_on_edit` takes
-both the kit `InputState` and Ely's `TextInput` (through the `TextField` trait), so a section that
-moves its own field to the kit changes the field's type and nothing in `state/mod.rs`.
+`ui::input_state(placeholder, window, cx)` builds a one-line field, and `state::redraw_on_edit`
+redraws the window on each of its edits.

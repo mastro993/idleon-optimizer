@@ -499,7 +499,7 @@ fn observations_card(
 }
 
 /// `value` with `decimals` places and its whole part grouped in thousands,
-/// as Ely's statistic drew it: `30,808.96`.
+/// as in `30,808.96`.
 fn grouped(value: f64, decimals: usize) -> String {
     let text = format!("{value:.decimals$}");
     match text.split_once('.') {

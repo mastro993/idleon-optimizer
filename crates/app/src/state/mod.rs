@@ -1714,15 +1714,6 @@ fn starter_simulation() -> Simulation {
     simulation
 }
 
-/// Both UI libraries, set up as a window state needs them under GPUI's test
-/// platform. Ely's `init_for_tests` stands in for `init`, which needs the
-/// bundled fonts the test platform has no asset source for.
-#[cfg(test)]
-pub(crate) fn init_for_tests(cx: &mut gpui::App) {
-    ely_gpui_component::init_for_tests(cx);
-    gpui_kit::init(cx);
-}
-
 /// A window state built under GPUI's test platform, its session and
 /// automation endpoint kept in a private directory; without an endpoint
 /// directory the bridge would register in the user's real one.
@@ -1731,7 +1722,7 @@ pub(crate) fn headless(
     cx: &mut gpui::TestAppContext,
     dir: &std::path::Path,
 ) -> gpui::WindowHandle<AppState> {
-    cx.update(init_for_tests);
+    cx.update(gpui_kit::init);
     let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
     let window = cx.add_window(|window, cx| {
         AppState::new(window, Some(endpoint), None, Some(state_dir), None, cx)
@@ -1775,7 +1766,7 @@ mod tests {
         dir: &std::path::Path,
         import: std::path::PathBuf,
     ) -> gpui::WindowHandle<AppState> {
-        cx.update(init_for_tests);
+        cx.update(gpui_kit::init);
         let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
         let window = cx.add_window(|window, cx| {
             AppState::new(
@@ -1798,7 +1789,7 @@ mod tests {
         cx: &mut gpui::TestAppContext,
         dir: &std::path::Path,
     ) -> (gpui::AnyWindowHandle, Entity<AppState>) {
-        cx.update(init_for_tests);
+        cx.update(gpui_kit::init);
         let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
         let mut state = None;
         let window = cx.add_window(|window, cx| {
@@ -2058,7 +2049,7 @@ mod tests {
         let written = std::fs::read(&path).expect("the session file");
 
         let mut cx = gpui::TestAppContext::single();
-        cx.update(init_for_tests);
+        cx.update(gpui_kit::init);
         let endpoint = dir.join("endpoint");
         let window = cx.add_window(|window, cx| {
             AppState::new(window, Some(endpoint), None, Some(state_dir), None, cx)

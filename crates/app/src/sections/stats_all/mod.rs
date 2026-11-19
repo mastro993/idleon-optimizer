@@ -503,7 +503,7 @@ fn map_card(
         .into_any_element()
 }
 
-/// One labelled context select under its Ely id.
+/// One labelled context select under its harness id.
 fn context_select<D: SearchableListDelegate + 'static>(
     select: Select<D>,
     id: &'static str,

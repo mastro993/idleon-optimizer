@@ -85,8 +85,7 @@ impl<T: 'static> TableDelegate for Rows<T> {
     }
 }
 
-/// A table state over `columns`: no selection, sorting or column moves, as the
-/// Ely tables had none.
+/// A table state over `columns`: no selection, sorting or column moves.
 pub(crate) fn state<T: 'static>(
     columns: Vec<Cell<T>>,
     window: &mut Window,

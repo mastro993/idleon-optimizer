@@ -53,8 +53,7 @@ impl Rows {
     }
 }
 
-/// A table state over the statue rows: no selection, sorting or column moves,
-/// as the Ely table had none.
+/// A table state over the statue rows: no selection, sorting or column moves.
 pub(super) fn state(rows: Rows, window: &mut Window, cx: &mut App) -> Entity<TableState<Rows>> {
     cx.new(|cx| {
         TableState::new(rows, window, cx)

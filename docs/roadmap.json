@@ -231,11 +231,11 @@
         {
           "id": "FND-08",
           "title": "Shared layout, theme and responsive rules",
-          "description": "Ely-based shell, cards, tabs, tables and form controls shared by all sections, with one dark palette and spacing scale.",
+          "description": "GPUI Kit shell, cards, tabs, tables and form controls shared by all sections, with one theme and spacing scale.",
           "acceptance": [
             "All sections use the shared page header, tab strip, card and table primitives.",
             "Minimum window size keeps tables scrollable and cards readable.",
-            "No section reimplements a component that exists in Ely."
+            "No section reimplements a component that exists in GPUI Kit or idleon_ui."
           ],
           "dependsOn": [
             "FND-01"

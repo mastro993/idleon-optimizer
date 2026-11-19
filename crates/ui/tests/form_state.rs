@@ -125,7 +125,7 @@ fn manual_input(
 ) -> impl IntoElement {
     let field = &state.opal.manual_fields[villager];
     show_number(field, state.opal.manual[villager], 0, window, cx);
-    // `NumberInput` has no `id`: a wrapper keeps the Ely control's id.
+    // `NumberInput` has no `id`: a wrapper carries the control's id.
     div().id(format!("opal-manual-{villager}")).child(
         NumberInput::new(field)
             .accessibility_label(format!("{} opals", NAMES[villager]))

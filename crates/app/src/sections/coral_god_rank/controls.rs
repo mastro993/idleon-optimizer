@@ -149,7 +149,7 @@ impl Controls {
             .iter()
             .map(|spec| number_state(spec.range.0, spec.range.1, spec.step, window, cx))
             .collect();
-        // Edits flow control -> input, held to the range the Ely field held.
+        // Edits flow control -> input, held to the field's range.
         let mut subscriptions = vec![cx.subscribe(
             goal.state(),
             |state, _, event: &SelectEvent<Vec<Choice<Goal>>>, cx| {

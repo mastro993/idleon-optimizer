@@ -7,4 +7,3 @@ unmaintained = "workspace"
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-allow-git = ["https://github.com/ELY-Open-Source/Ely-GPUI-Components"]

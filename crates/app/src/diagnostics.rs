@@ -1,6 +1,6 @@
 //! A local log and a crash record, so a problem outside a terminal leaves a trace.
 //!
-//! GPUI and Ely report recoverable errors through the `log` facade; without a
+//! GPUI and GPUI Kit report recoverable errors through the `log` facade; without a
 //! logger they vanish. This module installs one that appends warnings and
 //! errors to `idleon-optimizer.log` in the app's state directory, and a panic
 //! hook that appends the panic's message and location to the same file before

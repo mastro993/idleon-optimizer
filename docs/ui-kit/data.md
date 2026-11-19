@@ -1,8 +1,8 @@
 # Tables, scrolling and charts
 
-How a migrated screen shows rows, scrolls and plots with GPUI Kit, and how it stays fast doing it.
-It covers Ely's `tables::Table`, `layout::ScrollArea`, `charts::LineChart` with `Series`, and
-`lists::List`/`ListItem`. Tracking issue: [#335](https://github.com/mastro993/idleon-optimizer/issues/335).
+How a screen shows rows, scrolls and plots with GPUI Kit, and how it stays fast doing it. It was
+written for the move off Ely's `tables::Table`, `layout::ScrollArea`, `charts::LineChart` with
+`Series`, and `lists::List`/`ListItem`; the "Before (Ely)" snippets record what each replaced. Tracking issue: [#335](https://github.com/mastro993/idleon-optimizer/issues/335).
 
 ## Tables
 

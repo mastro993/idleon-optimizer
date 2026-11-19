@@ -3,7 +3,7 @@
 //! The tables whose rows grow with the fleet (one per boat, captain or boat
 //! upgrade) are virtualized `DataTable`s over [`Rows`]: their rows are built
 //! when the tab's inputs change, never in render (`docs/ui-kit/data.md`). The
-//! cells carry the element ids and tooltips the Ely tables had, so the delegate
+//! cells carry the element ids and tooltips the harness reads, so the delegate
 //! draws elements instead of the text-only `idleon_ui::widgets::RowsDelegate`.
 //! Small fixed tables are kit `Table`s through [`table`].
 
@@ -125,8 +125,7 @@ impl<T: 'static> TableDelegate for Rows<T> {
     }
 }
 
-/// A table state over `columns`: no selection, sorting or column moves, as the
-/// Ely tables had none.
+/// A table state over `columns`: no selection, sorting or column moves.
 pub(crate) fn state<T: 'static>(
     columns: Vec<Cell<T>>,
     window: &mut Window,

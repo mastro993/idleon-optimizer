@@ -151,7 +151,7 @@ fn live(
     })
 }
 
-/// A number field that calls `set` on Enter and on blur, as Ely's commit did.
+/// A number field that calls `set` on Enter and on blur.
 fn commit(
     cx: &mut Context<AppState>,
     field: &Entity<InputState>,

@@ -100,7 +100,7 @@ fn headline(jar: &Jar, tier: u32) -> AnyElement {
         .into_any_element()
 }
 
-/// The tier the income figures are projected for. Segment `n` keeps Ely's
+/// The tier the income figures are projected for. Segment `n` keeps the
 /// `jar-tier-toggle-<n>` id, which the harness clicks.
 fn tier_control(tier: u32, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();

@@ -241,7 +241,8 @@ ambers fall under 4.5:1 on white.
 `Idleon Console Dark` and `Idleon Console Light`. Every key is a `ThemeConfig` /
 `ThemeConfigColors` key from `crates/component/src/theme/schema.rs` in gpui-kit 0.10.0, and the
 file validates against the `.theme-schema.json` published with the `v0.10.0` tag. Its `font.size`
-is 16, not the 13 of the type scale below, while Ely remains (see [the README](README.md#theme)).
+is 16, not the 13 of the type scale below, because the app's spacing and the kit's component
+heights are in rems (see [the README](README.md#theme)).
 
 Left to the kit's fallbacks on purpose:
 
@@ -258,5 +259,4 @@ Left to the kit's fallbacks on purpose:
 `crates/app/data/theme.json` with `include_str!`, adds it with
 `ThemeRegistry::global_mut(cx).load_themes_from_str(..)`, sets the kit theme's `dark_theme` and
 `light_theme` to its two configs and shows the system's current mode. The app follows the system:
-`follow_system` observes the window's appearance and switches the kit (`Theme::change`) and Ely
-together. There is no in-app mode setting.
+`follow_system` observes the window's appearance and switches the kit (`Theme::change`). There is no in-app mode setting.
