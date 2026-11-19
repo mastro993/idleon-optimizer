@@ -1,25 +1,11 @@
 //! The kit table and figure pieces the fishing cards share.
 
 use gpui::prelude::*;
-use gpui::{AnyElement, ElementId, IntoElement, ParentElement, SharedString, Styled, div, px};
+use gpui::{AnyElement, ElementId, IntoElement, ParentElement, SharedString, div};
 use gpui_kit::component::Sizable as _;
-use gpui_kit::component::scroll::ScrollableElement as _;
-use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableRow};
 use gpui_kit::component::tag::Tag;
-use idleon_ui::widgets::{KpiStrip, Statistic, Tone};
-
-/// One column of a kit table: its title, whether it holds numbers (they sit
-/// right-aligned, as `docs/ui-kit/data.md` sets them) and its width. A width of
-/// `0.0` shares what the fixed columns leave.
-pub(super) type Col = (SharedString, bool, f32);
-
-/// `(title, numeric, width)` columns from static titles.
-pub(super) fn columns(columns: &[(&'static str, bool, f32)]) -> Vec<Col> {
-    columns
-        .iter()
-        .map(|(title, numeric, width)| (SharedString::from(*title), *numeric, *width))
-        .collect()
-}
+use idleon_ui::widgets::{KpiStrip, Statistic, TableColumn, Tone, table_header};
 
 /// One body row: its element id and its cells, in column order.
 pub(super) struct Row {
@@ -46,58 +32,31 @@ impl Row {
     }
 }
 
-/// A kit table over `columns` and `rows` under `id`. The kit shares a table's
-/// width evenly between its columns, so each column takes its own width, and
-/// the table scrolls sideways when the pane is narrower than them.
+/// A kit table over `columns` and `rows` under `id`: the figure columns are
+/// pinned and the text columns share the rest of the pane's width, so the table
+/// fits its pane instead of scrolling sideways (`docs/ui-kit/data.md`).
 pub(super) fn table(
     id: &'static str,
-    columns: &[Col],
+    columns: &[TableColumn],
     rows: impl IntoIterator<Item = Row>,
 ) -> AnyElement {
-    let width = |width: f32| (width > 0.0).then(|| px(width));
-    let head = TableRow::new().children(columns.iter().map(|(title, numeric, size)| {
-        TableHead::new()
-            .when(*numeric, TableHead::text_right)
-            .when_some(width(*size), |head, size| head.flex_none().w(size))
-            .child(title.clone())
-    }));
     let body = TableBody::new().children(rows.into_iter().map(|row| {
-        TableRow::new()
-            .id(row.id)
-            .children(
-                row.cells
-                    .into_iter()
-                    .zip(columns)
-                    .map(|(cell, (_, _, size))| {
-                        cell.when_some(width(*size), |cell, size| cell.flex_none().w(size))
-                    }),
-            )
-    }));
-    let min_width: f32 = columns
-        .iter()
-        .map(|(_, _, size)| if *size > 0.0 { *size } else { 120.0 })
-        .sum();
-    div()
-        .child(
-            div().min_w(px(min_width)).child(
-                Table::new()
-                    .child(TableHeader::new().child(head))
-                    .child(body),
-            ),
+        TableRow::new().id(row.id).children(
+            row.cells
+                .into_iter()
+                .zip(columns)
+                .map(|(cell, column)| column.apply(cell)),
         )
-        .overflow_x_scrollbar()
+    }));
+    div()
         .id(id)
+        .child(Table::new().child(table_header(columns)).child(body))
         .into_any_element()
 }
 
-/// A text cell.
-pub(super) fn text(content: impl IntoElement) -> TableCell {
-    TableCell::new().child(div().min_w_0().child(content))
-}
-
-/// A right-aligned number cell.
-pub(super) fn number(content: impl IntoElement) -> TableCell {
-    TableCell::new().text_right().child(content)
+/// A body cell holding `content`; its column sizes and aligns it.
+pub(super) fn cell(content: impl IntoElement) -> TableCell {
+    TableCell::new().child(content)
 }
 
 /// A small status tag.

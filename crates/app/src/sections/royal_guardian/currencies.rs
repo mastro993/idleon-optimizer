@@ -5,7 +5,7 @@
 //! sources with the same figures the tree resolves to.
 
 use super::overview::{figure_text, kpi, number_cell, rate_cell, tag};
-use super::table::{Col, table, text, text_id};
+use super::table::{table, text, text_id};
 use super::world_rail;
 use crate::state::AppState;
 use gpui::prelude::*;
@@ -15,7 +15,9 @@ use gpui_kit::component::{Sizable as _, v_flex};
 use idleon_royal_guardian::RoyalGuardian;
 use idleon_royal_guardian::{self as royal_guardian, CurrencyIncome};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, Tone};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, TableColumn, Tone,
+};
 
 /// The Currencies pane.
 pub(crate) fn currencies(
@@ -211,13 +213,13 @@ fn source_table(
     let table = table(
         "royal-currency-node",
         &[
-            Col::Text("Resource"),
-            Col::Number("Grade"),
-            Col::Number("Remaining"),
-            Col::Text("State"),
-            Col::Number("Nominal /hr"),
-            Col::Number("Collectable"),
-            Col::Text("Reset"),
+            TableColumn::text("Resource"),
+            TableColumn::number("Grade"),
+            TableColumn::number("Remaining"),
+            TableColumn::text("State"),
+            TableColumn::number("Nominal /hr"),
+            TableColumn::number("Collectable"),
+            TableColumn::text("Reset"),
         ],
         rows,
         cx,

@@ -6,14 +6,14 @@
 //! through this one tab: the page's stones with their next digit, the digit's
 //! DR impact, and the focus target the card explains.
 
-use super::table::{Col, table, text};
+use super::table::{table, text};
 use super::{grouped, pane, tag};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, App, IntoElement, ParentElement, SharedString, Styled, div};
 use idleon_cglunko::{self as cglunko, Cglunko, Focus, Page, Stone};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, TableColumn, Tone};
 
 pub(crate) fn stones_pane(state: &AppState, cx: &App) -> AnyElement {
     let cglunko = &state.cglunko;
@@ -125,14 +125,14 @@ fn stone_card(cglunko: &Cglunko, page: Page, stones: &[Stone], cx: &App) -> AnyE
         .child(table(
             "cglunko-stone-table",
             &[
-                Col::Text("Stone"),
-                Col::Number("Count"),
-                Col::Number("Digits"),
-                Col::Number("Next Pow10"),
-                Col::Number("Deficit"),
-                Col::Number("Drops / Kill"),
-                Col::Number("Kills Needed"),
-                Col::Text("Priority"),
+                TableColumn::text("Stone"),
+                TableColumn::number("Count"),
+                TableColumn::number("Digits"),
+                TableColumn::number("Next Pow10"),
+                TableColumn::number("Deficit"),
+                TableColumn::number("Drops / Kill"),
+                TableColumn::number("Kills Needed"),
+                TableColumn::text("Priority"),
             ],
             rows,
             cx,
@@ -160,12 +160,12 @@ fn focus_card(cglunko: &Cglunko, page: Page, rows: &[Focus], cx: &App) -> AnyEle
     let table = table(
         "cglunko-focus-table",
         &[
-            Col::Number("#"),
-            Col::Text("Stone"),
-            Col::Number("Deficit"),
-            Col::Number("Kills (focused)"),
-            Col::Number("Kills (unfocused)"),
-            Col::Number("DR / Digit"),
+            TableColumn::number("#"),
+            TableColumn::text("Stone"),
+            TableColumn::number("Deficit"),
+            TableColumn::number("Kills (focused)"),
+            TableColumn::number("Kills (unfocused)"),
+            TableColumn::number("DR / Digit"),
         ],
         rows.iter().enumerate().map(|(rank, row)| {
             let stone = div()

@@ -5,19 +5,19 @@
 //! Planning itself is [`idleon_cooking_mastery::Mastery::distribution`]; this
 //! module only draws it.
 
-use super::{number_cell, table, text_cell, whole};
+use super::{table, whole};
 use crate::state::AppState;
 use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use gpui::{AnyElement, Context, ElementId, IntoElement, ParentElement, Role, Styled, Window, div};
 use gpui_kit::component::clipboard::Clipboard;
 use gpui_kit::component::select::Select;
-use gpui_kit::component::table::TableRow;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_cooking_mastery::{Goal, Plan, Row};
 use idleon_ui::format;
 use idleon_ui::widgets::{
-    Callout, Caption, Card, CardHeader, Choice, Statistic, Tone, labeled, number_width, show_number,
+    Callout, Caption, Card, CardHeader, Choice, Statistic, TableColumn, Tone, labeled,
+    number_width, show_number,
 };
 
 /// The card: the controls, the plan's headline, its table and the copy action.
@@ -182,24 +182,28 @@ fn rows(plan: &Plan) -> AnyElement {
     div()
         .id("cooking-mastery-distribution-rows")
         .child(table(
-            &[
-                ("Upgrade", false),
-                ("Current", true),
-                ("Optimal", true),
-                ("Change", true),
-                ("EXP Bonus%", true),
-            ],
+            &COLUMNS,
             plan.rows.iter().map(|row| {
-                TableRow::new()
-                    .id(("cooking-mastery-distribution-table-row", row.index))
-                    .children(row_cells(row))
+                (
+                    ElementId::from(("cooking-mastery-distribution-table-row", row.index)),
+                    row_cells(row),
+                )
             }),
         ))
         .into_any_element()
 }
 
+/// The table's columns: the name wraps, the levels and the bonus are pinned.
+const COLUMNS: [TableColumn; 5] = [
+    TableColumn::text("Upgrade"),
+    TableColumn::number("Current").width(88.),
+    TableColumn::number("Optimal").width(88.),
+    TableColumn::number("Change").width(88.),
+    TableColumn::number("EXP Bonus%").width(120.),
+];
+
 /// One comparison row; a locked upgrade says what rank it waits for.
-fn row_cells(row: &Row) -> [gpui_kit::component::table::TableCell; 5] {
+fn row_cells(row: &Row) -> Vec<AnyElement> {
     let change = if row.change > 0.0 {
         format!("+{}", whole(row.change))
     } else {
@@ -229,12 +233,12 @@ fn row_cells(row: &Row) -> [gpui_kit::component::table::TableCell; 5] {
                 row.required_level
             )))
         });
-    [
-        text_cell(name),
-        number_cell(whole(row.current)),
-        number_cell(whole(row.planned)),
-        number_cell(change),
-        number_cell(format!("{:.1}%", row.bonus)),
+    vec![
+        name.into_any_element(),
+        whole(row.current).into_any_element(),
+        whole(row.planned).into_any_element(),
+        change.into_any_element(),
+        format!("{:.1}%", row.bonus).into_any_element(),
     ]
 }
 

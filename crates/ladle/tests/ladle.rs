@@ -4,7 +4,7 @@
 use idleon_ladle::{
     self as ladle, Character, Claimer, EXP_BALLOONS, Ladle, Panel, balloons_to_level,
     claim_expectation, claim_minimum, claim_plan, cooking_exp_req, ladle_breakpoints,
-    ladles_per_day, levels_from_balloons, split_balloons,
+    ladle_tier_outlook, ladles_per_day, levels_from_balloons, split_balloons,
 };
 use idleon_save::Save;
 use serde_json::{Value, json};
@@ -335,4 +335,12 @@ fn the_claim_plan_splits_the_window_and_respects_the_cap() {
     };
     let plan = claim_plan(&[short], 0.01);
     close(plan.min_ladles, 0.0);
+}
+
+#[test]
+fn the_outlook_label_keeps_an_unreachable_step_short() {
+    // No efficiency yet: the next step needs an astronomical efficiency.
+    let label = ladle_tier_outlook(0.0, 0.0).label();
+    assert!(label.ends_with(" eff"), "{label}");
+    assert!(label.len() < 32, "{label}");
 }

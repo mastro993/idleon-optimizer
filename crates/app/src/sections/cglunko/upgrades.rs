@@ -6,14 +6,14 @@
 //! charges. The stone each upgrade is paid from is added here, because the plan
 //! on the Optimizer tab spends exactly those saved balances.
 
-use super::table::{Col, table, text};
+use super::table::{table, text};
 use super::{pane, tag};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, App, IntoElement, ParentElement, SharedString, Styled, div};
 use idleon_cglunko::{self as cglunko, Page, stone};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, Tone};
+use idleon_ui::widgets::{Caption, Card, CardHeader, TableColumn, Tone};
 
 pub(crate) fn upgrades_pane(state: &AppState, cx: &App) -> AnyElement {
     let body = div()
@@ -81,13 +81,13 @@ fn page_card(cglunko: &idleon_cglunko::Cglunko, page: Page, cx: &App) -> AnyElem
         .child(table(
             "cglunko-upgrade-table",
             &[
-                Col::Text("Upgrade"),
-                Col::Text("Effect"),
-                Col::Number("Lv"),
-                Col::Number("Bonus"),
-                Col::Number("Per Lv"),
-                Col::Number("Next Cost"),
-                Col::Text("Stones"),
+                TableColumn::text("Upgrade"),
+                TableColumn::text("Effect"),
+                TableColumn::number("Lv"),
+                TableColumn::number("Bonus"),
+                TableColumn::number("Per Lv"),
+                TableColumn::number("Next Cost"),
+                TableColumn::text("Stones"),
             ],
             rows,
             cx,

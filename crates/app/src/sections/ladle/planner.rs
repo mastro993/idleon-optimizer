@@ -10,7 +10,7 @@
 //! holding it predicts.
 
 use super::summary::{self, count, figure, tag};
-use super::table::{Col, blank, table, text};
+use super::table::{blank, table, text};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
@@ -24,7 +24,7 @@ use idleon_ladle::kitchen::{self, Donation, Policy, Schedule};
 use idleon_ui::format;
 use idleon_ui::widgets::{
     Callout, Caption, Card, CardHeader, KpiStrip, RowColumn, RowsDelegate, Statistic, TEXT_BODY,
-    Tone,
+    TableColumn, Tone,
 };
 
 /// The inputs the donation search plans: the reset state and the section's own
@@ -506,14 +506,14 @@ fn rotation_chip(day: &RotationDay) -> AnyElement {
 /// The target table, most ladles saved first.
 fn targets_table(floor: &Floor, cx: &App) -> AnyElement {
     let cols = [
-        Col::Text("Target meal"),
-        Col::Number("Lv"),
-        Col::Number("Ladles → next"),
-        Col::Number("Saved per hit"),
-        Col::Text("In rotation"),
-        Col::Text("Blockers"),
-        Col::Number("Ladles to steer"),
-        Col::Text("Status"),
+        TableColumn::text("Target meal"),
+        TableColumn::number("Lv"),
+        TableColumn::number("Ladles → next"),
+        TableColumn::number("Saved per hit"),
+        TableColumn::text("In rotation"),
+        TableColumn::text("Blockers"),
+        TableColumn::number("Ladles to steer"),
+        TableColumn::text("Status"),
     ];
     let rows = floor.targets.iter().map(|target| {
         vec![
@@ -575,10 +575,10 @@ fn blockers_table(floor: &Floor, cx: &App) -> AnyElement {
         .into_any_element();
     }
     let cols = [
-        Col::Text("Blocker"),
-        Col::Text("Raise to"),
-        Col::Number("Levels"),
-        Col::Number("Ladles"),
+        TableColumn::text("Blocker"),
+        TableColumn::text("Raise to"),
+        TableColumn::number("Levels"),
+        TableColumn::number("Ladles"),
     ];
     let levels: f64 = floor.blockers.iter().map(|blocker| blocker.levels).sum();
     let rows = floor

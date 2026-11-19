@@ -21,7 +21,7 @@ use idleon_sailing::{
     ArtifactOutcome, RouteMetrics, incomplete_artifacts, max_artifact_tier, route_metrics,
 };
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, TableColumn, Tone};
 
 /// One island of the ranking, formatted.
 struct IslandRow {
@@ -106,16 +106,16 @@ pub(crate) fn artifacts_tab(state: &mut AppState, cx: &mut Context<AppState>) ->
         )
         .child(div().id("artifacts-ranking").child(table::table(
             "artifacts-ranking-scroll",
-            &table::columns(&[
-                ("Island", false, 0.0),
-                ("Incomplete", true, 0.0),
-                ("Trip", true, 0.0),
-                ("Per chest", true, 0.0),
-                ("Direct finds/hr", true, 0.0),
-            ]),
+            &[
+                TableColumn::text("Island"),
+                TableColumn::number("Incomplete"),
+                TableColumn::number("Trip"),
+                TableColumn::number("Per chest"),
+                TableColumn::number("Direct finds/hr"),
+            ],
             view.ranking.iter().enumerate().map(|(index, row)| {
                 table::Row::new(("artifacts-row", row.island))
-                    .child(table::text(
+                    .child(table::cell(
                         h_flex()
                             .id(("artifacts-island", row.island))
                             .gap_2()
@@ -124,14 +124,14 @@ pub(crate) fn artifacts_tab(state: &mut AppState, cx: &mut Context<AppState>) ->
                                 cell.child(table::tag("Best", Tone::Success))
                             }),
                     ))
-                    .child(table::number(
+                    .child(table::cell(
                         div()
                             .id(("artifacts-incomplete", row.island))
                             .child(row.incomplete.clone()),
                     ))
-                    .child(table::number(row.trip.clone()))
-                    .child(table::number(row.per_chest.clone()))
-                    .child(table::number(row.finds.clone()))
+                    .child(table::cell(row.trip.clone()))
+                    .child(table::cell(row.per_chest.clone()))
+                    .child(table::cell(row.finds.clone()))
             }),
         )));
     let island = Card::new()
@@ -145,34 +145,34 @@ pub(crate) fn artifacts_tab(state: &mut AppState, cx: &mut Context<AppState>) ->
         )
         .child(div().id("artifacts-island-table").child(table::table(
             "artifacts-island-scroll",
-            &table::columns(&[
-                ("Artifact", false, 0.0),
-                ("Current tier", true, 0.0),
-                ("Next odds", true, 0.0),
-                ("Per generated chest", true, 0.0),
-                ("Status", false, 0.0),
-            ]),
+            &[
+                TableColumn::text("Artifact"),
+                TableColumn::number("Current tier"),
+                TableColumn::number("Next odds"),
+                TableColumn::number("Per generated chest"),
+                TableColumn::text("Status"),
+            ],
             view.artifacts.iter().map(|row| {
                 let tip = row.tip.clone();
                 table::Row::new(("artifact-row", row.artifact))
-                    .child(table::text(
+                    .child(table::cell(
                         div()
                             .id(("artifact-name", row.artifact))
                             .tooltip(move |window, cx| Tooltip::new(tip.clone()).build(window, cx))
                             .child(row.name.clone()),
                     ))
-                    .child(table::number(row.tier.clone()))
-                    .child(table::number(
+                    .child(table::cell(row.tier.clone()))
+                    .child(table::cell(
                         div()
                             .id(("artifact-odds", row.artifact))
                             .child(row.odds.clone()),
                     ))
-                    .child(table::number(
+                    .child(table::cell(
                         div()
                             .id(("artifact-chance", row.artifact))
                             .child(row.chance.clone()),
                     ))
-                    .child(table::text(
+                    .child(table::cell(
                         div()
                             .id(("artifact-status", row.artifact))
                             .child(table::tag(row.status.0, row.status.1)),

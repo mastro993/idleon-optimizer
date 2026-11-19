@@ -55,6 +55,46 @@ Table::new()
 Number columns are right-aligned (`text_right()` on the head and its cells). An element id the
 harness selects stays on the same element: wrap the cell's content in a `div().id(..)`, as above.
 
+#### Column widths: `TableColumn`
+
+A kit `Table` gives every column the same share of its width (each cell is at least 100 px), so a
+`#` column is as wide as a name, long heads run into each other and a table with many columns
+clips at the right edge or has to scroll sideways. Build the columns from
+`idleon_ui::widgets::TableColumn` instead:
+
+- pin the narrow figure columns (`#`, a level, a short number or percentage) with `.width(px)`;
+- leave the names, descriptions and long figures shared: they split what the pinned columns leave
+  (at least 64 px each) and wrap inside it;
+- every head and cell stacks its content in a column, so text wraps at the cell's width instead of
+  running into the next cell, and a number column right-aligns it.
+
+```rust
+use idleon_ui::widgets::{TableColumn, table_header};
+
+const COLUMNS: [TableColumn; 4] = [
+    TableColumn::text("#").width(88.),
+    TableColumn::text("Upgrade"),
+    TableColumn::number("Level").width(64.),
+    TableColumn::number("+1 Gain%").width(120.),
+];
+
+Table::new()
+    .child(table_header(&COLUMNS))
+    .child(TableBody::new().children(rows.iter().map(|row| {
+        TableRow::new()
+            .id(("upgrade-row", row.index))
+            .child(COLUMNS[0].cell().child(row.rank.to_string()))
+            .child(COLUMNS[1].cell().child(row.name.clone()))
+            .child(COLUMNS[2].cell().child(row.level.clone()))
+            .child(COLUMNS[3].cell().child(row.gain.clone()))
+    })))
+```
+
+`TableColumn::titled(..)` names a column at run time, and `column.apply(cell)` sizes a `TableCell`
+built elsewhere. Size the pinned columns so the table fits the narrowest pane it sits in at a
+1180 px window: the pinned widths plus 64 px per shared column must not exceed it. A cell that holds
+a row of elements (`h_flex`) keeps them on one line; use a `v_flex` when its text should wrap.
+
 Give each `Table` an id through a wrapper (`div().id("<id>-table").child(Table::new()…)`) when
 another table sits under the same nearest element id, as in a pane of cards (a `Card` carries no
 id). The kit derives a table's accessibility node from that id path, so two such tables collide and
@@ -146,6 +186,18 @@ When rows need more than text (selection, sorting, a badge or a button in a cell
 id), implement `TableDelegate` for the section's own type; the three rules still hold. The kit
 gives each drawn cell the id `table-cell:<row>:<col>` inside the table; rows out of view are not
 drawn, so the harness can only select what is on screen.
+
+#### Filling the width: `fit_columns`
+
+A `DataTable` draws its columns at their kit widths and leaves the rest of the pane empty, which
+reads as a blank trailing column, and it scrolls sideways when the pane is narrower than the
+columns. A delegate that implements `idleon_ui::widgets::FitColumns` keeps a `ColumnFit`, returns
+its columns at their natural widths from `natural_column` and `fit.apply(..)` of them from
+`column`; render then draws the table through `fit_columns(DataTable::new(&state), &state)`. The
+columns keep their proportions and end at the table's right edge at any width. A column whose
+content cannot shrink (a stepper, a text field, a two-line figure) sets its kit `min_width`, and the
+fit never narrows it below that. A delegate that may narrow its columns can override `render_th`
+so a head wraps instead of clipping (the statue table does).
 
 `crates/ui/src/widgets/table.rs` has the test that keeps this honest:
 `a_long_table_builds_only_the_rows_in_view` draws a 5,000-row table in a 400 px window, checks that

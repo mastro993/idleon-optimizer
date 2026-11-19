@@ -286,6 +286,27 @@ pub struct Outlook {
     pub small_tier: bool,
 }
 
+impl Outlook {
+    /// The next-step cell's text, as the outlook column shows it. A step out
+    /// of reach (no efficiency yet) needs an astronomical efficiency, which
+    /// reads in the formula trees' short form instead of thirty digits.
+    pub fn label(&self) -> String {
+        let percent = ValueFormat::Percent;
+        if self.small_tier {
+            format!(
+                "{} @ {} eff",
+                percent.format(self.next_tier_gain_pct),
+                percent.format(self.next_tier_efficiency_pct)
+            )
+        } else {
+            format!(
+                "+10% eff → {}",
+                percent.format(self.plus_10_efficiency_gain_pct)
+            )
+        }
+    }
+}
+
 /// One claim's cost and result.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Use {
@@ -1024,19 +1045,6 @@ impl Stats {
     fn claim_count(&self) -> usize {
         let window = 24.0;
         (window / self.claim_hours - 1e-9).ceil().max(1.0) as usize
-    }
-
-    /// The next-step cell's text, as the outlook column shows it.
-    pub fn outlook_label(&self) -> String {
-        let outlook = self.outlook;
-        if outlook.small_tier {
-            format!(
-                "+{:.1}% @ +{:.1}% eff",
-                outlook.next_tier_gain_pct, outlook.next_tier_efficiency_pct
-            )
-        } else {
-            format!("+10% eff → +{:.2}%", outlook.plus_10_efficiency_gain_pct)
-        }
     }
 }
 

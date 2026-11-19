@@ -340,8 +340,8 @@ crates/import                       save -> every calculator's state (`import`),
 crates/project                      project document format and migration
 crates/ui                           GPUI building blocks: TaskRunner, run chrome, formula tree,
                                     number formats, the display composites GPUI Kit lacks
-                                    (`widgets`, see docs/ui-kit/display.md) and the kit table's
-                                    `RowsDelegate` (docs/ui-kit/data.md)
+                                    (`widgets`, see docs/ui-kit/display.md) and the kit tables'
+                                    column widths and `RowsDelegate` (docs/ui-kit/data.md)
 crates/app                          GPUI binary, drawn with GPUI Kit
   data/theme.json                   the GPUI Kit theme (Console, dark and light)
   fonts/                            JetBrains Mono, bundled under the SIL OFL 1.1

@@ -12,7 +12,7 @@
 use super::State;
 use super::kitchens::{ChartPoint, Figures};
 use super::summary::count;
-use super::table::{Col, table, text};
+use super::table::{table, text};
 use crate::state::AppState;
 use crate::ui::number_field;
 use gpui::prelude::*;
@@ -27,7 +27,9 @@ use gpui_kit::component::table::{Column, DataTable, TableDelegate, TableState};
 use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_ladle::kitchen::{self, Forecast, Objective, Plan, Scenario};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, TEXT_MONO, show_number};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, KpiStrip, Statistic, TEXT_MONO, TableColumn, show_number,
+};
 
 /// How the meal outcomes table orders its rows (`k.outcomeSort`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -73,11 +75,11 @@ pub(crate) fn comparison(
 ) -> AnyElement {
     let objective = state.kitchen.objective;
     let cols = [
-        Col::Text("Scenario"),
-        Col::Number("Meal ranks"),
-        Col::Number("Donated"),
-        Col::Number("Final daily grant"),
-        Col::Number("Ladles spent"),
+        TableColumn::text("Scenario"),
+        TableColumn::number("Meal ranks"),
+        TableColumn::number("Donated"),
+        TableColumn::number("Final daily grant"),
+        TableColumn::number("Ladles spent"),
     ];
     let rows = kitchen::SCENARIOS.into_iter().map(|scenario| {
         let plan = forecast.plan(scenario);

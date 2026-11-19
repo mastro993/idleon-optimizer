@@ -20,7 +20,9 @@ use idleon_sailing::{
     ReplacementOutcome, RouteMetrics, chest_loot_multiplier, ranked, replacement_outcome, strongest,
 };
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, show_number};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, KpiStrip, Statistic, fit_columns, show_number,
+};
 
 /// The tiers the matrix compares, the ordinary chest tiers.
 const TIERS: usize = 5;
@@ -187,7 +189,7 @@ pub(crate) fn replacements_tab(
                     div()
                         .id("replacements-table")
                         .h(table::data_height(view.sources, 33.0, table_height))
-                        .child(DataTable::new(&state.sailing_controls.replacements_table)),
+                        .child(fit_columns(DataTable::new(&state.sailing_controls.replacements_table), &state.sailing_controls.replacements_table)),
                 )
                 .child(
                     Caption::new(

@@ -10,7 +10,7 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, 
 use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use idleon_fishing::Evaluation;
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone};
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, TableColumn, Tone};
 
 /// One fish of the pool, formatted.
 struct FishRow {
@@ -126,14 +126,14 @@ pub(crate) fn card(view: &View, cx: &mut Context<AppState>) -> AnyElement {
     let ratio = view.ratio;
     let rows = view.rows.iter().enumerate().map(|(index, fish)| {
         table::Row::new(("fishing-detail-row", index))
-            .child(table::text(
+            .child(table::cell(
                 h_flex().gap_2().child(fish.name.clone()).children(
                     fish.status
                         .clone()
                         .map(|status| table::tag(status, Tone::Neutral)),
                 ),
             ))
-            .children(fish.cells.iter().cloned().map(table::number))
+            .children(fish.cells.iter().cloned().map(table::cell))
     });
     Card::new()
         .header(
@@ -148,16 +148,16 @@ pub(crate) fn card(view: &View, cx: &mut Context<AppState>) -> AnyElement {
                 .aria_label(view.summary.clone())
                 .gap_3()
                 .child(table::table("fishing-detail-scroll", 
-                    &table::columns(&[
-                        ("Fish", false, 260.0),
-                        ("Efficiency req", true, 110.0),
-                        ("Share", true, 80.0),
-                        ("EXP / catch", true, 90.0),
-                        ("Catches", true, 80.0),
-                        ("Fish", true, 70.0),
-                        ("EXP", true, 80.0),
-                        ("EXP %", true, 70.0),
-                    ]),
+                    &[
+                        TableColumn::text("Fish"),
+                        TableColumn::number("Efficiency req").width(96.),
+                        TableColumn::number("Share").width(72.),
+                        TableColumn::number("EXP / catch").width(88.),
+                        TableColumn::number("Catches").width(80.),
+                        TableColumn::number("Fish").width(64.),
+                        TableColumn::number("EXP").width(72.),
+                        TableColumn::number("EXP %").width(64.),
+                    ],
                     rows,
                 ))
                 .child(

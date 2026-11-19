@@ -10,7 +10,7 @@
 //! come from `idleon_ui::run_chrome`, and a result whose page changed is marked stale instead
 //! of dropped.
 
-use super::table::{Col, table, text};
+use super::table::{table, text};
 use super::upgrades::effect;
 use super::{grouped, pane, tag};
 use crate::state::AppState;
@@ -22,7 +22,7 @@ use gpui_kit::component::button::{Button, ButtonVariants as _};
 use idleon_cglunko::Cglunko;
 use idleon_cglunko::{Page, Plan, Rank, Step};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, TableColumn, Tone};
 
 pub(crate) fn optimizer_pane(state: &AppState, entity: Entity<AppState>, cx: &App) -> AnyElement {
     let page = state.cglunko_page;
@@ -162,11 +162,11 @@ fn plan_card(plan: &Plan, stale: bool, cx: &App) -> AnyElement {
     let table = table(
         "cglunko-plan-table",
         &[
-            Col::Text("Upgrade"),
-            Col::Number("Purchases"),
-            Col::Number("Levels"),
-            Col::Number("Stones"),
-            Col::Number("Stones Left"),
+            TableColumn::text("Upgrade"),
+            TableColumn::number("Purchases").width(96.),
+            TableColumn::number("Levels").width(80.),
+            TableColumn::number("Stones").width(96.),
+            TableColumn::number("Stones Left").width(96.),
         ],
         rows.iter().map(|row| {
             vec![
@@ -255,12 +255,12 @@ fn priority_card(cglunko: &Cglunko, page: Page, ranks: &[Rank], cx: &App) -> Any
         .child(table(
             "cglunko-priority-table",
             &[
-                Col::Number("#"),
-                Col::Text("Upgrade"),
-                Col::Number("Lv"),
-                Col::Number("Next Cost"),
-                Col::Number("DR Gain"),
-                Col::Number("DR/Cost"),
+                TableColumn::number("#").width(40.),
+                TableColumn::text("Upgrade"),
+                TableColumn::number("Lv").width(56.),
+                TableColumn::number("Next Cost").width(136.),
+                TableColumn::number("DR Gain").width(88.),
+                TableColumn::number("DR/Cost").width(88.),
             ],
             rows,
             cx,

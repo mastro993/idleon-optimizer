@@ -249,3 +249,65 @@ fn a_tone_picks_the_matching_kit_variant() {
     assert_eq!(AlertVariant::from(Tone::Accent), AlertVariant::Default);
     assert_eq!(AlertVariant::from(Tone::Warning), AlertVariant::Warning);
 }
+
+#[gpui::test]
+fn a_pinned_column_keeps_its_width_and_the_text_columns_share_the_rest(cx: &mut TestAppContext) {
+    use gpui_kit::component::table::{Table, TableBody, TableRow};
+
+    const COLUMNS: [TableColumn; 3] = [
+        TableColumn::number("#").width(48.),
+        TableColumn::text("Upgrade"),
+        TableColumn::text("Effect"),
+    ];
+    let cx = open(cx, || {
+        let marked = |column: usize, selector: &'static str, text: &'static str| {
+            COLUMNS[column]
+                .cell()
+                .child(div().debug_selector(move || selector.into()).child(text))
+        };
+        div()
+            .w(gpui::px(600.))
+            .child(
+                Table::new().child(table_header(&COLUMNS)).child(
+                    TableBody::new().child(
+                        TableRow::new()
+                            .child(marked(0, "rank", "1"))
+                            .child(marked(1, "name", "SWEET — Divorce Cake"))
+                            .child(marked(
+                                2,
+                                "effect",
+                                "A long effect that wraps inside its share of the table \
+                                 instead of running into the next column or past the edge",
+                            )),
+                    ),
+                ),
+            )
+            .into_any_element()
+    });
+    let [rank, name, effect] =
+        ["rank", "name", "effect"].map(|cell| cx.debug_bounds(cell).expect("cell drawn"));
+    assert!(
+        rank.right() <= gpui::px(48.),
+        "the pinned column holds its width"
+    );
+    assert!(
+        rank.left() > gpui::px(24.),
+        "a number sits at the right of its column"
+    );
+    assert!(
+        name.left() < gpui::px(64.),
+        "the text starts next to the pinned column"
+    );
+    assert!(
+        name.right() <= effect.left(),
+        "the text columns do not overlap"
+    );
+    assert!(
+        effect.right() <= gpui::px(600.),
+        "the last column stays inside the table"
+    );
+    assert!(
+        effect.size.height > name.size.height,
+        "the long text wraps inside its share"
+    );
+}

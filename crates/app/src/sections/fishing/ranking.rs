@@ -21,7 +21,9 @@ use gpui_kit::component::table::{Column, DataTable, TableDelegate, TableState};
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_fishing::{self as fishing, Evaluation};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_MONO, Tone};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, ColumnFit, FitColumns, TEXT_MONO, Tone, fit_columns,
+};
 use std::sync::Arc;
 
 /// Where a row stands against the best.
@@ -52,6 +54,7 @@ pub(crate) struct RankRow {
 pub(crate) struct Ranking {
     app: WeakEntity<AppState>,
     rows: Vec<RankRow>,
+    fit: ColumnFit,
 }
 
 /// The ranking's table state, with no selection, sorting or column moves.
@@ -64,6 +67,7 @@ pub(crate) fn state(
         Ranking {
             app,
             rows: Vec::new(),
+            fit: ColumnFit::default(),
         },
         window,
         cx,
@@ -74,16 +78,12 @@ pub(crate) fn state(
     .sortable(false)
 }
 
-impl TableDelegate for Ranking {
-    fn columns_count(&self, _: &App) -> usize {
-        7
+impl FitColumns for Ranking {
+    fn column_fit(&mut self) -> &mut ColumnFit {
+        &mut self.fit
     }
 
-    fn rows_count(&self, _: &App) -> usize {
-        self.rows.len()
-    }
-
-    fn column(&self, col_ix: usize, _: &App) -> Column {
+    fn natural_column(&self, col_ix: usize, _: &App) -> Column {
         match col_ix {
             0 => Column::new("rank", "#").width(px(110.0)),
             1 => Column::new("lure", "Lure").width(px(170.0)),
@@ -95,6 +95,20 @@ impl TableDelegate for Ranking {
                 .text_right(),
             _ => Column::new("use", "").width(px(80.0)),
         }
+    }
+}
+
+impl TableDelegate for Ranking {
+    fn columns_count(&self, _: &App) -> usize {
+        7
+    }
+
+    fn rows_count(&self, _: &App) -> usize {
+        self.rows.len()
+    }
+
+    fn column(&self, col_ix: usize, cx: &App) -> Column {
+        self.fit.apply(self.natural_column(col_ix, cx))
     }
 
     fn render_td(
@@ -384,7 +398,7 @@ pub(crate) fn card(
                     div()
                         .id("fishing-ranking-table")
                         .h(table_height)
-                        .child(DataTable::new(&controls.ranking)),
+                        .child(fit_columns(DataTable::new(&controls.ranking), &controls.ranking)),
                 )
                 .child(
                     v_flex()

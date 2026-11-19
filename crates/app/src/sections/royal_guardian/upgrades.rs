@@ -5,7 +5,7 @@
 //! so this pane carries the two upgrades the Royal Guardian owns.
 
 use super::overview::{figure_text, kpi, number_cell, tag};
-use super::table::{Col, table, text, text_id};
+use super::table::{table, text, text_id};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, Window, div, px};
@@ -13,7 +13,9 @@ use gpui_kit::component::select::Select;
 use gpui_kit::component::{Sizable as _, h_flex, v_flex};
 use idleon_royal_guardian::{ArmoryRow, PROJECTION_LEVELS, RoyalGuardian};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, Tone};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, TableColumn, Tone,
+};
 
 /// The two upgrade lists the pane switches between.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -177,12 +179,12 @@ fn armory_card(
     let table = table(
         "royal-armory",
         &[
-            Col::Text("Shelf"),
-            Col::Text("Name"),
-            Col::Text("Level"),
-            Col::Text("Effect"),
-            Col::Text("Cost"),
-            Col::Number("Balance"),
+            TableColumn::text("Shelf"),
+            TableColumn::text("Name"),
+            TableColumn::text("Level"),
+            TableColumn::text("Effect"),
+            TableColumn::text("Cost"),
+            TableColumn::number("Balance"),
         ],
         cells,
         cx,
@@ -275,10 +277,10 @@ fn plan_card(
     let table = table(
         "royal-armory-plan",
         &[
-            Col::Text("Level"),
-            Col::Number("Discounted"),
-            Col::Number("Full price"),
-            Col::Number("Total (full)"),
+            TableColumn::text("Level"),
+            TableColumn::number("Discounted"),
+            TableColumn::number("Full price"),
+            TableColumn::number("Total (full)"),
         ],
         steps,
         cx,
@@ -373,11 +375,11 @@ fn orblets_card(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyElement
     let table = table(
         "royal-orblet",
         &[
-            Col::Text("Orblet"),
-            Col::Text("Level"),
-            Col::Text("Effect"),
-            Col::Number("Cost"),
-            Col::Text("Affordable"),
+            TableColumn::text("Orblet"),
+            TableColumn::text("Level"),
+            TableColumn::text("Effect"),
+            TableColumn::number("Cost"),
+            TableColumn::text("Affordable"),
         ],
         cells,
         cx,

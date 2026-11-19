@@ -3,7 +3,7 @@
 //! [`figures`] works out the table and the balloon tree when the rates or the
 //! balloon controls change; render only formats what it kept.
 
-use super::table::{Col, blank, table, text};
+use super::table::{blank, table, text};
 use super::{State, summary::tag};
 use crate::state::AppState;
 use crate::ui::number_field;
@@ -18,7 +18,7 @@ use idleon_ladle::{
     self as ladle, EXP_BALLOONS, Ladle, balloons_to_level, levels_from_balloons, split_balloons,
 };
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, Tone, show_number};
+use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, TableColumn, Tone, show_number};
 
 /// One character's row, formatted once.
 #[derive(Clone, Debug, Default)]
@@ -270,16 +270,16 @@ fn table_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let figures = &state.ladle_state.derived.exp;
     let split = figures.split_used.is_some();
     let cols = [
-        Col::Text("Character"),
-        Col::Number("Cook Lv"),
-        Col::Text("EXP progress"),
-        Col::Number("EXP multi"),
-        Col::Number("EXP / hr"),
-        Col::Number("EXP / balloon"),
-        Col::Number("Balloons → next Lv"),
-        Col::Text("Balloons → target"),
-        Col::Number("AFK time → target"),
-        Col::Text(match split {
+        TableColumn::text("Character"),
+        TableColumn::number("Cook Lv"),
+        TableColumn::text("EXP progress"),
+        TableColumn::number("EXP multi"),
+        TableColumn::number("EXP / hr"),
+        TableColumn::number("EXP / balloon"),
+        TableColumn::number("Balloons → next Lv"),
+        TableColumn::text("Balloons → target"),
+        TableColumn::number("AFK time → target"),
+        TableColumn::text(match split {
             true => "Lv with split share",
             false => "Lv if given all owned",
         }),

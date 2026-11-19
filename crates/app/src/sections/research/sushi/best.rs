@@ -1,7 +1,6 @@
 //! The Best Upgrade pane: the efficiency ranking and the affordable path for
 //! bucks, fuel generation and fuel capacity.
 
-use super::columns::{self, Column};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
@@ -11,6 +10,7 @@ use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::table::{Table, TableBody, TableRow};
 use idleon_sushi::{Inputs, Metric, Path, candidates, fmt_num, path};
 use idleon_ui::widgets::{Caption, Card, CardHeader};
+use idleon_ui::widgets::{TableColumn, table_header};
 
 /// One ranking's key, title and the metric it ranks by.
 struct Ranking {
@@ -106,19 +106,19 @@ impl Best {
 }
 
 /// The path table's columns.
-const PATH_COLUMNS: [Column; 3] = [
-    ("Upgrade", None, false),
-    ("Level", Some(96.0), true),
-    ("Cost", Some(80.0), true),
+const PATH_COLUMNS: [TableColumn; 3] = [
+    TableColumn::text("Upgrade"),
+    TableColumn::number("Level").width(96.0),
+    TableColumn::number("Cost").width(80.0),
 ];
 
 /// The ranking table's columns.
-const RANK_COLUMNS: [Column; 5] = [
-    ("Upgrade", None, false),
-    ("Lvl", Some(48.0), true),
-    ("Cost", Some(80.0), true),
-    ("Gain", Some(80.0), true),
-    ("Eff.", Some(72.0), true),
+const RANK_COLUMNS: [TableColumn; 5] = [
+    TableColumn::text("Upgrade"),
+    TableColumn::number("Lvl").width(48.0),
+    TableColumn::number("Cost").width(80.0),
+    TableColumn::number("Gain").width(80.0),
+    TableColumn::number("Eff.").width(72.0),
 ];
 
 /// The path summary and its grouped purchases.
@@ -126,10 +126,10 @@ fn path_card(ranking: &Ranking, outcome: &Path, cx: &Context<AppState>) -> AnyEl
     let theme = cx.theme();
     let muted = theme.muted_foreground;
     let accent = theme.primary;
-    let cell = |index| columns::cell(&PATH_COLUMNS, index);
+    let cell = |index: usize| PATH_COLUMNS[index].cell();
     let table = Table::new()
         .small()
-        .child(columns::header(&PATH_COLUMNS))
+        .child(table_header(&PATH_COLUMNS))
         .child(
             TableBody::new().children(outcome.purchases.iter().enumerate().map(
                 |(step, purchase)| {
@@ -197,10 +197,10 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     let mut body = div().flex().flex_col().gap_3();
     for board in &best.boards {
         let ranking = board.ranking;
-        let cell = |index| columns::cell(&RANK_COLUMNS, index);
+        let cell = |index: usize| RANK_COLUMNS[index].cell();
         let table = Table::new()
             .small()
-            .child(columns::header(&RANK_COLUMNS))
+            .child(table_header(&RANK_COLUMNS))
             .child(
                 TableBody::new().children(board.candidates.iter().enumerate().map(
                     |(rank, candidate)| {

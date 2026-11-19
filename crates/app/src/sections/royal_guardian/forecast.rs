@@ -7,7 +7,7 @@
 //! their hours.
 
 use super::overview::{figure_text, kpi};
-use super::table::{Col, table, text, text_id};
+use super::table::{table, text, text_id};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{
@@ -21,7 +21,7 @@ use gpui_kit::component::select::Select;
 use gpui_kit::component::{Sizable as _, h_flex, v_flex};
 use idleon_royal_guardian::{Forecast, ForecastOptions, HORIZON, RoyalGuardian};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP};
+use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, KpiStrip, PANEL_GAP, TableColumn};
 
 /// The horizons the selector offers, in hours, with their labels.
 const HORIZONS: [(u32, &str); 5] = [
@@ -431,10 +431,10 @@ fn currency(result: &Forecast, cx: &App) -> AnyElement {
     let table = table(
         "royal-forecast-currency",
         &[
-            Col::Text("Currency"),
-            Col::Number("Start"),
-            Col::Number("At the horizon"),
-            Col::Number("Collected"),
+            TableColumn::text("Currency"),
+            TableColumn::number("Start"),
+            TableColumn::number("At the horizon"),
+            TableColumn::number("Collected"),
         ],
         rows,
         cx,
@@ -461,11 +461,11 @@ fn resets(result: &Forecast, cx: &App) -> AnyElement {
     let table = table(
         "royal-forecast-reset",
         &[
-            Col::Text("Reset"),
-            Col::Text("Refills"),
-            Col::Number("Refilled"),
-            Col::Number("Grades"),
-            Col::Number("Missed"),
+            TableColumn::text("Reset"),
+            TableColumn::text("Refills"),
+            TableColumn::number("Refilled"),
+            TableColumn::number("Grades"),
+            TableColumn::number("Missed"),
         ],
         rows,
         cx,
