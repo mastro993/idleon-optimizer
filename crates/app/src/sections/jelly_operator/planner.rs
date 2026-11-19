@@ -8,8 +8,7 @@
 use super::controls::{self, SequenceTable};
 use super::grid;
 use super::parts::{
-    SELECT_WIDTH, boxed, figure, info, number_field, run_button, select, strips, text_kpi,
-    text_table,
+    field_row, figure, info, number_field, run_button, select_field, strips, text_kpi, text_table,
 };
 use crate::state::AppState;
 use gpui::prelude::*;
@@ -207,27 +206,23 @@ fn controls(
         window,
         cx,
     );
-    let mut row = div()
+    let mut row = field_row()
         .id("jelly-sections-controls")
-        .flex()
-        .flex_wrap()
-        .items_center()
-        .gap(PANEL_GAP)
-        .child(boxed(
-            SELECT_WIDTH,
-            select(
-                &controls.plan_strategy,
-                "jelly-sections-strategy",
-                "Strategy",
-            ),
+        .child(select_field(
+            &controls.plan_strategy,
+            "jelly-sections-strategy",
+            "Strategy",
+            false,
+            window,
+            cx,
         ))
-        .child(boxed(
-            SELECT_WIDTH,
-            select(
-                &controls.plan_objective,
-                "jelly-sections-objective",
-                "Objective",
-            ),
+        .child(select_field(
+            &controls.plan_objective,
+            "jelly-sections-objective",
+            "Objective",
+            false,
+            window,
+            cx,
         ));
     if planner.objective == Objective::Exp {
         controls.plan_exp.show(
@@ -236,13 +231,13 @@ fn controls(
             window,
             cx,
         );
-        row = row.child(boxed(
-            SELECT_WIDTH,
-            select(
-                &controls.plan_exp,
-                "jelly-sections-exp-cell-type",
-                "EXP target",
-            ),
+        row = row.child(select_field(
+            &controls.plan_exp,
+            "jelly-sections-exp-cell-type",
+            "EXP target",
+            false,
+            window,
+            cx,
         ));
     }
     row.child(number_field(
@@ -253,9 +248,13 @@ fn controls(
         window,
         cx,
     ))
-    .child(boxed(
-        SELECT_WIDTH,
-        select(&controls.plan_quality, "jelly-sections-quality", "Quality"),
+    .child(select_field(
+        &controls.plan_quality,
+        "jelly-sections-quality",
+        "Quality",
+        false,
+        window,
+        cx,
     ))
     .child(number_field(
         "jelly-sections-beam",

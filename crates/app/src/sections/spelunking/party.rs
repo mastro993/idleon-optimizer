@@ -71,7 +71,7 @@ pub(crate) fn card(
                 } else {
                     div().w(px(24.0)).into_any_element()
                 })
-                .child(boxed(picker))
+                .child(boxed(&controls.party[slot], picker, window, cx))
                 .child(Caption::new(format!(
                     "max {}",
                     current_character.map_or("—".to_string(), |character| {
@@ -140,7 +140,7 @@ pub(crate) fn card(
                     format!("Team stamina {}", format::value(total)),
                     Tone::Neutral,
                 ))
-                .child(boxed(starting)),
+                .child(boxed(&controls.starting, starting, window, cx)),
         )
         .child(slots)
         .child(

@@ -12,13 +12,14 @@ use super::{number_cell, table, text_cell, whole};
 use crate::state::AppState;
 use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
 use gpui_kit::component::select::Select;
 use gpui_kit::component::table::TableRow;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_cooking_mastery::{Allocation, MealRow, Yellow};
 use idleon_ui::widgets::{
-    Callout, Caption, Card, CardHeader, PANEL_GAP, TEXT_KPI, Tone, show_number,
+    Callout, Caption, Card, CardHeader, PANEL_GAP, TEXT_KPI, Tone, labeled, number_width,
+    show_number,
 };
 
 /// The pane: the controls, the plan's headline, its table and the context.
@@ -99,12 +100,6 @@ fn controls(
         window,
         cx,
     );
-    let labeled = |label: &'static str, control: AnyElement| {
-        v_flex()
-            .gap_1()
-            .child(Caption::new(label).text_color(muted))
-            .child(control)
-    };
     let mut row = h_flex()
         .id("cooking-mastery-yellow-controls")
         .flex_wrap()
@@ -114,27 +109,30 @@ fn controls(
             "Points to Spend",
             h_flex()
                 .gap_2()
-                .child(ui::number_field(
-                    "cooking-mastery-yellow-budget",
-                    &controls.yellow_budget,
-                    "Points to Spend",
-                ))
+                .child(
+                    ui::number_field(
+                        "cooking-mastery-yellow-budget",
+                        &controls.yellow_budget,
+                        "Points to Spend",
+                    )
+                    .w(number_width(&controls.yellow_budget, window, cx)),
+                )
                 .child(
                     Caption::new(format!("of {} total", whole(plan.available))).text_color(muted),
-                )
-                .into_any_element(),
+                ),
         ))
-        .child(
-            labeled(
-                "Goal",
-                Select::new(controls.yellow_goal.state())
-                    .id("cooking-mastery-yellow-goal")
-                    .accessibility_label("Goal")
-                    .small()
-                    .into_any_element(),
-            )
-            .w(px(220.0)),
-        );
+        .child(labeled(
+            "Goal",
+            div()
+                .max_w_full()
+                .w(controls.yellow_goal.width(window, cx))
+                .child(
+                    Select::new(controls.yellow_goal.state())
+                        .id("cooking-mastery-yellow-goal")
+                        .accessibility_label("Goal")
+                        .small(),
+                ),
+        ));
     if !yellow.characters.is_empty() {
         controls.character.show(
             derived.characters.clone(),
@@ -142,17 +140,18 @@ fn controls(
             window,
             cx,
         );
-        row = row.child(
-            labeled(
-                "Character Context",
-                Select::new(controls.character.state())
-                    .id("cooking-mastery-yellow-character")
-                    .accessibility_label("Character Context")
-                    .small()
-                    .into_any_element(),
-            )
-            .w(px(200.0)),
-        );
+        row = row.child(labeled(
+            "Character Context",
+            div()
+                .max_w_full()
+                .w(controls.character.width(window, cx))
+                .child(
+                    Select::new(controls.character.state())
+                        .id("cooking-mastery-yellow-character")
+                        .accessibility_label("Character Context")
+                        .small(),
+                ),
+        ));
     }
     row.into_any_element()
 }

@@ -16,14 +16,12 @@ use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHe
 use gpui_kit::component::v_flex;
 use gpui_kit::component::{Disableable as _, Sizable as _};
 use idleon_ui::format;
-use idleon_ui::widgets::{Choice, ChoiceSelect, KpiStrip, PANEL_GAP, Statistic, Tone, show_number};
+use idleon_ui::widgets::{
+    ChoiceSelect, KpiStrip, PANEL_GAP, Statistic, Tone, labeled, number_width, show_number,
+};
 
 /// How many figures one KPI strip holds before the next row starts.
 const STRIP_CELLS: usize = 4;
-/// Kit fields fill their parent, so a wrapping row of controls boxes each one:
-/// numbers sized to a ten-digit seed and its steppers, selects to a label.
-const NUMBER_WIDTH: Pixels = px(160.);
-pub(crate) const SELECT_WIDTH: Pixels = px(240.);
 
 /// A number with a game suffix (`1.23M`), as the KPI cells read.
 pub(crate) fn stat(id: &'static str, label: &'static str, value: f64) -> Statistic {
@@ -76,7 +74,8 @@ pub(crate) fn strips(id: &'static str, figures: Vec<Statistic>) -> AnyElement {
         .into_any_element()
 }
 
-/// A kit number field showing `value`, under the old control's id.
+/// A labelled kit number field showing `value`, under the old control's id,
+/// as wide as the number it holds.
 pub(crate) fn number_field(
     id: &'static str,
     label: &'static str,
@@ -86,31 +85,56 @@ pub(crate) fn number_field(
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     show_number(field, value, 0, window, cx);
-    div()
-        .id(id)
-        .flex_none()
-        .w(NUMBER_WIDTH)
-        .h_6()
-        .child(NumberInput::new(field).accessibility_label(label).small())
-        .into_any_element()
+    labeled(
+        label,
+        div()
+            .id(id)
+            .flex_none()
+            .max_w_full()
+            .w(number_width(field, window, cx))
+            .h_6()
+            .child(NumberInput::new(field).accessibility_label(label).small()),
+    )
+    .into_any_element()
 }
 
-/// A kit select under the old control's id; [`boxed`] gives it a place in a row.
-pub(crate) fn select<V: Clone + PartialEq + 'static>(
+/// A labelled kit select under the old control's id, as wide as its longest
+/// option and never wider than its row.
+pub(crate) fn select_field<V: Clone + PartialEq + 'static>(
     control: &ChoiceSelect<V>,
     id: &'static str,
     label: &'static str,
-) -> Select<Vec<Choice<V>>> {
-    Select::new(control.state())
-        .id(id)
-        .accessibility_label(label)
-        .small()
+    disabled: bool,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    labeled(
+        label,
+        div()
+            .flex_none()
+            .max_w_full()
+            .w(control.width(window, cx))
+            .h_6()
+            .child(
+                Select::new(control.state())
+                    .id(id)
+                    .accessibility_label(label)
+                    .small()
+                    .disabled(disabled),
+            ),
+    )
+    .into_any_element()
 }
 
-/// A kit field in a box of its own: the field's root fills its parent, so in a
-/// wrapping row it needs a fixed width and the small control height.
-pub(crate) fn boxed(width: Pixels, field: impl IntoElement) -> Div {
-    div().flex_none().w(width).h_6().child(field)
+/// A wrapping row of labelled fields, their controls lined up along the
+/// bottom with the run button.
+pub(crate) fn field_row() -> Div {
+    div()
+        .flex()
+        .flex_wrap()
+        .items_end()
+        .gap_x_4()
+        .gap_y(PANEL_GAP)
 }
 
 /// A primary run button.

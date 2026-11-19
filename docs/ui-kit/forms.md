@@ -69,6 +69,27 @@ control's own state. The rule:
    buttons all share the local ids `increment` and `decrement`, which the bridge drops as duplicates.
    A harness clicks the field and presses `up` or `down` instead.
 
+### Labels and widths
+
+The kit `Select` and `NumberInput` fill their parent, so a row of them puts each in a box of its
+own. Size that box to the content, never to a guessed constant, and give every field a visible
+label (`design.md`):
+
+- **Label:** `widgets::labeled(label, control)` puts the label (11 px, muted) over the control. The
+  `aria`/`accessibility_label` on the control stays; the visible label is for people.
+- **Select:** box it to `ChoiceSelect::width(window, cx)`, the width of its longest option plus the
+  caret and padding, measured once per item list. Add `max_w_full()` so the row caps it, and let
+  the row `flex_wrap()` so a long select moves to its own line instead of truncating.
+- **Number:** box it to `widgets::number_width(&field, window, cx)`, the width of the number it
+  holds (at least four digits) plus its step buttons. It grows as the value does, so `0.0000` or a
+  ten-digit seed never clips.
+- **A button that replaces typed values** (`Use saved opals`) calls `window.blur(cx)` before it
+  writes the section value: `show_number` skips a focused field, so without the blur the field the
+  user was editing keeps showing the old number.
+
+Rows of labelled fields line up their controls with `items_end()`, so a run button sits on the
+controls' line rather than the labels'.
+
 ### Worked example
 
 The Opal Optimizer's target `Select` and one villager's opal `NumberInput`, converted. The section

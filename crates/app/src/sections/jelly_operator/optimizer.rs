@@ -10,8 +10,7 @@ use super::controls::{OPTIMIZER_COUNTS, optimizer_count};
 use super::grid;
 use super::outlook::timeline_card;
 use super::parts::{
-    SELECT_WIDTH, boxed, figure, info, number_field, run_button, select, strips, text_kpi,
-    text_table,
+    field_row, figure, info, number_field, run_button, select_field, strips, text_kpi, text_table,
 };
 use super::planner::signed_value;
 use crate::state::AppState;
@@ -183,19 +182,15 @@ fn controls(
         window,
         cx,
     );
-    let mut row = div()
+    let mut row = field_row()
         .id("jelly-optimizer-controls")
-        .flex()
-        .flex_wrap()
-        .items_center()
-        .gap(PANEL_GAP)
-        .child(boxed(
-            SELECT_WIDTH,
-            select(
-                &controls.opt_objective,
-                "jelly-optimizer-objective",
-                "Objective",
-            ),
+        .child(select_field(
+            &controls.opt_objective,
+            "jelly-optimizer-objective",
+            "Objective",
+            false,
+            window,
+            cx,
         ));
     if optimizer.objective == Objective::Exp {
         controls.opt_exp.show(
@@ -204,13 +199,13 @@ fn controls(
             window,
             cx,
         );
-        row = row.child(boxed(
-            SELECT_WIDTH,
-            select(
-                &controls.opt_exp,
-                "jelly-optimizer-exp-cell-type",
-                "EXP target",
-            ),
+        row = row.child(select_field(
+            &controls.opt_exp,
+            "jelly-optimizer-exp-cell-type",
+            "EXP target",
+            false,
+            window,
+            cx,
         ));
     }
     let mut counts = optimizer.clone();

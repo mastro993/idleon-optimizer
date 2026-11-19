@@ -166,8 +166,14 @@ fn controls(
         .items_end()
         .gap_4()
         .p_3()
-        .child(field("Mode", boxed(mode)))
-        .child(field("Objective", boxed(objective)))
+        .child(field(
+            "Mode",
+            boxed(&controls.optimizer_mode, mode, window, cx),
+        ))
+        .child(field(
+            "Objective",
+            boxed(&controls.objective, objective, window, cx),
+        ))
         .child(field(
             "Screening trials",
             number(

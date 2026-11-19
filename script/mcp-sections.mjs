@@ -1638,6 +1638,13 @@ const INTERACTIONS = {
         !has(nodes, 'opal-manual-warning'),
       'opal: the reset restores the saved split',
     );
+    // The Measurer's field still had focus from the Down presses; the reset
+    // ends that edit, so the field shows the restored count too.
+    await waitFor(
+      lane,
+      (nodes) => nodes.find((node) => node.label === 'Measurer opals')?.value?.value === '15',
+      'opal: the focused field shows the restored count',
+    );
     // On the save's own split the simulator reads the current state's total, so
     // an equal distribution matches the figure the section reports.
     const manualTotal = rateOf(labelOf(await lane.tree(), 'opal-manual-total'));
@@ -4855,8 +4862,11 @@ const typeInChunks = async (lane, text, limit = 60 * 1024) => {
 /// scroll areas: the right margin of the scroll container.
 const wheelPoint = async (lane, id) => {
   const node = (await lane.tree()).find((candidate) => (candidate.id ?? '').endsWith(id));
-  const bounds = node?.bounds ?? { x: 0, width: 600 };
-  return { x: bounds.x + bounds.width - 6, y: 300 };
+  const bounds = node?.bounds ?? { x: 0, y: 0, width: 600, height: 900 };
+  // A tall header above the pane (a toolbar that wraps) can push its top past
+  // y = 300, so keep the point inside the pane.
+  const y = Math.min(Math.max(300, bounds.y + 20), bounds.y + bounds.height - 20);
+  return { x: bounds.x + bounds.width - 6, y };
 };
 
 /// Scroll the pane until an element's bounds sit inside the viewport: a click

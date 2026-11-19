@@ -94,15 +94,21 @@ pub(crate) fn card(
                 .flex_wrap()
                 .items_end()
                 .gap_4()
-                .child(field("Character", boxed(character)))
-                .child(field("Cave", boxed(cave)))
-                .child(field("Mode", boxed(mode)))
-                .child(field("Policy", boxed(policy)))
+                .child(field(
+                    "Character",
+                    boxed(&controls.character, character, window, cx),
+                ))
+                .child(field("Cave", boxed(&controls.cave, cave, window, cx)))
+                .child(field("Mode", boxed(&controls.mode, mode, window, cx)))
+                .child(field("Policy", boxed(&controls.policy, policy, window, cx)))
                 .child(field(
                     "Descent",
                     div().h_6().flex().items_center().child(full_clear),
                 ))
-                .child(field("Auto speed", boxed(speed)))
+                .child(field(
+                    "Auto speed",
+                    boxed(&controls.speed, speed, window, cx),
+                ))
                 .when(spelunking.policy == Policy::AmberFarm, |row| {
                     row.child(tag("Amber farming always clears the floor", Tone::Warning))
                 }),
@@ -251,7 +257,10 @@ pub(crate) fn amber_card(
                             cx,
                         ),
                     ))
-                    .child(field("Finishing characters", boxed(finishers)))
+                    .child(field(
+                        "Finishing characters",
+                        boxed(&controls.finishers, finishers, window, cx),
+                    ))
                     .child(field(
                         "Finisher reserve (%)",
                         number(

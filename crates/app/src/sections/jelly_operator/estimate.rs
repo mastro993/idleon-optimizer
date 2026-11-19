@@ -1,7 +1,7 @@
 //! The operation estimate: the run controls, its aggregate and its outlook.
 
 use super::outlook;
-use super::parts::{figure, info, number_field, run_button, stat, strips};
+use super::parts::{field_row, figure, info, number_field, run_button, stat, strips};
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
@@ -49,12 +49,8 @@ pub(crate) fn pane(
         .flex_col()
         .gap(PANEL_GAP)
         .child(
-            div()
+            field_row()
                 .id("jelly-estimate-controls")
-                .flex()
-                .flex_wrap()
-                .items_center()
-                .gap(PANEL_GAP)
                 .child(trials)
                 .child(seed)
                 .child(run)

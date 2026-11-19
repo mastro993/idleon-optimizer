@@ -1,11 +1,13 @@
 //! Options for the kit `Select`, and a select whose items and pick mirror
 //! section state.
 
-use gpui::{App, AppContext as _, Entity, SharedString, Window};
+use gpui::{App, AppContext as _, Entity, Pixels, SharedString, Window};
 use gpui_kit::component::IndexPath;
 use gpui_kit::component::searchable_list::{SearchableListDelegate as _, SearchableListItem};
 use gpui_kit::component::select::SelectState;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+
+use super::fit::select_width;
 
 /// One option of a kit `Select`: the value a pick reports and the label it
 /// shows. The kit's own items (`String`, `&str`) report their label, so a
@@ -58,6 +60,8 @@ pub struct ChoiceSelect<V: Clone + PartialEq + 'static> {
     state: Entity<SelectState<Vec<Choice<V>>>>,
     /// The items the state holds, so an unchanged list is never pushed again.
     shown: RefCell<Vec<Choice<V>>>,
+    /// The width that fits the widest of `shown`, measured once per list.
+    width: Cell<Option<Pixels>>,
 }
 
 impl<V: Clone + PartialEq + 'static> ChoiceSelect<V> {
@@ -71,12 +75,31 @@ impl<V: Clone + PartialEq + 'static> ChoiceSelect<V> {
         let index = selected.and_then(|value| items.position(value));
         let shown = RefCell::new(items.clone());
         let state = cx.new(|cx| SelectState::new(items, index, window, cx));
-        Self { state, shown }
+        Self {
+            state,
+            shown,
+            width: Cell::new(None),
+        }
     }
 
     /// The state the kit `Select` renders and the section subscribes to.
     pub fn state(&self) -> &Entity<SelectState<Vec<Choice<V>>>> {
         &self.state
+    }
+
+    /// The width of a small `Select` that shows its widest option whole. The
+    /// select fills its parent, so a row boxes it to this, capped by the row.
+    pub fn width(&self, window: &mut Window, cx: &App) -> Pixels {
+        if let Some(width) = self.width.get() {
+            return width;
+        }
+        let shown = self.shown.borrow();
+        let widest = shown
+            .iter()
+            .map(|choice| select_width(&choice.label, window, cx))
+            .fold(Pixels::ZERO, Pixels::max);
+        self.width.set(Some(widest));
+        widest
     }
 
     /// Show `items` with `selected` picked, touching the state only where it
@@ -90,6 +113,7 @@ impl<V: Clone + PartialEq + 'static> ChoiceSelect<V> {
     ) {
         if *self.shown.borrow() != items {
             self.shown.replace(items.clone());
+            self.width.set(None);
             self.state
                 .update(cx, |state, cx| state.set_items(items, window, cx));
         }
@@ -183,6 +207,25 @@ mod tests {
             state.read_with(cx, |state, _| state.selected_value().cloned()),
             None
         );
+    }
+
+    #[gpui::test]
+    fn the_width_fits_the_longest_option_of_the_shown_list(cx: &mut TestAppContext) {
+        cx.update(gpui_kit::init);
+        let (_, cx) = cx.add_window_view(|_, _| gpui::Empty);
+        cx.update(|window, cx| {
+            let select = ChoiceSelect::new(items(1), Some(&None), window, cx);
+            let short = select.width(window, cx);
+            let long = vec![Choice::new(
+                None,
+                "All villagers, with every bonus term listed",
+            )];
+            select.show(long, Some(&None), window, cx);
+            assert!(select.width(window, cx) > short);
+            // Back to the short list, the width shrinks with it.
+            select.show(items(1), Some(&None), window, cx);
+            assert_eq!(select.width(window, cx), short);
+        });
     }
 
     #[test]

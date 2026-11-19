@@ -154,7 +154,9 @@ node script/mcp-sections.mjs --baseline target/mcp-sections-baseline --update-ba
 
 A page whose cards own their own scroll areas needs a wheel point on the page's margin, not on a
 card: `bringIntoView(lane, id, await wheelPoint(lane, '<page-scroll-id>'))` scrolls the page, while
-the fixed default point can land on an inner table that swallows the wheel.
+the fixed default point can land on an inner table that swallows the wheel. The point sits on the
+pane's right edge at y = 300, moved down into the pane when a header above it (a toolbar whose
+fields wrap) pushes the pane's top lower.
 
 The research check also puts a monocle in the pool and runs the Insight ROI table (`RES-05`): it
 opens the tab, computes the analysis, sorts it through the segmented control and checks the summary

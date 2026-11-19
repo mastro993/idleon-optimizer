@@ -33,7 +33,7 @@ use crate::ui::layout::{self, Breakpoint};
 use controls::Slots;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Div, ElementId, Entity, IntoElement, ParentElement, Pixels, SharedString,
+    AnyElement, App, Context, Div, ElementId, Entity, IntoElement, ParentElement, SharedString,
     Styled, Window, div, px,
 };
 use gpui_kit::assets::IconName;
@@ -47,7 +47,7 @@ use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::select::Select;
 use gpui_kit::component::tag::Tag;
 use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _};
-use idleon_ui::widgets::{Caption, Choice, ChoiceSelect, Tone, show_number};
+use idleon_ui::widgets::{Choice, ChoiceSelect, Tone, labeled, number_width, show_number};
 
 /// The section: the controls, the party and belt, the account inputs and the
 /// depth estimates in one scrolling page.
@@ -116,17 +116,8 @@ pub(crate) fn view(
 
 /// A labelled control in the toolbars.
 pub(crate) fn field(label: &'static str, control: impl IntoElement) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(Caption::new(label))
-        .child(control)
-        .into_any_element()
+    labeled(label, control).into_any_element()
 }
-
-/// Kit selects fill their parent, so each sits in a box of its own width.
-const SELECT_WIDTH: Pixels = px(220.0);
 
 /// A kit select showing `items` with `selected`, under the old control's id;
 /// [`boxed`] gives it a place in a row.
@@ -146,9 +137,20 @@ pub(crate) fn select<V: Clone + PartialEq + 'static>(
         .small()
 }
 
-/// A kit select fills its parent, so in a row it sits in a box of its own.
-pub(crate) fn boxed(select: impl IntoElement) -> Div {
-    div().flex_none().w(SELECT_WIDTH).h_6().child(select)
+/// A kit select fills its parent, so in a row it sits in a box of its own, as
+/// wide as `control`'s longest option and never wider than the row.
+pub(crate) fn boxed<V: Clone + PartialEq + 'static>(
+    control: &ChoiceSelect<V>,
+    select: impl IntoElement,
+    window: &mut Window,
+    cx: &App,
+) -> Div {
+    div()
+        .flex_none()
+        .max_w_full()
+        .w(control.width(window, cx))
+        .h_6()
+        .child(select)
 }
 
 /// A kit number field showing `value` to `precision` decimals, under the old
@@ -164,7 +166,7 @@ pub(crate) fn number(
 ) -> AnyElement {
     show_number(field, value, precision, window, cx);
     crate::ui::number_field(ElementId::Name(id.into()), field, label)
-        .w(px(150.0))
+        .w(number_width(field, window, cx))
         .into_any_element()
 }
 

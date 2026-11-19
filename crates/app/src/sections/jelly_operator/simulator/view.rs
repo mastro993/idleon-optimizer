@@ -4,11 +4,11 @@ use super::result;
 use super::state::{fever_modes, revive_label};
 use crate::sections::jelly_operator::grid;
 use crate::sections::jelly_operator::parts::{
-    SELECT_WIDTH, boxed, info, number_field, run_button, select,
+    field_row, info, number_field, run_button, select_field,
 };
 use crate::state::AppState;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
 use gpui_kit::component::button::{Button, ButtonVariants as _, Toggle, ToggleGroup};
 use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_jelly::operation::RevivePolicy;
@@ -140,15 +140,22 @@ fn controls(
         .flex_col()
         .gap(PANEL_GAP)
         .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .items_center()
-                .gap(PANEL_GAP)
-                .child(boxed(SELECT_WIDTH, select(&controls.sim_stage, "jelly-sim-stage", "Stage")).w(px(380.)))
-                .child(boxed(
-                    SELECT_WIDTH,
-                    select(&controls.sim_fever, "jelly-sim-fever", "Fever").disabled(modes == 0),
+            field_row()
+                .child(select_field(
+                    &controls.sim_stage,
+                    "jelly-sim-stage",
+                    "Stage",
+                    false,
+                    window,
+                    cx,
+                ))
+                .child(select_field(
+                    &controls.sim_fever,
+                    "jelly-sim-fever",
+                    "Fever",
+                    modes == 0,
+                    window,
+                    cx,
                 ))
                 .when(owns_roid(jelly), |row| {
                     row.child(number_field(
@@ -161,11 +168,14 @@ fn controls(
                     ))
                 })
                 .when(owns_revives(jelly), |row| {
-                    row.child(boxed(SELECT_WIDTH, select(
+                    row.child(select_field(
                         &controls.sim_revive,
                         "jelly-sim-revive",
                         "Automatic revival strategy",
-                    )))
+                        false,
+                        window,
+                        cx,
+                    ))
                 })
                 .child(number_field(
                     "jelly-sim-seed",

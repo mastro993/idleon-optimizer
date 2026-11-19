@@ -17,7 +17,7 @@ use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_cooking_mastery::{Goal, Plan, Row};
 use idleon_ui::format;
 use idleon_ui::widgets::{
-    Callout, Caption, Card, CardHeader, Choice, Statistic, Tone, show_number,
+    Callout, Caption, Card, CardHeader, Choice, Statistic, Tone, labeled, number_width, show_number,
 };
 
 /// The card: the controls, the plan's headline, its table and the copy action.
@@ -38,7 +38,6 @@ pub(crate) fn card(
     let goal = Select::new(controls.goal.state())
         .id("cooking-mastery-goal")
         .accessibility_label("Goal")
-        .menu_width(gpui::px(200.0))
         .small();
 
     Card::new()
@@ -54,31 +53,34 @@ pub(crate) fn card(
                 .flex_wrap()
                 .items_end()
                 .gap_3()
-                .child(
-                    v_flex()
-                        .gap_1()
-                        .child(Caption::new("Points to Spend").text_color(muted))
+                .child(labeled(
+                    "Points to Spend",
+                    h_flex()
+                        .gap_2()
                         .child(
-                            h_flex()
-                                .gap_2()
-                                .child(ui::number_field(
-                                    "cooking-mastery-budget",
-                                    &controls.budget,
-                                    "Points to Spend",
-                                ))
-                                .child(
-                                    Caption::new(format!("of {} total", whole(plan.available)))
-                                        .text_color(muted),
-                                ),
+                            ui::number_field(
+                                "cooking-mastery-budget",
+                                &controls.budget,
+                                "Points to Spend",
+                            )
+                            .w(number_width(
+                                &controls.budget,
+                                window,
+                                cx,
+                            )),
+                        )
+                        .child(
+                            Caption::new(format!("of {} total", whole(plan.available)))
+                                .text_color(muted),
                         ),
-                )
-                .child(
-                    v_flex()
-                        .gap_1()
-                        .w(gpui::px(200.0))
-                        .child(Caption::new("Goal").text_color(muted))
+                ))
+                .child(labeled(
+                    "Goal",
+                    div()
+                        .max_w_full()
+                        .w(controls.goal.width(window, cx))
                         .child(goal),
-                ),
+                )),
         )
         .child(headline(plan, muted))
         .child(rows(plan))
