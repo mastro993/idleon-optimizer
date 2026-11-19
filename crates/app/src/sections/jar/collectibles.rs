@@ -1,44 +1,44 @@
 //! The Collectibles tab: every collectible, its saved bonus and the order an
-//! enchant should target them in.
+//! enchant should target them in. The groups and the priority are read once
+//! per applied save ([`super::Controls::sync`]).
 
-use crate::sections::jar::metric;
+use super::table::{Col, table, text};
+use crate::sections::jar::{metric, row};
 use crate::state::AppState;
-use ely_gpui_component::data_display::Tone;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_jar::Collectible;
-use idleon_jar::Jar;
+use gpui::{
+    AnyElement, App, Context, FontWeight, Hsla, IntoElement, ParentElement, Role, Styled, div, px,
+};
+use gpui_kit::component::ActiveTheme as _;
+use idleon_jar::{Collectible, EnchantPriority, Jar};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, TEXT_CAPTION, Tone};
+
+/// Tiles to a row: a row never wraps (`docs/ui-kit/display.md`).
+const TILES_PER_ROW: usize = 6;
 
 pub(crate) fn collectibles(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let jar = state
         .jar
         .as_ref()
         .expect("the section renders its import prompt without a save");
+    let figures = state.jar_controls.figures();
     div()
         .id("jar-collectibles")
         .flex()
         .flex_col()
         .gap_3()
-        .child(summary(jar, cx))
-        .child(grid(jar, cx))
-        .child(priority(jar, cx))
+        .child(summary(jar))
+        .child(grid(jar, &figures.groups, cx))
+        .child(priority(&figures.priority, cx))
         .into_any_element()
 }
 
 /// The four figures the collectibles tab leads with.
-fn summary(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
+fn summary(jar: &Jar) -> AnyElement {
     let found = jar.collectibles_found();
     let slots = jar.collectible_slots();
-    let mut row = div()
-        .id("jar-collectibles-summary")
-        .flex()
-        .flex_wrap()
-        .gap_3()
+    let mut row = row("jar-collectibles-summary")
         .child(metric(
             "jar-collectibles-found",
             "Found",
@@ -48,7 +48,6 @@ fn summary(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
                 false => "Advanced Collection unlocks the other twenty-four".to_owned(),
             },
             Tone::Accent,
-            cx,
         ))
         .child(metric(
             "jar-collectibles-enchants",
@@ -56,7 +55,6 @@ fn summary(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
             format::number(f64::from(jar.enchant_levels())),
             "The sum of level − 1 across every enchanted collectible".to_owned(),
             Tone::Info,
-            cx,
         ))
         .child(metric(
             "jar-collectibles-page-two",
@@ -70,7 +68,6 @@ fn summary(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
                 true => Tone::Success,
                 false => Tone::Warning,
             },
-            cx,
         ));
     if jar.ext.legend_pts > 0.0 {
         row = row.child(metric(
@@ -79,26 +76,21 @@ fn summary(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
             format!("+{}%", format::number(jar.ext.legend_pts)),
             "Bonus to every collectible from legend talent 29".to_owned(),
             Tone::Success,
-            cx,
         ));
     }
     row.into_any_element()
 }
 
 /// The tiles grouped by effect category.
-fn grid(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
-    let groups = jar.collectible_groups();
+fn grid(jar: &Jar, groups: &[idleon_jar::CollectibleGroup], cx: &App) -> AnyElement {
     let found = jar.collectibles_found();
-    let mut body = div().id("jar-collectible-grid").flex().flex_col().gap_4();
-    for group in groups {
-        let colors = cx.theme().colors.clone();
-        let color = format::hex(group.color);
-        let count = group.items.len();
-        let mut tiles = div().flex().flex_wrap().gap_2();
-        for item in group.items {
-            tiles = tiles.child(tile(item, color, &colors));
-        }
-        body = body.child(
+    let body = div()
+        .id("jar-collectible-grid")
+        .flex()
+        .flex_col()
+        .gap_4()
+        .children(groups.iter().map(|group| {
+            let color = format::hex(group.color);
             div()
                 .flex()
                 .flex_col()
@@ -111,19 +103,20 @@ fn grid(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
                         .child(div().size(px(8.0)).rounded_full().bg(color))
                         .child(
                             div()
-                                .text_size(px(13.0))
+                                .text_size(TEXT_BODY)
                                 .font_weight(FontWeight::SEMIBOLD)
                                 .text_color(color)
                                 .child(group.label),
                         )
-                        .child(
-                            Caption::new(format!("{count} collectibles"))
-                                .text_color(colors.fg_muted),
-                        ),
+                        .child(Caption::new(format!("{} collectibles", group.items.len()))),
                 )
-                .child(tiles),
-        );
-    }
+                .children(group.items.chunks(TILES_PER_ROW).map(|chunk| {
+                    div()
+                        .flex()
+                        .gap_2()
+                        .children(chunk.iter().map(|item| tile(item, color, cx)))
+                }))
+        }));
     Card::new()
         .header(
             CardHeader::new("Collectibles").description(format!(
@@ -135,17 +128,14 @@ fn grid(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// One collectible tile: its level, its current effect and its enchant tier.
-fn tile(
-    item: Collectible,
-    color: gpui::Hsla,
-    colors: &ely_gpui_component::theme::Palette,
-) -> AnyElement {
-    let unmapped = colors.fg_muted;
+fn tile(item: &Collectible, color: Hsla, cx: &App) -> AnyElement {
+    let theme = cx.theme();
+    // The game's enchant tier borders: gold, silver and bronze.
     let border = match item.enchant_levels {
         20.. => format::hex("#ffd700"),
         5..=19 => format::hex("#aaaaaa"),
         1..=4 => format::hex("#cd7f32"),
-        _ => colors.border,
+        _ => theme.border,
     };
     let level = match item.level {
         0 => "—".to_owned(),
@@ -154,7 +144,7 @@ fn tile(
     };
     let effect = match item.level {
         0 => "Not found".to_owned(),
-        _ => item.effect.clone(),
+        _ => format!("{} · per level {}", item.effect, item.per_level_effect),
     };
     div()
         .id(("jar-collectible", item.index))
@@ -169,67 +159,55 @@ fn tile(
         .w(px(150.0))
         .flex_none()
         .p_2()
-        .rounded(px(6.0))
+        .rounded(theme.radius)
         .border_1()
         .border_color(border)
         .when(item.level == 0, |tile| tile.opacity(0.55))
         .child(
             div()
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .font_weight(FontWeight::SEMIBOLD)
                 .text_color(color)
                 .child(item.name),
         )
         .child(
             div()
+                .font_family(theme.mono_font_family.clone())
                 .text_size(px(15.0))
                 .font_weight(FontWeight::BOLD)
                 .child(level),
         )
-        .child(
-            div()
-                .text_size(px(11.0))
-                .text_color(unmapped)
-                .child(match item.level {
-                    0 => effect,
-                    _ => format!("{effect} · per level {}", item.per_level_effect),
-                }),
-        )
+        .child(Caption::new(effect))
         .into_any_element()
 }
 
-/// Found collectibles sorted by the next level's marginal
-/// value.
-fn priority(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
-    let rows = jar.enchant_priority();
+/// Found collectibles sorted by the next level's marginal value.
+fn priority(rows: &[EnchantPriority], cx: &App) -> AnyElement {
     if rows.is_empty() {
         return div()
             .id("jar-collectible-priority")
             .child(
                 Card::new()
                     .header(CardHeader::new("Enchant priority"))
-                    .child(
-                        Caption::new(
-                            "No collectible has been found yet, so there is nothing to enchant.",
-                        )
-                        .text_color(cx.theme().colors.fg_muted),
-                    ),
+                    .child(Caption::new(
+                        "No collectible has been found yet, so there is nothing to enchant.",
+                    )),
             )
             .into_any_element();
     }
-    let mut table = Table::new([
-        "#",
-        "Collectible",
-        "Category",
-        "Level",
-        "Enchant",
-        "Current bonus",
-        "+1 enchant",
-    ]);
-    for row in rows {
-        table = table.row([
-            div().child(row.index.to_string()).into_any_element(),
-            div().child(row.name).into_any_element(),
+    let cols = [
+        Col::Number("#"),
+        Col::Text("Collectible"),
+        Col::Text("Category"),
+        Col::Number("Level"),
+        Col::Number("Enchant"),
+        Col::Number("Current bonus"),
+        Col::Number("+1 enchant"),
+    ];
+    let rows = rows.iter().map(|row| {
+        vec![
+            text(row.index.to_string()),
+            text(row.name),
             div()
                 .flex()
                 .items_center()
@@ -242,25 +220,21 @@ fn priority(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
                 )
                 .child(row.category_label)
                 .into_any_element(),
-            div().child(row.level.to_string()).into_any_element(),
-            div()
-                .child(row.enchant_levels.to_string())
-                .into_any_element(),
-            div().child(format!("+{:.1}", row.bonus)).into_any_element(),
-            div()
-                .child(format!("+{:.1}", row.marginal))
-                .into_any_element(),
-        ]);
-    }
+            text(row.level.to_string()),
+            text(row.enchant_levels.to_string()),
+            text(format!("+{:.1}", row.bonus)),
+            text(format!("+{:.1}", row.marginal)),
+        ]
+    });
     div()
         .id("jar-collectible-priority")
         .child(
             Card::new()
                 .header(CardHeader::new("Enchant priority").description(
-                    "Highest marginal value first; ties go to the collectible with the \
-                         fewest enchant levels",
+                    "Highest marginal value first; ties go to the collectible with the fewest \
+                     enchant levels",
                 ))
-                .child(table),
+                .child(table("jar-priority", &cols, rows, cx)),
         )
         .into_any_element()
 }

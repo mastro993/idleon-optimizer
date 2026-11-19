@@ -1,44 +1,48 @@
 //! The Rupie Value tab: the multiplier every rupie is worth, its sources, the
 //! extra rupie chance and what a break pays at each tier.
+//!
+//! The value tree's root is set once per applied save
+//! ([`super::Controls::sync`]); render only places it.
 
-use crate::sections::jar::{kpi, metric, stat};
+use super::table::{Col, table, text};
+use crate::sections::jar::{kpi, metric, row, stat};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{ToggleGroup, ToggleItem};
-use ely_gpui_component::data_display::Tone;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Styled, div, px};
+use gpui::{AnyElement, App, Context, Entity, IntoElement, ParentElement, Styled, div, px};
+use gpui_kit::component::Sizable as _;
+use gpui_kit::component::button::{Toggle, ToggleGroup, ToggleVariants as _};
 use idleon_jar::Jar;
 use idleon_jar::{INCOME_TIERS, RUPIE_COLORS, RUPIE_NAMES, VALUE_TIERS};
 use idleon_ui::format;
+use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{Caption, Card, CardHeader, Tone};
 
-pub(crate) fn rupies(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+/// The tier column heads the tables take their first columns from.
+pub(super) const TIER_HEADS: [&str; 6] =
+    ["Tier 1", "Tier 2", "Tier 3", "Tier 4", "Tier 5", "Tier 6"];
+
+pub(crate) fn rupies(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let jar = state
         .jar
         .as_ref()
         .expect("the section renders its import prompt without a save");
     let tier = state.jar_tier.min(INCOME_TIERS - 1);
-    let tree = state.jar_breakdown.clone();
-    tree.update(cx, |tree, cx| tree.set_root(jar.rupie_value_tree(), cx));
     div()
         .id("jar-rupies")
         .flex()
         .flex_col()
         .gap_3()
-        .child(headline(jar, tier, cx))
+        .child(headline(jar, tier))
         .child(tier_control(tier, cx))
-        .child(breakdown(tree))
-        .child(extra_chances(jar))
-        .child(income(jar, tier))
-        .child(value_by_tier(jar))
+        .child(breakdown(&state.jar_breakdown))
+        .child(extra_chances(jar, cx))
+        .child(income(jar, tier, cx))
+        .child(value_by_tier(jar, cx))
         .into_any_element()
 }
 
 /// The four figures the tab leads with.
-fn headline(jar: &Jar, tier: u32, cx: &mut Context<AppState>) -> AnyElement {
+fn headline(jar: &Jar, tier: u32) -> AnyElement {
     let gilded = jar.doubler_bonus();
     let (gilded_value, gilded_caption, gilded_tone) = match gilded > 0.0 {
         true => (
@@ -55,11 +59,7 @@ fn headline(jar: &Jar, tier: u32, cx: &mut Context<AppState>) -> AnyElement {
     let value = jar.rupie_value();
     let payout = jar.rupies_per_break(tier);
     let extra = jar.extra_rupie_chance();
-    div()
-        .id("jar-rupies-summary")
-        .flex()
-        .flex_wrap()
-        .gap_3()
+    row("jar-rupies-summary")
         .child(kpi(
             "jar-kpi-rupies",
             "Rupie value",
@@ -96,42 +96,45 @@ fn headline(jar: &Jar, tier: u32, cx: &mut Context<AppState>) -> AnyElement {
             gilded_value,
             gilded_caption,
             gilded_tone,
-            cx,
         ))
         .into_any_element()
 }
 
-/// The tier the income figures are projected for.
+/// The tier the income figures are projected for. Segment `n` keeps Ely's
+/// `jar-tier-toggle-<n>` id, which the harness clicks.
 fn tier_control(tier: u32, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    let mut control = ToggleGroup::new("jar-tier").size(ControlSize::Sm);
-    for index in 0..INCOME_TIERS {
-        control = control.item(ToggleItem::new(index.to_string()).label(format!("T{}", index + 1)));
-    }
-    let muted = cx.theme().colors.fg_muted;
+    let control = ToggleGroup::new("jar-tier")
+        .segmented()
+        .single()
+        .outline()
+        .small()
+        .children((0..INCOME_TIERS).map(|index| {
+            Toggle::new(format!("jar-tier-toggle-{index}"))
+                .label(format!("T{}", index + 1))
+                .checked(index == tier)
+        }))
+        // A click on the checked segment clears every flag: keep the tier.
+        .on_click(move |checked, _window, cx| {
+            if let Some(index) = checked.iter().position(|checked| *checked) {
+                entity.update(cx, |state, cx| state.set_jar_tier(index as u32, cx));
+            }
+        });
     div()
         .id("jar-tier-row")
         .flex()
         .items_center()
         .gap_3()
-        .child(Caption::new(format!("Rupies per break at tier {}", tier + 1)).text_color(muted))
-        .child(
-            control
-                .selected([tier.to_string()])
-                .on_change(move |selected, _window, cx| {
-                    let Some(value) = selected.first() else {
-                        return;
-                    };
-                    if let Ok(tier) = value.parse::<u32>() {
-                        entity.update(cx, |state, cx| state.set_jar_tier(tier, cx));
-                    }
-                }),
-        )
+        .child(Caption::new(format!(
+            "Rupies per break at tier {}",
+            tier + 1
+        )))
+        .child(control)
         .into_any_element()
 }
 
 /// The shared formula tree under a fixed height, so its own scroll area works.
-fn breakdown(tree: Entity<idleon_ui::formula::FormulaTree>) -> AnyElement {
+fn breakdown(tree: &Entity<FormulaTree>) -> AnyElement {
     Card::new()
         .header(
             CardHeader::new("Rupie value breakdown")
@@ -142,78 +145,73 @@ fn breakdown(tree: Entity<idleon_ui::formula::FormulaTree>) -> AnyElement {
                 .id("jar-rupies-breakdown")
                 .h(px(320.0))
                 .min_h_0()
-                .child(tree),
+                .child(tree.clone()),
         )
         .into_any_element()
 }
 
 /// The sources that add a rupie to a break.
-fn extra_chances(jar: &Jar) -> AnyElement {
-    let mut table = Table::new(["Source", "Value", "From"]).row([
-        div().child("One rupie").into_any_element(),
-        div().child("+100%").into_any_element(),
-        div()
-            .child("Every break pays at least one")
-            .into_any_element(),
-    ]);
-    for term in jar.extra_rupie_terms() {
-        table = table.row([
-            div().child(term.label).into_any_element(),
-            div()
-                .child(format!("+{}%", format::number(term.percent)))
-                .into_any_element(),
-            div().child(term.source).into_any_element(),
-        ]);
-    }
-    table = table.row([
-        div().child("Total").into_any_element(),
-        div()
-            .child(format!(
-                "+{}%",
-                format::number(jar.extra_rupie_chance() * 100.0)
-            ))
-            .into_any_element(),
-        div()
-            .child(format!(
-                "{} rupies a break, on average",
-                format::value(jar.avg_rupies_per_break())
-            ))
-            .into_any_element(),
-    ]);
+fn extra_chances(jar: &Jar, cx: &App) -> AnyElement {
+    let rows = std::iter::once(vec![
+        text("One rupie"),
+        text("+100%"),
+        text("Every break pays at least one"),
+    ])
+    .chain(jar.extra_rupie_terms().into_iter().map(|term| {
+        vec![
+            text(term.label),
+            text(format!("+{}%", format::number(term.percent))),
+            text(term.source),
+        ]
+    }))
+    .chain(std::iter::once(vec![
+        text("Total"),
+        text(format!(
+            "+{}%",
+            format::number(jar.extra_rupie_chance() * 100.0)
+        )),
+        text(format!(
+            "{} rupies a break, on average",
+            format::value(jar.avg_rupies_per_break())
+        )),
+    ]));
     Card::new()
         .header(
             CardHeader::new("Extra rupie chance")
                 .description("Each break pays one rupie plus the chance of another"),
         )
-        .child(table)
+        .child(table(
+            "jar-extra-chances",
+            &[Col::Text("Source"), Col::Number("Value"), Col::Text("From")],
+            rows,
+            cx,
+        ))
         .into_any_element()
 }
 
 /// What one break of each rupie jar pays at the chosen tier,
 /// split across the colors the account has reached.
-fn income(jar: &Jar, tier: u32) -> AnyElement {
-    let mut table = Table::new(["Jar type", "Colors", "Rupies / break"]);
+fn income(jar: &Jar, tier: u32, cx: &App) -> AnyElement {
+    let mut rows = Vec::new();
     for (_, name, active) in jar.rupie_jars() {
         let total = jar.rupies_per_break(tier);
-        table = table.row([
-            div().child(name).into_any_element(),
-            div()
-                .child(
-                    active
-                        .iter()
-                        .map(|color| RUPIE_NAMES[*color])
-                        .collect::<Vec<_>>()
-                        .join(", "),
-                )
-                .into_any_element(),
-            div().child(format::value(total)).into_any_element(),
+        rows.push(vec![
+            text(name),
+            text(
+                active
+                    .iter()
+                    .map(|color| RUPIE_NAMES[*color])
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            ),
+            text(format::value(total)),
         ]);
         if active.len() < 2 {
             continue;
         }
         let share = total / active.len() as f64;
         for color in active {
-            table = table.row([
+            rows.push(vec![
                 div()
                     .flex()
                     .items_center()
@@ -222,8 +220,8 @@ fn income(jar: &Jar, tier: u32) -> AnyElement {
                     .child(dot(color))
                     .child(RUPIE_NAMES[color])
                     .into_any_element(),
-                div().child("Splits evenly").into_any_element(),
-                div().child(format::value(share)).into_any_element(),
+                text("Splits evenly"),
+                text(format::value(share)),
             ]);
         }
     }
@@ -234,7 +232,16 @@ fn income(jar: &Jar, tier: u32) -> AnyElement {
                 tier + 1
             )),
         )
-        .child(table)
+        .child(table(
+            "jar-income",
+            &[
+                Col::Text("Jar type"),
+                Col::Text("Colors"),
+                Col::Number("Rupies / break"),
+            ],
+            rows,
+            cx,
+        ))
         .into_any_element()
 }
 
@@ -249,25 +256,25 @@ fn dot(color: usize) -> AnyElement {
 }
 
 /// The multiplier at each of the five value tiers.
-fn value_by_tier(jar: &Jar) -> AnyElement {
-    let mut headers: Vec<String> = vec!["Rupie value".into()];
-    for tier in 0..VALUE_TIERS {
-        headers.push(format!("Tier {}", tier + 1));
-    }
-    let mut cells: Vec<AnyElement> = vec![div().child("Multiplier").into_any_element()];
-    for tier in 0..VALUE_TIERS {
-        cells.push(
-            div()
-                .child(format!("×{}", format::value(jar.rupie_value_at_tier(tier))))
-                .into_any_element(),
-        );
-    }
+fn value_by_tier(jar: &Jar, cx: &App) -> AnyElement {
+    let mut cols = vec![Col::Text("Rupie value")];
+    cols.extend(
+        TIER_HEADS[..VALUE_TIERS as usize]
+            .iter()
+            .copied()
+            .map(Col::Number),
+    );
+    let mut cells = vec![text("Multiplier")];
+    cells.extend(
+        (0..VALUE_TIERS)
+            .map(|tier| text(format!("×{}", format::value(jar.rupie_value_at_tier(tier))))),
+    );
     Card::new()
         .header(
             CardHeader::new("Rupie value by tier").description(
                 "A tier multiplies the rupie value by ten, on top of the income table",
             ),
         )
-        .child(Table::new(headers).row(cells))
+        .child(table("jar-value-tiers", &cols, [cells], cx))
         .into_any_element()
 }

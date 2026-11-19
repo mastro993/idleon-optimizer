@@ -5,11 +5,16 @@
 //! The section has nine tabs. JR-01 and JR-02 build the first four; JR-03 adds
 //! Collectibles, Upgrades and Next Tier, and JR-04 adds the enchant simulator
 //! and history, so the strip never offers a tab that has nothing behind it.
+//!
+//! The section draws with GPUI Kit: the simulator's controls are built once in
+//! [`controls`], and the lists the tabs read from the save are worked out there
+//! when a save is applied, never per frame.
 
 mod actions;
 
 mod chances;
 mod collectibles;
+mod controls;
 mod enchant;
 mod history;
 mod next_tier;
@@ -17,23 +22,27 @@ mod overview;
 mod production;
 mod rupies;
 pub(crate) mod state;
+mod table;
 mod upgrades;
 
+pub(crate) use controls::Controls;
 pub(crate) use state::State;
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui::layout::tab_bar;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _};
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
 
 /// The jar page's tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -101,22 +110,22 @@ impl Tab {
             Tab::EnchantHistory => "Enchant History",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// The jar section: the tab strip over a scrolling pane, or the import prompt
 /// when the loaded save carries no cavern.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    if state.jar.is_none() {
+    let Some(jar) = state.jar.as_ref() else {
         return prompt(cx);
-    }
+    };
+    state
+        .jar_controls
+        .sync(state.save_revision, jar, &state.jar_breakdown, cx);
+    let state: &AppState = state;
     let tab = state.jar_tab;
     div()
         .id("jar-section")
@@ -127,8 +136,9 @@ pub(crate) fn view(
         .gap_3()
         .child(tabs(state, cx))
         .child(
-            ScrollArea::new("jar-pane")
-                .vertical()
+            div()
+                .flex()
+                .flex_col()
                 .flex_1()
                 .min_h_0()
                 .child(match tab {
@@ -139,9 +149,11 @@ pub(crate) fn view(
                     Tab::Collectibles => collectibles::collectibles(state, cx),
                     Tab::Upgrades => upgrades::upgrades(state, cx),
                     Tab::NextTier => next_tier::next_tier(state, cx),
-                    Tab::EnchantSim => enchant::enchant(state, cx),
+                    Tab::EnchantSim => enchant::enchant(state, window, cx),
                     Tab::EnchantHistory => history::history(state, cx),
-                }),
+                })
+                .overflow_y_scrollbar()
+                .id("jar-pane"),
         )
         .into_any_element()
 }
@@ -149,23 +161,32 @@ pub(crate) fn view(
 /// The tab strip, driven by the state's own tab.
 fn tabs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    let mut tabs = TabBar::new("jar-tabs").selected(SharedString::from(state.jar_tab.id()));
-    for tab in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        if let Some(tab) = Tab::from_id(id.as_ref()) {
-            entity.update(cx, |state, cx| state.set_jar_tab(tab, cx));
-        }
-    });
-    crate::ui::layout::scrolling_tabs("jar-tabs-scroll", tabs, cx)
+    let selected = Tab::ALL
+        .iter()
+        .position(|tab| *tab == state.jar_tab)
+        .unwrap_or(0);
+    tab_bar(
+        "jar-tabs",
+        Tab::ALL.map(|tab| (tab.id().into(), tab.label().into())),
+        selected,
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| state.set_jar_tab(Tab::ALL[index], cx));
+        },
+    )
+    .flex_none()
+    .into_any_element()
+}
+
+/// A row of figures that never wraps (`docs/ui-kit/display.md`).
+pub(super) fn row(id: &'static str) -> gpui::Stateful<gpui::Div> {
+    div().id(id).flex().gap_3()
 }
 
 /// A KPI figure with its value scaled to `K`/`M`/`B`, so a cavern-sized
-/// multiplier still fits the card.
+/// multiplier still fits its cell.
 pub(super) fn stat(id: &'static str, label: &'static str, value: f64) -> Statistic {
     let (scaled, suffix) = idleon_ui::format::scaled(value);
-    let statistic = Statistic::new(id, label, scaled).decimals(2);
+    let statistic = Statistic::new(id, label, format!("{scaled:.2}"));
     match suffix.is_empty() {
         true => statistic,
         false => statistic.suffix(suffix),
@@ -173,7 +194,7 @@ pub(super) fn stat(id: &'static str, label: &'static str, value: f64) -> Statist
 }
 
 /// A labelled figure: the automation bridge and screen readers read the
-/// headline as one value instead of walking the card's children.
+/// headline as one value instead of walking the panel's children.
 fn labelled(
     id: &'static str,
     title: &'static str,
@@ -187,12 +208,12 @@ fn labelled(
         .flex()
         .flex_col()
         .flex_1()
-        .min_w(px(200.0))
+        .min_w(px(180.0))
         .child(body)
         .into_any_element()
 }
 
-/// A KPI card wearing its own label, so its figure reads as one value.
+/// A KPI panel wearing its own label, so its figure reads as one value.
 pub(super) fn kpi(
     id: &'static str,
     title: &'static str,
@@ -204,31 +225,43 @@ pub(super) fn kpi(
         id,
         title,
         display,
-        KpiCard::new(statistic).caption(caption).into_any_element(),
+        KpiStrip::new()
+            .h_full()
+            .child(statistic.caption(caption))
+            .into_any_element(),
     )
 }
 
-/// A card whose headline is a formatted string: a chance reads `1 in 1.09M`,
-/// which the numeric statistic cannot show.
+/// A panel whose headline is a formatted string: a chance reads `1 in 1.09M`,
+/// which a numeric figure cannot show.
 pub(super) fn metric(
     id: &'static str,
     title: &'static str,
     display: String,
     caption: String,
     tone: Tone,
-    cx: &Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
     let body = Card::new()
-        .header(CardHeader::new(title).action(Badge::new(display.clone()).tone(tone)))
-        .child(Caption::new(caption).text_color(muted))
+        .h_full()
+        .header(CardHeader::new(title).action(tag(display.clone(), tone)))
+        .child(Caption::new(caption))
         .into_any_element();
     labelled(id, title, display, body)
+}
+
+/// A small outlined tag.
+pub(super) fn tag(label: impl Into<SharedString>, tone: Tone) -> Tag {
+    Tag::new()
+        .with_variant(tone.into())
+        .outline()
+        .small()
+        .child(label.into())
 }
 
 /// A save without `Holes` has no jar state: say so and offer the import.
 fn prompt(cx: &mut Context<AppState>) -> AnyElement {
     let import = cx.entity();
+    let muted = cx.theme().muted_foreground;
     div()
         .id("jar-section")
         .flex()
@@ -236,18 +269,30 @@ fn prompt(cx: &mut Context<AppState>) -> AnyElement {
         .size_full()
         .min_h_0()
         .child(
-            EmptyState::new("jar-empty", IconName::Map, "No jar state")
-                .body(
-                    "The jar calculator reads the cavern from a save. Import one to see the jar \
-                     types, rupie balances and production slots.",
-                )
-                .action(
-                    Button::new("jar-import", "Import save")
-                        .icon(IconName::Upload)
-                        .on_click(move |_event, window, cx| {
-                            import.update(cx, |state, cx| state.open_import(window, cx));
-                        }),
-                ),
+            div().id("jar-empty").child(
+                Empty::new()
+                    .header(
+                        EmptyHeader::new()
+                            .media(
+                                EmptyMedia::new().child(Icon::new(IconName::Map).text_color(muted)),
+                            )
+                            .title(EmptyTitle::new().child("No jar state"))
+                            .description(EmptyDescription::new().child(
+                                "The jar calculator reads the cavern from a save. Import one to \
+                                 see the jar types, rupie balances and production slots.",
+                            )),
+                    )
+                    .content(
+                        EmptyContent::new().child(
+                            Button::new("jar-import")
+                                .label("Import save")
+                                .icon(IconName::Upload)
+                                .on_click(move |_event, window, cx| {
+                                    import.update(cx, |state, cx| state.open_import(window, cx));
+                                }),
+                        ),
+                    ),
+            ),
         )
         .into_any_element()
 }

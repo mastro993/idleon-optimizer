@@ -4,8 +4,7 @@ use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
 use crate::state::AppState;
 use gpui::{App, Context};
-use idleon_jar::{COLLECTIBLES, EnchantSnapshot, Jar, SimInputs, SimResult, record_snapshot};
-use idleon_ui::runner::TaskState;
+use idleon_jar::{COLLECTIBLES, EnchantSnapshot, Jar, SimInputs, record_snapshot};
 
 impl AppState {
     pub(crate) fn set_jar_tab(&mut self, tab: JarTab, cx: &mut Context<Self>) {
@@ -65,9 +64,9 @@ impl AppState {
         );
     }
 
-    /// The stored spread and whether its inputs changed since the run.
-    pub(crate) fn jar_simulation(&self, cx: &App) -> TaskState<SimResult> {
-        self.jar_sim.read(cx).state(&self.jar_sim_inputs())
+    /// Whether the stored spread's inputs changed since the run.
+    pub(crate) fn jar_simulation_stale(&self, cx: &App) -> bool {
+        self.jar_sim.read(cx).is_stale(&self.jar_sim_inputs())
     }
 
     /// The inputs a simulation started now would read.

@@ -65,6 +65,8 @@ const SCROLL_TARGET = {
   spelunking: 'spelunking-pane',
   sneaking: 'sneaking-pane',
   fountain: 'fountain-pane',
+  ladle: 'ladle-ladles-scroll',
+  jar: 'jar-pane',
 };
 
 /// Cards the pointer crosses on Home.

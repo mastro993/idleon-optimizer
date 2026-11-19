@@ -3249,12 +3249,13 @@ const INTERACTIONS = {
     );
 
     // The section's toolbar ids nest under the toolbar, so the breakdown selector
-    // is found by its suffix rather than a bare id. A combobox opens on Enter.
+    // is found by its suffix rather than a bare id. A closed select opens on the
+    // first Down and starts on its current choice.
     const breakdownSelect = (await lane.tree()).find((node) =>
       (node.id ?? '').endsWith('.ladle-breakdown-character'),
     );
     await lane.call('focus_element', { id: breakdownSelect.id });
-    await lane.call('keyboard', { keystroke: 'enter' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
@@ -3278,16 +3279,22 @@ const INTERACTIONS = {
     );
     await waitForNode(lane, 'kitchens-grant-chart', 'ladle: the comparison draws the grant trend');
     await waitForNode(lane, 'kitchens-outcomes', 'ladle: the meal outcomes table renders');
-    await lane.call('click_element', { id: 'kitchens-days-less' });
+    // A press on a number field focuses it, and Down steps it. The forecast list
+    // keeps the same Ely id, so the field is named through its row of controls.
+    await lane.call('click_element', { id: 'kitchens-controls.kitchens-days' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await waitFor(
       lane,
-      (nodes) => !has(nodes, 'kitchens-day-30'),
+      (nodes) => (labelOf(nodes, 'kitchens-pane') ?? '').startsWith('29 resets'),
       'ladle: the forecast follows the horizon',
     );
-    await bringIntoView(lane, 'kitchens-show-layout');
+    // The forecast list and the meal table scroll on their own, so the page
+    // scrolls from its margin.
+    const page = await wheelPoint(lane, 'kitchens-scroll');
+    await bringIntoView(lane, 'kitchens-show-layout', page);
     await lane.call('click_element', { id: 'kitchens-show-layout' });
     await waitForNode(lane, 'kitchens-pins', 'ladle: the kitchen pins open');
-    await bringIntoView(lane, 'kitchens-day-header-1');
+    await bringIntoView(lane, 'kitchens-day-header-1', page);
     await lane.call('click_element', { id: 'kitchens-day-header-1' });
     await waitFor(
       lane,
@@ -3300,13 +3307,13 @@ const INTERACTIONS = {
 
     // The steering panel reads the split, the floor and the rotation the floor
     // holding predicts.
-    await bringIntoView(lane, 'ladle-steer-targets');
+    await bringIntoView(lane, 'ladle-steer-targets', page);
     await waitForNode(lane, 'ladle-steer-targets', 'ladle: the NMLB targets render');
     await waitForNode(lane, 'ladle-steer-rotation', 'ladle: the predicted rotation renders');
     // The donation search runs off the UI thread. A cancel keeps the previous
     // recommendation, and either click can lose a race with a finished run, so
     // the cancel is only taken while its progress card is still up.
-    await bringIntoView(lane, 'ladle-plan-start');
+    await bringIntoView(lane, 'ladle-plan-start', page);
     await lane.call('click_element', { id: 'ladle-plan-start' });
     await waitFor(
       lane,
@@ -3346,9 +3353,10 @@ const INTERACTIONS = {
     );
     // Five presses take Turkey's target past its saved level, and the forecast
     // runs again under the objective the comparison now names.
-    await bringIntoView(lane, 'kitchens-target-0');
+    await bringIntoView(lane, 'kitchens-target-0', await wheelPoint(lane, 'kitchens-scroll'));
+    await lane.call('click_element', { id: 'kitchens-target-0' });
     for (let press = 0; press < 5; press += 1) {
-      await lane.call('click_element', { id: 'kitchens-target-0-up' });
+      await lane.call('keyboard', { keystroke: 'up' });
     }
     await waitFor(
       lane,

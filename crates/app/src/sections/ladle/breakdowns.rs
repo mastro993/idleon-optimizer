@@ -1,36 +1,21 @@
 //! The formula trees behind the rates: the AFK panel rate and one claim's rolls.
+//!
+//! The trees' roots are set in [`super::State::sync`] when the rates or the
+//! chosen character change; render only places them.
 
 use crate::state::AppState;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Styled, div};
+use gpui::{AnyElement, Entity, IntoElement, ParentElement, Styled, div};
 use idleon_ladle::Stats;
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{Caption, Card, CardHeader};
 
 /// The two rate trees, each in its own card around the shared tree component.
-pub(crate) fn ladles(
-    state: &mut AppState,
-    stats: &[Stats],
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let chosen = state
-        .ladle_state
-        .breakdown_character
-        .min(stats.len().saturating_sub(1));
-    let Some(row) = stats.get(chosen).cloned() else {
+pub(crate) fn ladles(state: &AppState, stats: &[Stats]) -> AnyElement {
+    let ladle_state = &state.ladle_state;
+    let Some(row) = stats.get(ladle_state.chosen()) else {
         return div().into_any_element();
     };
-    state
-        .ladle_state
-        .ladles_tree
-        .update(cx, |tree, cx| tree.set_root(row.ladles_tree(), cx));
-    state
-        .ladle_state
-        .claims_tree
-        .update(cx, |tree, cx| tree.set_root(row.claims_tree(), cx));
-    let ladles = state.ladle_state.ladles_tree.clone();
-    let claims = state.ladle_state.claims_tree.clone();
     div()
         .id("ladle-breakdowns")
         .flex()
@@ -50,13 +35,13 @@ pub(crate) fn ladles(
             "ladle-breakdown-ladles",
             "Ladles / day (AFK panel)",
             "15 × Ladle Multi × AFK gain rate",
-            &ladles,
+            &ladle_state.ladles_tree,
         ))
         .child(panel(
             "ladle-breakdown-claims",
             "Expected ladles from claims",
             "One claim every window, floored, then the Post Office 19c roll",
-            &claims,
+            &ladle_state.claims_tree,
         ))
         .into_any_element()
 }
