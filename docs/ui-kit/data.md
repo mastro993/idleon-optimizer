@@ -148,9 +148,14 @@ fewer than 50 rows are built, scrolls to row 4,000 and checks again.
 
 ### Lists
 
-Ely's `lists::List`/`ListItem` (one use, the spelunking event log, capped to a fixed count) maps to
-kit `list::ListItem` rows in a plain column. An unbounded list of uniform rows uses
-`v_virtual_list` (below) or a `DataTable` with one column.
+Ely's `lists::List`/`ListItem` had one use, the spelunking event log. A short fixed list maps to kit
+`list::ListItem` rows in a plain column. An unbounded list of uniform rows uses `v_virtual_list`
+(below) or a `DataTable`: the event log is a `DataTable` (`sections/spelunking/events.rs`) whose
+first cell keeps the `spelunk-run-event-<n>` id.
+
+Every kit `Table` draws under the same element id, so two tables with no element id between them
+collide (a debug build panics on the duplicate accessibility node). Give each table a `div().id(..)`
+of its own.
 
 ## Scrolling
 

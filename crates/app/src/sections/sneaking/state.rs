@@ -10,6 +10,7 @@ use gpui::{App, Context};
 use idleon_sneaking::{Loadout, Objective, Outcome, Request, SlotKind};
 use idleon_ui::runner::TaskState;
 use serde::{Deserialize, Serialize};
+use std::rc::Rc;
 
 /// The three workspaces the section shows.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -46,10 +47,6 @@ impl Workspace {
             Workspace::Optimizer => "Optimizer",
             Workspace::Floors => "Floor Mastery",
         }
-    }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|entry| entry.id() == id)
     }
 }
 
@@ -92,10 +89,6 @@ impl FormulaTab {
             FormulaTab::Door => "Door",
             FormulaTab::Runtime => "Runtime",
         }
-    }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|entry| entry.id() == id)
     }
 }
 
@@ -196,6 +189,7 @@ impl AppState {
         };
         match loadout.equip(twin, slot, row) {
             Ok(()) => {
+                self.sneaking_controls.edits += 1;
                 let name = loadout
                     .twin(twin)
                     .map_or_else(String::new, |entry| entry.name.clone());
@@ -224,7 +218,10 @@ impl AppState {
             return;
         };
         match loadout.unequip(twin, slot) {
-            Ok(()) => self.status = format!("Sneaking: {} emptied.", slot.label()),
+            Ok(()) => {
+                self.sneaking_controls.edits += 1;
+                self.status = format!("Sneaking: {} emptied.", slot.label());
+            }
             Err(error) => self.status = format!("Sneaking: {error}."),
         }
         cx.notify();
@@ -253,6 +250,7 @@ impl AppState {
     pub(crate) fn sneak_reset(&mut self, cx: &mut Context<Self>) {
         if let Some(loadout) = self.sneaking.as_mut() {
             loadout.reset();
+            self.sneaking_controls.edits += 1;
             self.set_status("Sneaking: the loadout is back to the save.", cx);
         }
     }
@@ -264,10 +262,18 @@ impl AppState {
     }
 
     /// The charm run's progress, result and staleness for the current objective.
-    pub(crate) fn sneak_optimizer_task(&self, cx: &App) -> TaskState<Outcome> {
-        self.sneaking_opt
-            .read(cx)
-            .state(&self.sneaking_state.optimizer_request())
+    /// The result is the copy kept when the run stored it, not a fresh clone.
+    pub(crate) fn sneak_optimizer_task(&self, cx: &App) -> TaskState<Rc<Outcome>> {
+        let runner = self.sneaking_opt.read(cx);
+        TaskState {
+            running: runner.running(),
+            cancelled: runner.cancelled(),
+            progress: runner.progress().cloned(),
+            result: runner
+                .result()
+                .and_then(|_| self.sneaking_controls.outcome.clone()),
+            stale: runner.is_stale(&self.sneaking_state.optimizer_request()),
+        }
     }
 
     /// Search charm placements off the UI thread through the shared runner.
@@ -303,7 +309,9 @@ impl AppState {
         let Some(loadout) = self.sneaking.as_mut() else {
             return;
         };
-        let message = if loadout.apply(&outcome.winner) {
+        let applied = loadout.apply(&outcome.winner);
+        self.sneaking_controls.edits += 1;
+        let message = if applied {
             format!(
                 "Sneaking: the recommended {} placement is in the loadout.",
                 outcome.request.objective.label()

@@ -1,458 +1,800 @@
-//! The expedition controls above the party, belt and depth estimate.
+//! The kit controls the section owns (`docs/ui-kit/forms.md`) and what render
+//! reads from the calculator.
 //!
-//! Every control the toolbar carries: the logged-in character, the cave (with
-//! its Normal/Manic records), Normal/Manic mode, the policy, the Auto
-//! full-clear flag and the Auto speed. The account card carries the four values
-//! that come from the account's whole stat context, which the save decode does
-//! not cover yet.
+//! Every select and number field is built once here, except the party, belt
+//! and memory slots and the maximum-stamina fields, whose count follows the
+//! save: those are added the first time a render needs them and kept. An edit
+//! comes back through a subscription that calls the section's setter; render
+//! pushes the section's values back into the controls.
+//!
+//! [`Derived`] is everything render would otherwise ask the calculator for on
+//! every frame (the save's inputs, the configuration check, the search space,
+//! the depth profile and every option list). It is rebuilt only when the save
+//! or the section state changes.
 
-use super::state::records;
+use super::chart::Series;
+use super::events::Events;
+use super::state::{OptimizerMode, State, records};
+use super::{OptimizerInputs, RunInputs};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Checkbox, Choice, NumberInput, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
-use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, div, px};
-use idleon_spelunking::{AmberPolicy, Inputs, Policy, StaminaMode};
+use gpui::{AppContext as _, Context, Entity, Subscription, Window};
+use gpui_kit::component::input::{InputEvent, InputState};
+use gpui_kit::component::select::SelectEvent;
+use gpui_kit::component::table::TableState;
+use idleon_spelunking::{
+    AmberPolicy, Entry, Inputs, Objective, Policy, PresetKind, Profile, ReferenceTool, RunResult,
+    Save, SearchResult, StaminaMode, ToolChoice, data, profile, search_space,
+};
+use idleon_ui::format;
+use idleon_ui::runner::{Ending, TaskEvent, TaskRunner};
+use idleon_ui::widgets::{Choice, ChoiceSelect, number_state, number_value};
+use std::rc::Rc;
 
-/// The toolbar card: character, cave, mode, policy, full-clear and speed.
-pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let character_entity = entity.clone();
-    let cave_entity = entity.clone();
-    let mode_entity = entity.clone();
-    let policy_entity = entity.clone();
-    let clear_entity = entity.clone();
-    let speed_entity = entity.clone();
+/// The per-rock-type chart colours, the game's own rock palette.
+const DEPTH_COLORS: [&str; 16] = [
+    "#4dd0e1", "#ffb74d", "#a5d66f", "#df91f0", "#fb8299", "#82aaff", "#ffe082", "#80cbc4",
+    "#dca978", "#adadff", "#e4ceff", "#91c4a0", "#f6956a", "#b6d6ee", "#ed95bb", "#ffffff",
+];
 
-    let character_choices: Vec<Choice> = inputs
-        .characters
-        .iter()
-        .map(|character| {
-            Choice::new(character.id.to_string(), character.name.clone()).note(format!(
-                "{} / {} stamina",
-                held(character.stamina),
-                held(character.max_stamina)
-            ))
-        })
-        .collect();
-    let character_select = Select::new("spelunk-character", character_choices)
-        .label("Logged-in character")
-        .selected(state.spelunking.character.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(character) = value.parse::<usize>() {
-                character_entity.update(cx, |state, cx| state.set_spelunk_character(character, cx));
-            }
-        });
+type Setter = fn(&mut AppState, f64, &mut Context<AppState>);
 
-    let records = records(inputs, state.spelunking.manic);
-    let cave_choices: Vec<Choice> = inputs
-        .caves
-        .iter()
-        .map(|cave| {
-            let record = records.get(cave.id).copied().unwrap_or(0.0);
-            Choice::new(cave.id.to_string(), cave.name.clone()).note(format!(
-                "record {} · {} members",
-                held(record),
-                cave.capacity
-            ))
-        })
-        .collect();
-    let cave_select = Select::new("spelunk-cave", cave_choices)
-        .label("Cave")
-        .selected(state.spelunking.cave.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(cave) = value.parse::<usize>() {
-                cave_entity.update(cx, |state, cx| state.set_spelunk_cave(cave, cx));
-            }
-        });
-
-    let manic_choice = Choice::new("true", "Manic");
-    let mode_select = Select::new(
-        "spelunk-mode",
-        [
-            Choice::new("false", "Normal"),
-            if inputs.manic {
-                manic_choice
-            } else {
-                manic_choice.disabled()
-            },
-        ],
-    )
-    .label("Expedition")
-    .selected(state.spelunking.manic.to_string())
-    .size(ControlSize::Sm)
-    .on_change(move |value, _window, cx| {
-        mode_entity.update(cx, |state, cx| {
-            state.set_spelunk_manic(value.as_ref() == "true", cx)
-        });
-    });
-
-    let policy_choices: Vec<Choice> = Policy::ALL
-        .into_iter()
-        .map(|policy| {
-            let choice = Choice::new(policy.id(), policy.label());
-            if policy == Policy::Auto && !inputs.auto {
-                choice.disabled()
-            } else {
-                choice
-            }
-        })
-        .collect();
-    let policy_select = Select::new("spelunk-policy", policy_choices)
-        .label("Policy")
-        .selected(state.spelunking.policy.id())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Some(policy) = Policy::from_id(value.as_ref()) {
-                policy_entity.update(cx, |state, cx| state.set_spelunk_policy(policy, cx));
-            }
-        });
-
-    let auto = state.spelunking.policy == Policy::Auto;
-    let full_clear = Checkbox::new("spelunk-full-clear", state.spelunking.full_clear)
-        .label(SharedString::from("Auto full clear"))
-        .disabled(!auto)
-        .on_change(move |checked, _window, cx| {
-            clear_entity.update(cx, |state, cx| state.set_spelunk_full_clear(checked, cx));
-        });
-
-    let speeds: Vec<Choice> = (0..=inputs.speed_max)
-        .map(|speed| {
-            Choice::new(
-                speed.to_string(),
-                if speed == 0 {
-                    "Base".to_string()
-                } else {
-                    format!("Speed {speed}")
-                },
-            )
-        })
-        .collect();
-    let speed_select = Select::new("spelunk-speed", speeds)
-        .label("Auto speed")
-        .selected(state.spelunking.speed.to_string())
-        .size(ControlSize::Sm)
-        .disabled(!auto)
-        .on_change(move |value, _window, cx| {
-            if let Ok(speed) = value.parse::<u32>() {
-                speed_entity.update(cx, |state, cx| state.set_spelunk_speed(speed, cx));
-            }
-        });
-
-    Card::new()
-        .header(CardHeader::new("Expedition controls").description(
-            "The save supplies each character's stamina, the caves and their records, and the \
-                 available modes, speeds and elixirs.",
-        ))
-        .child(
-            div()
-                .id("spelunk-controls")
-                .flex()
-                .flex_wrap()
-                .items_end()
-                .gap_4()
-                .child(crate::sections::spelunking::field(
-                    "Character",
-                    character_select.into_any_element(),
-                ))
-                .child(crate::sections::spelunking::field(
-                    "Cave",
-                    cave_select.into_any_element(),
-                ))
-                .child(crate::sections::spelunking::field(
-                    "Mode",
-                    mode_select.into_any_element(),
-                ))
-                .child(crate::sections::spelunking::field(
-                    "Policy",
-                    policy_select.into_any_element(),
-                ))
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .min_w(px(150.0))
-                        .child(Caption::new("Descent").text_color(muted))
-                        .child(full_clear),
-                )
-                .child(crate::sections::spelunking::field(
-                    "Auto speed",
-                    speed_select.into_any_element(),
-                ))
-                .when(state.spelunking.policy == Policy::AmberFarm, |row| {
-                    row.child(
-                        Badge::new("Amber farming always clears the floor").tone(Tone::Warning),
-                    )
-                }),
-        )
-        .into_any_element()
+pub(crate) struct Controls {
+    pub(crate) character: ChoiceSelect<usize>,
+    pub(crate) cave: ChoiceSelect<usize>,
+    pub(crate) mode: ChoiceSelect<bool>,
+    pub(crate) policy: ChoiceSelect<Policy>,
+    pub(crate) speed: ChoiceSelect<u32>,
+    pub(crate) starting: ChoiceSelect<StaminaMode>,
+    pub(crate) finishers: ChoiceSelect<u32>,
+    pub(crate) depth_tool: ChoiceSelect<ReferenceTool>,
+    pub(crate) run_tool: ChoiceSelect<ToolChoice>,
+    pub(crate) run_entry: ChoiceSelect<Entry>,
+    pub(crate) optimizer_mode: ChoiceSelect<OptimizerMode>,
+    pub(crate) objective: ChoiceSelect<Objective>,
+    /// One per party, belt and memory slot, added as the save needs them.
+    pub(crate) party: Vec<ChoiceSelect<i32>>,
+    pub(crate) elixirs: Vec<ChoiceSelect<i32>>,
+    pub(crate) memorized: Vec<ChoiceSelect<i32>>,
+    pub(crate) power: Entity<InputState>,
+    pub(crate) exits: Entity<InputState>,
+    pub(crate) amber: Entity<InputState>,
+    pub(crate) regen: Entity<InputState>,
+    pub(crate) grand: Entity<InputState>,
+    pub(crate) dump: Entity<InputState>,
+    pub(crate) reserve: Entity<InputState>,
+    pub(crate) harvest: Entity<InputState>,
+    pub(crate) rope: Entity<InputState>,
+    pub(crate) depth_from: Entity<InputState>,
+    pub(crate) depth_to: Entity<InputState>,
+    pub(crate) inspect: Entity<InputState>,
+    pub(crate) seed: Entity<InputState>,
+    pub(crate) reaction: Entity<InputState>,
+    pub(crate) screening: Entity<InputState>,
+    pub(crate) trials: Entity<InputState>,
+    pub(crate) optimizer_seed: Entity<InputState>,
+    pub(crate) optimizer_from: Entity<InputState>,
+    pub(crate) optimizer_to: Entity<InputState>,
+    pub(crate) min_rope: Entity<InputState>,
+    pub(crate) max_trials: Entity<InputState>,
+    /// One per character, added as the save needs them.
+    pub(crate) max_stamina: Vec<Entity<InputState>>,
+    /// The run's event log, filled when a run is stored.
+    pub(crate) events: Entity<TableState<Events>>,
+    /// The stored run and search, copied once when each run stores them.
+    pub(crate) run: Option<Rc<RunResult>>,
+    pub(crate) search: Option<Rc<SearchResult>>,
+    derived: Option<((u64, State), Rc<Derived>)>,
+    depth: Option<(DepthKey, Rc<Depth>)>,
+    subscriptions: Vec<Subscription>,
 }
 
-/// The account values the account's stat context would supply.
-pub(crate) fn account_card(
-    state: &AppState,
-    _inputs: &Inputs,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let power_entity = entity.clone();
-    let exit_entity = entity.clone();
-    let amber_entity = entity.clone();
-    let regen_entity = entity.clone();
-    let grand_entity = entity.clone();
-    let power = NumberInput::new("spelunk-power", state.spelunking.account.power)
-        .range(0.0, 1e30)
-        .step(1.0)
-        .precision(4)
-        .size(ControlSize::Sm)
-        .label("Spelunking Power")
-        .on_change(move |value, _window, cx| {
-            power_entity.update(cx, |state, cx| state.set_spelunk_power(value, cx));
-        });
-    let exits = NumberInput::new("spelunk-extra-exits", state.spelunking.account.holes_bonus)
-        .range(0.0, 100_000.0)
-        .step(1.0)
-        .precision(2)
-        .size(ControlSize::Sm)
-        .label("Extra exits")
-        .on_change(move |value, _window, cx| {
-            exit_entity.update(cx, |state, cx| state.set_spelunk_holes_bonus(value, cx));
-        });
-    let amber = NumberInput::new("spelunk-amber", state.spelunking.account.amber)
-        .range(0.0, 1e30)
-        .step(0.1)
-        .precision(4)
-        .size(ControlSize::Sm)
-        .label("Amber multiplier")
-        .on_change(move |value, _window, cx| {
-            amber_entity.update(cx, |state, cx| state.set_spelunk_amber(value, cx));
-        });
-    let regen = NumberInput::new("spelunk-regen", state.spelunking.account.regen)
-        .range(0.0, 1e9)
-        .step(1.0)
-        .precision(2)
-        .size(ControlSize::Sm)
-        .label("Stamina regeneration")
-        .on_change(move |value, _window, cx| {
-            regen_entity.update(cx, |state, cx| state.set_spelunk_regen(value, cx));
-        });
-    let grand = NumberInput::new("spelunk-grand", 100.0 * state.spelunking.account.grand)
-        .range(0.0, 100.0)
-        .step(0.001)
-        .precision(4)
-        .size(ControlSize::Sm)
-        .label("Grand Discovery chance (%)")
-        .on_change(move |value, _window, cx| {
-            grand_entity.update(cx, |state, cx| state.set_spelunk_grand_pct(value, cx));
-        });
-    Card::new()
-        .header(CardHeader::new("Account inputs").description(
-            "Spelunking Power, the extra-exit and Amber multipliers, stamina regeneration and \
-                 the Grand Discovery chance are account values the save does not decode yet: read \
-                 them in game. The save fixes everything else.",
-        ))
-        .child(
-            div()
-                .id("spelunk-account-inputs")
-                .flex()
-                .flex_wrap()
-                .items_end()
-                .gap_4()
-                .child(crate::sections::spelunking::field(
-                    "Spelunking Power",
-                    power,
-                ))
-                .child(crate::sections::spelunking::field(
-                    "Extra exits (%)",
-                    exits.into_any_element(),
-                ))
-                .child(crate::sections::spelunking::field(
-                    "Amber multiplier",
-                    amber.into_any_element(),
-                ))
-                .child(crate::sections::spelunking::field(
-                    "Stamina regen / hr",
-                    regen.into_any_element(),
-                ))
-                .child(crate::sections::spelunking::field(
-                    "Grand Discovery (%)",
-                    grand.into_any_element(),
-                ))
-                .child(div().flex().items_center().gap_2().child(
-                    Caption::new("The saved belt and memory are the defaults.").text_color(muted),
-                )),
-        )
-        .into_any_element()
-}
+impl Controls {
+    pub(crate) fn new(
+        sim: &Entity<TaskRunner<RunResult, RunInputs>>,
+        optimizer: &Entity<TaskRunner<SearchResult, OptimizerInputs>>,
+        window: &mut Window,
+        cx: &mut Context<AppState>,
+    ) -> Self {
+        let mut subscriptions = Vec::new();
+        let character = ChoiceSelect::new(Vec::new(), None, window, cx);
+        subscriptions.push(on_pick(&character, cx, |state, id, cx| {
+            state.set_spelunk_character(id, cx)
+        }));
+        let cave = ChoiceSelect::new(Vec::new(), None, window, cx);
+        subscriptions.push(on_pick(&cave, cx, |state, id, cx| {
+            state.set_spelunk_cave(id, cx)
+        }));
+        let mode = ChoiceSelect::new(Vec::new(), None, window, cx);
+        subscriptions.push(on_pick(&mode, cx, |state, manic, cx| {
+            state.set_spelunk_manic(manic, cx)
+        }));
+        let policy = ChoiceSelect::new(Vec::new(), None, window, cx);
+        subscriptions.push(on_pick(&policy, cx, |state, policy, cx| {
+            state.set_spelunk_policy(policy, cx)
+        }));
+        let speed = ChoiceSelect::new(Vec::new(), None, window, cx);
+        subscriptions.push(on_pick(&speed, cx, |state, speed, cx| {
+            state.set_spelunk_speed(speed, cx)
+        }));
+        let starting = ChoiceSelect::new(starting_choices(), None, window, cx);
+        subscriptions.push(on_pick(&starting, cx, |state, mode, cx| {
+            state.set_spelunk_starting(mode, cx)
+        }));
+        let finishers = ChoiceSelect::new(finisher_choices(), None, window, cx);
+        subscriptions.push(on_pick(&finishers, cx, |state, finishers, cx| {
+            let amber = AmberPolicy {
+                finishers,
+                ..state.spelunking.amber
+            };
+            state.set_spelunk_amber_policy(amber, cx)
+        }));
+        let depth_tool = ChoiceSelect::new(Vec::new(), None, window, cx);
+        subscriptions.push(on_pick(&depth_tool, cx, |state, tool, cx| {
+            state.set_spelunk_depth_tool(tool, cx)
+        }));
+        let run_tool = ChoiceSelect::new(Vec::new(), None, window, cx);
+        subscriptions.push(on_pick(&run_tool, cx, |state, tool, cx| {
+            state.set_spelunk_sim_tool(tool, cx)
+        }));
+        let run_entry = ChoiceSelect::new(entry_choices(), None, window, cx);
+        subscriptions.push(on_pick(&run_entry, cx, |state, entry, cx| {
+            state.set_spelunk_sim_entry(entry, cx)
+        }));
+        let optimizer_mode = ChoiceSelect::new(optimizer_mode_choices(), None, window, cx);
+        subscriptions.push(on_pick(&optimizer_mode, cx, |state, mode, cx| {
+            state.set_spelunk_optimizer_mode(mode, cx)
+        }));
+        let objective = ChoiceSelect::new(Vec::new(), None, window, cx);
+        subscriptions.push(on_pick(&objective, cx, |state, objective, cx| {
+            state.set_spelunk_optimizer_objective(objective, cx)
+        }));
 
-/// The phased Amber policy's limits, shown for `amber-farm` only.
-pub(crate) fn amber_card(state: &AppState, cx: &mut Context<AppState>) -> Option<AnyElement> {
-    if state.spelunking.policy != Policy::AmberFarm {
-        return None;
-    }
-    let amber = state.spelunking.amber;
-    let entity = cx.entity();
-    let dump_entity = entity.clone();
-    let finishers_entity = entity.clone();
-    let reserve_entity = entity.clone();
-    let harvest_entity = entity.clone();
-    let rope_entity = entity;
-
-    let dump = NumberInput::new("spelunk-amber-dump-depth", f64::from(amber.dump_depth))
-        .range(1.0, 10_000.0)
-        .step(1.0)
-        .precision(0)
-        .size(ControlSize::Sm)
-        .label("Amber dump depth")
-        .on_change(move |value, _window, cx| {
-            dump_entity.update(cx, |state, cx| {
-                state.set_spelunk_amber_policy(
-                    AmberPolicy {
-                        dump_depth: value.max(0.0) as u32,
-                        ..state.spelunking.amber
-                    },
-                    cx,
-                );
-            });
+        let mut number = |min: f64, max: f64, step: f64, set: Setter| {
+            let field = number_state(min, max, step, window, cx);
+            subscriptions.push(on_number(&field, cx, set));
+            field
+        };
+        let power = number(0.0, 1e30, 1.0, |state, value, cx| {
+            state.set_spelunk_power(value, cx)
         });
-    let finishers = Select::new(
-        "spelunk-amber-finishers",
-        [
-            Choice::new("1", "Last character"),
-            Choice::new("2", "Last two characters"),
-        ],
-    )
-    .label("Finishing characters")
-    .selected(amber.finishers.to_string())
-    .size(ControlSize::Sm)
-    .on_change(move |value, _window, cx| {
-        if let Ok(finishers) = value.parse::<u32>() {
-            finishers_entity.update(cx, |state, cx| {
-                state.set_spelunk_amber_policy(
-                    AmberPolicy {
-                        finishers,
-                        ..state.spelunking.amber
-                    },
-                    cx,
-                );
-            });
+        let exits = number(0.0, 100_000.0, 1.0, |state, value, cx| {
+            state.set_spelunk_holes_bonus(value, cx)
+        });
+        let amber = number(0.0, 1e30, 0.1, |state, value, cx| {
+            state.set_spelunk_amber(value, cx)
+        });
+        let regen = number(0.0, 1e9, 1.0, |state, value, cx| {
+            state.set_spelunk_regen(value, cx)
+        });
+        let grand = number(0.0, 100.0, 0.001, |state, value, cx| {
+            state.set_spelunk_grand_pct(value, cx)
+        });
+        let dump = number(1.0, 10_000.0, 1.0, |state, value, cx| {
+            let amber = AmberPolicy {
+                dump_depth: value.max(0.0) as u32,
+                ..state.spelunking.amber
+            };
+            state.set_spelunk_amber_policy(amber, cx)
+        });
+        let reserve = number(25.0, 100.0, 1.0, |state, value, cx| {
+            let amber = AmberPolicy {
+                reserve_pct: value.max(0.0) as u32,
+                ..state.spelunking.amber
+            };
+            state.set_spelunk_amber_policy(amber, cx)
+        });
+        let harvest = number(0.0, 100.0, 1.0, |state, value, cx| {
+            let amber = AmberPolicy {
+                harvest_depths: value.max(0.0) as u32,
+                ..state.spelunking.amber
+            };
+            state.set_spelunk_amber_policy(amber, cx)
+        });
+        let rope = number(1.0, 100.0, 1.0, |state, value, cx| {
+            let amber = AmberPolicy {
+                rope_reserve_pct: value.max(0.0) as u32,
+                ..state.spelunking.amber
+            };
+            state.set_spelunk_amber_policy(amber, cx)
+        });
+        let depth_from = number(1.0, 10_000.0, 1.0, |state, value, cx| {
+            state.set_spelunk_depth_from(value.max(0.0) as usize, cx)
+        });
+        let depth_to = number(1.0, 10_000.0, 1.0, |state, value, cx| {
+            state.set_spelunk_depth_to(value.max(0.0) as usize, cx)
+        });
+        let inspect = number(1.0, 10_000.0, 1.0, |state, value, cx| {
+            state.set_spelunk_inspect(value.max(0.0) as usize, cx)
+        });
+        let seed = number(0.0, f64::from(u32::MAX), 1.0, |state, value, cx| {
+            state.set_spelunk_sim_seed(value.max(0.0) as u32, cx)
+        });
+        let reaction = number(100.0, 5_000.0, 10.0, |state, value, cx| {
+            state.set_spelunk_sim_reaction(value, cx)
+        });
+        let screening = number(1.0, 8.0, 1.0, |state, value, cx| {
+            state.set_spelunk_optimizer_screening(value.max(1.0) as usize, cx)
+        });
+        let trials = number(2.0, 64.0, 1.0, |state, value, cx| {
+            state.set_spelunk_optimizer_trials(value.max(2.0) as usize, cx)
+        });
+        let optimizer_seed = number(0.0, f64::from(u32::MAX), 1.0, |state, value, cx| {
+            state.set_spelunk_optimizer_seed(value.max(0.0) as u32, cx)
+        });
+        let optimizer_from = number(1.0, 10_000.0, 1.0, |state, value, cx| {
+            state.set_spelunk_optimizer_from(value.max(1.0) as usize, cx)
+        });
+        let optimizer_to = number(1.0, 10_000.0, 1.0, |state, value, cx| {
+            state.set_spelunk_optimizer_to(value.max(1.0) as usize, cx)
+        });
+        let min_rope = number(0.0, 100.0, 1.0, |state, value, cx| {
+            state.set_spelunk_optimizer_min_rope(value.max(0.0) as usize, cx)
+        });
+        let max_trials = number(2.0, 256.0, 1.0, |state, value, cx| {
+            state.set_spelunk_optimizer_max_trials(value.max(2.0) as usize, cx)
+        });
+
+        let events = cx.new(|cx| TableState::new(Events::default(), window, cx));
+        // Keep each run's result once, when it is stored, and build the event
+        // log's rows then.
+        subscriptions.push(cx.subscribe(sim, |state, runner, event: &TaskEvent, cx| {
+            if matches!(event, TaskEvent::Finished(Ending::Stored)) {
+                let run = runner.read(cx).result().cloned().map(Rc::new);
+                let controls = &mut state.spelunking_controls;
+                controls.events.update(cx, |table, cx| {
+                    table.delegate_mut().show(run.as_deref());
+                    cx.notify();
+                });
+                controls.run = run;
+            }
+        }));
+        subscriptions.push(
+            cx.subscribe(optimizer, |state, runner, event: &TaskEvent, cx| {
+                if matches!(event, TaskEvent::Finished(Ending::Stored)) {
+                    state.spelunking_controls.search =
+                        runner.read(cx).result().cloned().map(Rc::new);
+                }
+            }),
+        );
+
+        Self {
+            character,
+            cave,
+            mode,
+            policy,
+            speed,
+            starting,
+            finishers,
+            depth_tool,
+            run_tool,
+            run_entry,
+            optimizer_mode,
+            objective,
+            party: Vec::new(),
+            elixirs: Vec::new(),
+            memorized: Vec::new(),
+            power,
+            exits,
+            amber,
+            regen,
+            grand,
+            dump,
+            reserve,
+            harvest,
+            rope,
+            depth_from,
+            depth_to,
+            inspect,
+            seed,
+            reaction,
+            screening,
+            trials,
+            optimizer_seed,
+            optimizer_from,
+            optimizer_to,
+            min_rope,
+            max_trials,
+            max_stamina: Vec::new(),
+            events,
+            run: None,
+            search: None,
+            derived: None,
+            depth: None,
+            subscriptions,
         }
-    });
-    let reserve = NumberInput::new("spelunk-amber-reserve", f64::from(amber.reserve_pct))
-        .range(25.0, 100.0)
-        .step(1.0)
-        .precision(0)
-        .size(ControlSize::Sm)
-        .label("First finisher's stamina to keep (%)")
-        .on_change(move |value, _window, cx| {
-            reserve_entity.update(cx, |state, cx| {
-                state.set_spelunk_amber_policy(
-                    AmberPolicy {
-                        reserve_pct: value.max(0.0) as u32,
-                        ..state.spelunking.amber
-                    },
-                    cx,
-                );
-            });
-        });
-    let harvest = NumberInput::new("spelunk-amber-harvest", f64::from(amber.harvest_depths))
-        .range(0.0, 100.0)
-        .step(1.0)
-        .precision(0)
-        .size(ControlSize::Sm)
-        .label("Floors after oranges before seeking rope")
-        .on_change(move |value, _window, cx| {
-            harvest_entity.update(cx, |state, cx| {
-                state.set_spelunk_amber_policy(
-                    AmberPolicy {
-                        harvest_depths: value.max(0.0) as u32,
-                        ..state.spelunking.amber
-                    },
-                    cx,
-                );
-            });
-        });
-    let rope = NumberInput::new(
-        "spelunk-amber-rope-reserve",
-        f64::from(amber.rope_reserve_pct),
-    )
-    .range(1.0, 100.0)
-    .step(1.0)
-    .precision(0)
-    .size(ControlSize::Sm)
-    .label("Seek rope below finishing stamina (%)")
-    .on_change(move |value, _window, cx| {
-        rope_entity.update(cx, |state, cx| {
-            state.set_spelunk_amber_policy(
-                AmberPolicy {
-                    rope_reserve_pct: value.max(0.0) as u32,
-                    ..state.spelunking.amber
-                },
-                cx,
-            );
-        });
-    });
+    }
 
-    Some(
-        Card::new()
-            .header(CardHeader::new("Amber policy").description(
-                "Manual targeting throughout: full clear and drink teals as they come, saving the \
-                 oranges, then burn stamina on visible objects from the dump depth. The first \
-                 finisher keeps the reserve; later finishers stay untouched until needed. Drink \
-                 the oranges when the reserve is reached, harvest within the remaining stamina \
-                 budget, and take the first untouched rope after the harvest target or below the \
-                 rope reserve.",
-            ))
-            .child(
-                div()
-                    .id("spelunk-amber-policy")
-                    .flex()
-                    .flex_wrap()
-                    .items_end()
-                    .gap_4()
-                    .child(super::field("Dump depth", dump.into_any_element()))
-                    .child(super::field(
-                        "Finishing characters",
-                        finishers.into_any_element(),
-                    ))
-                    .child(super::field(
-                        "Finisher reserve (%)",
-                        reserve.into_any_element(),
-                    ))
-                    .child(super::field("Harvest floors", harvest.into_any_element()))
-                    .child(super::field("Rope reserve (%)", rope.into_any_element())),
-            )
-            .into_any_element(),
-    )
-}
-
-/// The starting-stamina choice shared by the party card.
-pub(crate) fn starting_select(state: &AppState, entity: gpui::Entity<AppState>) -> AnyElement {
-    let modes = [
-        Choice::new(StaminaMode::Saved.id(), "Saved stamina"),
-        Choice::new(StaminaMode::Full.id(), "Fully recovered (hypothetical)"),
-    ];
-    Select::new("spelunk-stamina", modes)
-        .label("Starting stamina")
-        .selected(state.spelunking.starting.id())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Some(mode) = StaminaMode::from_id(value.as_ref()) {
-                entity.update(cx, |state, cx| state.set_spelunk_starting(mode, cx));
+    /// What render reads for `state` and the save at `revision`.
+    pub(crate) fn derived(&mut self, revision: u64, state: &State, save: &Save) -> Rc<Derived> {
+        if let Some(((known, shown), derived)) = &self.derived
+            && *known == revision
+            && shown == state
+        {
+            return derived.clone();
+        }
+        let inputs = save.inputs(&state.account);
+        let depth_key = (
+            revision,
+            state.requested(),
+            state.range(),
+            state.account.clone(),
+        );
+        let depth = match &self.depth {
+            Some((known, depth)) if *known == depth_key => depth.clone(),
+            _ => {
+                let depth = Rc::new(Depth::of(&inputs, state));
+                self.depth = Some((depth_key, depth.clone()));
+                depth
             }
-        })
-        .into_any_element()
+        };
+        let derived = Rc::new(Derived::of(inputs, state, depth));
+        self.derived = Some(((revision, state.clone()), derived.clone()));
+        derived
+    }
+
+    /// Make sure there is a slot select for each of `count` party, belt or
+    /// memory slots.
+    pub(crate) fn ensure_slots(
+        &mut self,
+        kind: Slots,
+        count: usize,
+        window: &mut Window,
+        cx: &mut Context<AppState>,
+    ) {
+        let slots = match kind {
+            Slots::Party => &mut self.party,
+            Slots::Belt => &mut self.elixirs,
+            Slots::Memory => &mut self.memorized,
+        };
+        while slots.len() < count {
+            let slot = slots.len();
+            let select = ChoiceSelect::new(Vec::new(), None, window, cx);
+            self.subscriptions
+                .push(on_pick(&select, cx, move |state, id, cx| match kind {
+                    Slots::Party => state.set_spelunk_party(slot, id, cx),
+                    Slots::Belt => state.set_spelunk_elixir(slot, id, cx),
+                    Slots::Memory => state.set_spelunk_memorized(slot, id, cx),
+                }));
+            slots.push(select);
+        }
+    }
+
+    /// Make sure there is a maximum-stamina field for each of `count` characters.
+    pub(crate) fn ensure_max_stamina(
+        &mut self,
+        count: usize,
+        window: &mut Window,
+        cx: &mut Context<AppState>,
+    ) {
+        while self.max_stamina.len() < count {
+            let character = self.max_stamina.len();
+            let field = number_state(0.0, 1e12, 10.0, window, cx);
+            self.subscriptions
+                .push(cx.subscribe(&field, move |state, field, event, cx| {
+                    if matches!(event, InputEvent::Change)
+                        && let Some(value) = number_value(field.read(cx))
+                    {
+                        state.set_spelunk_max_stamina(character, value, cx);
+                    }
+                }));
+            self.max_stamina.push(field);
+        }
+    }
 }
 
-/// A short stamina readout for notes and choices.
-fn held(value: f64) -> String {
-    idleon_ui::format::value(value)
+/// Which slot selects [`Controls::ensure_slots`] fills.
+#[derive(Clone, Copy)]
+pub(crate) enum Slots {
+    Party,
+    Belt,
+    Memory,
+}
+
+fn on_pick<V: Clone + PartialEq + 'static>(
+    select: &ChoiceSelect<V>,
+    cx: &mut Context<AppState>,
+    set: impl Fn(&mut AppState, V, &mut Context<AppState>) + 'static,
+) -> Subscription {
+    cx.subscribe(
+        select.state(),
+        move |state, _, event: &SelectEvent<Vec<Choice<V>>>, cx| {
+            if let SelectEvent::Confirm(Some(value)) = event {
+                set(state, value.clone(), cx);
+            }
+        },
+    )
+}
+
+fn on_number(field: &Entity<InputState>, cx: &mut Context<AppState>, set: Setter) -> Subscription {
+    cx.subscribe(field, move |state, field, event, cx| {
+        if matches!(event, InputEvent::Change)
+            && let Some(value) = number_value(field.read(cx))
+        {
+            set(state, value, cx);
+        }
+    })
+}
+
+/// What render reads from the calculator for one save and section state.
+pub(crate) struct Derived {
+    pub(crate) inputs: Inputs,
+    /// Why the controls cannot run, when they cannot.
+    pub(crate) config_error: Option<String>,
+    /// How many configurations the search scope allows.
+    pub(crate) space: Option<u128>,
+    pub(crate) depth: Rc<Depth>,
+    /// Why each built-in preset cannot be applied, in `data()` order.
+    pub(crate) preset_issues: Vec<Vec<String>>,
+    pub(crate) characters: Vec<Choice<usize>>,
+    pub(crate) caves: Vec<Choice<usize>>,
+    pub(crate) modes: Vec<Choice<bool>>,
+    pub(crate) policies: Vec<Choice<Policy>>,
+    pub(crate) speeds: Vec<Choice<u32>>,
+    pub(crate) depth_tools: Vec<Choice<ReferenceTool>>,
+    pub(crate) run_tools: Vec<Choice<ToolChoice>>,
+    pub(crate) objectives: Vec<Choice<Objective>>,
+    /// One option list per party, belt and memory slot.
+    pub(crate) party: Vec<Vec<Choice<i32>>>,
+    pub(crate) elixirs: Vec<Vec<Choice<i32>>>,
+    pub(crate) memorized: Vec<Vec<Choice<i32>>>,
+}
+
+impl Derived {
+    fn of(inputs: Inputs, state: &State, depth: Rc<Depth>) -> Self {
+        let config_error = state.config(&inputs).err().map(|error| error.to_string());
+        let space = config_error
+            .is_none()
+            .then(|| {
+                search_space(
+                    &inputs,
+                    &state.run_requested(),
+                    &state.optimizer_requested(),
+                )
+                .ok()
+            })
+            .flatten()
+            .map(|(count, _)| count);
+        let preset_issues = data()
+            .elixir_presets
+            .iter()
+            .map(|preset| state.preset_issues(&inputs, preset))
+            .collect();
+        let characters = inputs
+            .characters
+            .iter()
+            .map(|character| {
+                Choice::new(
+                    character.id,
+                    format!(
+                        "{} · {} / {} stamina",
+                        character.name,
+                        format::value(character.stamina),
+                        format::value(character.max_stamina)
+                    ),
+                )
+            })
+            .collect();
+        let records = records(&inputs, state.manic);
+        let caves = inputs
+            .caves
+            .iter()
+            .map(|cave| {
+                let record = records.get(cave.id).copied().unwrap_or(0.0);
+                Choice::new(
+                    cave.id,
+                    format!(
+                        "{} · record {} · {} members",
+                        cave.name,
+                        format::value(record),
+                        cave.capacity
+                    ),
+                )
+            })
+            .collect();
+        let modes = vec![
+            Choice::new(false, "Normal"),
+            Choice::new(true, "Manic").disabled(!inputs.manic),
+        ];
+        let policies = Policy::ALL
+            .into_iter()
+            .map(|policy| {
+                Choice::new(policy, policy.label()).disabled(policy == Policy::Auto && !inputs.auto)
+            })
+            .collect();
+        let speeds = (0..=inputs.speed_max)
+            .map(|speed| {
+                Choice::new(
+                    speed,
+                    if speed == 0 {
+                        "Base".to_string()
+                    } else {
+                        format!("Speed {speed}")
+                    },
+                )
+            })
+            .collect();
+        let depth_tools = std::iter::once(Choice::new(
+            ReferenceTool::Best,
+            "Lowest isolated cost (optimistic)",
+        ))
+        .chain(
+            inputs
+                .tools
+                .iter()
+                .map(|tool| Choice::new(ReferenceTool::Tool(tool.id), tool.name.clone())),
+        )
+        .collect();
+        let run_tools = std::iter::once(Choice::new(ToolChoice::Adaptive, "Adaptive"))
+            .chain(
+                inputs
+                    .tools
+                    .iter()
+                    .map(|tool| Choice::new(ToolChoice::Tool(tool.id), tool.name.clone())),
+            )
+            .collect();
+        let amber_mode = state.optimizer_mode == OptimizerMode::Amber;
+        let objectives = Objective::ALL
+            .into_iter()
+            .filter(|objective| !amber_mode || objective.amber())
+            .map(|objective| Choice::new(objective, objective.label()))
+            .collect();
+        let capacity = inputs.caves.get(state.cave).map_or(0, |cave| cave.capacity);
+        let full_stamina = state.starting == StaminaMode::Full;
+        let party = (0..capacity)
+            .map(|slot| {
+                std::iter::once(Choice::new(-1, "Empty"))
+                    .chain(inputs.characters.iter().map(|character| {
+                        let eligible = full_stamina || character.has_half_stamina();
+                        Choice::new(
+                            character.id as i32,
+                            format!(
+                                "{} · {} / {}",
+                                character.name,
+                                format::value(character.stamina),
+                                format::value(character.max_stamina)
+                            ),
+                        )
+                        .disabled(state.in_party(slot, character.id) || !eligible)
+                    }))
+                    .collect()
+            })
+            .collect();
+        let elixirs = slot_choices(&inputs, PresetKind::Belt, &state.elixirs, inputs.slots);
+        let memorized = slot_choices(
+            &inputs,
+            PresetKind::Memory,
+            &state.memorized,
+            inputs.memory_slots,
+        );
+        Self {
+            config_error,
+            space,
+            depth,
+            preset_issues,
+            characters,
+            caves,
+            modes,
+            policies,
+            speeds,
+            depth_tools,
+            run_tools,
+            objectives,
+            party,
+            elixirs,
+            memorized,
+            inputs,
+        }
+    }
+}
+
+/// Each belt or memory slot's elixirs; one already used up elsewhere (past the
+/// duplicate limit on the belt, at all in memory) is shown but not pickable.
+fn slot_choices(
+    inputs: &Inputs,
+    kind: PresetKind,
+    values: &[i32],
+    count: usize,
+) -> Vec<Vec<Choice<i32>>> {
+    (0..count)
+        .map(|slot| {
+            let others = || {
+                values
+                    .iter()
+                    .enumerate()
+                    .filter(move |(index, _)| *index != slot)
+                    .map(|(_, value)| *value)
+            };
+            std::iter::once(Choice::new(-1, "Empty"))
+                .chain(
+                    inputs
+                        .elixirs
+                        .iter()
+                        .take(inputs.elixir_owned)
+                        .map(|elixir| {
+                            let id = elixir.id as i32;
+                            let used = match kind {
+                                PresetKind::Belt => {
+                                    others().filter(|value| *value == id).count() >= inputs.dupes
+                                }
+                                PresetKind::Memory => others().any(|value| value == id),
+                            };
+                            Choice::new(id, elixir.name.clone()).disabled(used)
+                        }),
+                )
+                .collect()
+        })
+        .collect()
+}
+
+/// The depth profile behind the two charts and the inspector.
+type DepthKey = (
+    u64,
+    idleon_spelunking::Requested,
+    idleon_spelunking::DepthRange,
+    idleon_spelunking::Account,
+);
+
+pub(crate) struct Depth {
+    pub(crate) profile: Result<Profile, idleon_spelunking::ConfigError>,
+    pub(crate) risk: Rc<Vec<Series>>,
+    pub(crate) stamina: Rc<Vec<Series>>,
+}
+
+impl Depth {
+    fn of(inputs: &Inputs, state: &State) -> Self {
+        let profile = profile(inputs, &state.requested(), &state.range());
+        let (risk, stamina) = match &profile {
+            Ok(profile) => (risk_series(profile), stamina_series(profile)),
+            Err(_) => (Vec::new(), Vec::new()),
+        };
+        Self {
+            profile,
+            risk: Rc::new(risk),
+            stamina: Rc::new(stamina),
+        }
+    }
+}
+
+fn risk_series(profile: &Profile) -> Vec<Series> {
+    let blocked = profile
+        .rows
+        .iter()
+        .map(|row| Some(row.blocked_exits))
+        .collect();
+    let hard = profile.rows.iter().map(|row| Some(row.hard)).collect();
+    vec![
+        Series::new(
+            "All descent holes over budget",
+            format::hex(DEPTH_COLORS[1]),
+            blocked,
+        ),
+        Series::new(
+            "Normal rocks over budget",
+            format::hex(DEPTH_COLORS[4]),
+            hard,
+        )
+        .dashed(),
+    ]
+}
+
+fn stamina_series(profile: &Profile) -> Vec<Series> {
+    let mut kinds: Vec<usize> = profile
+        .rows
+        .iter()
+        .flat_map(|row| row.objects.iter().map(|object| object.kind))
+        .collect();
+    kinds.sort_unstable();
+    kinds.dedup();
+    kinds
+        .iter()
+        .map(|kind| {
+            let name = profile
+                .rows
+                .iter()
+                .flat_map(|row| row.objects.iter())
+                .find(|object| object.kind == *kind)
+                .map_or_else(|| format!("Rock {kind}"), |object| object.name.clone());
+            let values = profile
+                .rows
+                .iter()
+                .map(|row| {
+                    row.objects
+                        .iter()
+                        .find(|object| object.kind == *kind)
+                        .map(|object| object.expected)
+                        .filter(|expected| expected.is_finite())
+                })
+                .collect();
+            Series::new(
+                name,
+                format::hex(DEPTH_COLORS[kind % DEPTH_COLORS.len()]),
+                values,
+            )
+        })
+        .collect()
+}
+
+pub(crate) fn starting_choices() -> Vec<Choice<StaminaMode>> {
+    vec![
+        Choice::new(StaminaMode::Saved, "Saved stamina"),
+        Choice::new(StaminaMode::Full, "Fully recovered (hypothetical)"),
+    ]
+}
+
+pub(crate) fn finisher_choices() -> Vec<Choice<u32>> {
+    vec![
+        Choice::new(1, "Last character"),
+        Choice::new(2, "Last two characters"),
+    ]
+}
+
+pub(crate) fn entry_choices() -> Vec<Choice<Entry>> {
+    vec![
+        Choice::new(Entry::Surface, "Surface"),
+        Choice::new(Entry::Shortcut, "Saved shortcut"),
+    ]
+}
+
+pub(crate) fn optimizer_mode_choices() -> Vec<Choice<OptimizerMode>> {
+    vec![
+        Choice::new(OptimizerMode::Configuration, "Configurations"),
+        Choice::new(OptimizerMode::Amber, "Amber farming phases"),
+    ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gpui_kit::component::searchable_list::SearchableListItem as _;
+    use idleon_spelunking::Account;
+
+    fn save() -> Save {
+        let text = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/data.json"
+        ))
+        .expect("the fixture is committed");
+        let imported = idleon_import::import(&text).expect("the fixture imports");
+        Save::from_parts(&imported.save).expect("the fixture carries Spelunk rows")
+    }
+
+    #[test]
+    fn the_derived_figures_read_the_save_and_lock_taken_slots() {
+        let save = save();
+        let mut state = State::default();
+        state.adopt(&save.inputs(&Account::neutral()));
+        let inputs = save.inputs(&state.account);
+        let depth = Rc::new(Depth::of(&inputs, &state));
+        assert_eq!(
+            depth.profile,
+            profile(&inputs, &state.requested(), &state.range()),
+            "the cached profile is the calculator's"
+        );
+        let derived = Derived::of(inputs, &state, depth);
+        assert_eq!(derived.config_error, None);
+        assert_eq!(derived.party.len(), state.party.len());
+        assert_eq!(derived.elixirs.len(), derived.inputs.slots);
+        assert_eq!(derived.memorized.len(), derived.inputs.memory_slots);
+
+        // The first slot's character cannot be picked again in the second.
+        let first = state.party[0];
+        let taken = derived.party[1]
+            .iter()
+            .find(|choice| *choice.value() == first)
+            .expect("every character is listed");
+        assert!(taken.disabled());
+        let own = derived.party[0]
+            .iter()
+            .find(|choice| *choice.value() == first)
+            .expect("every character is listed");
+        assert!(!own.disabled());
+        // A memorized elixir cannot fill the other memory slot.
+        let memorized = state.memorized[0];
+        assert!(
+            derived.memorized[1]
+                .iter()
+                .find(|choice| *choice.value() == memorized)
+                .is_some_and(|choice| choice.disabled())
+        );
+    }
 }

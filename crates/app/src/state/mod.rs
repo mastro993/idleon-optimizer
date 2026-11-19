@@ -308,6 +308,8 @@ pub(crate) struct AppState {
     pub(crate) spelunking: SpelunkingState,
     /// The Spelunking rows the loaded save carries, if it has them.
     pub(crate) spelunking_save: Option<idleon_spelunking::Save>,
+    /// The Spelunking section's kit controls and the figures derived for it.
+    pub(crate) spelunking_controls: crate::sections::spelunking::Controls,
     /// The shared runner for the Spelunking expedition run.
     pub(crate) spelunk_sim: Entity<TaskRunner<SpelunkRunResult, SpelunkRunInputs>>,
     /// The shared runner for the Spelunking optimizer.
@@ -367,6 +369,8 @@ pub(crate) struct AppState {
     pub(crate) sneaking_opt: Entity<TaskRunner<idleon_sneaking::Outcome, idleon_sneaking::Request>>,
     /// The shared formula tree on the sneaking breakdowns workspace.
     pub(crate) sneaking_breakdown: Entity<FormulaTree>,
+    /// The Sneaking section's kit selects and the figures derived for it.
+    pub(crate) sneaking_controls: crate::sections::sneaking::Controls,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub(crate) pickle: PickleState,
     /// The Prisma calculator's controls and the plan for the save.
@@ -1196,6 +1200,9 @@ impl AppState {
                 })
             },
         );
+        let spelunking_controls =
+            crate::sections::spelunking::Controls::new(&spelunk_sim, &spelunk_opt, window, cx);
+        let sneaking_controls = crate::sections::sneaking::Controls::new(&sneaking_opt, window, cx);
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         // A session file means there is something to restore, so the window
@@ -1308,6 +1315,7 @@ impl AppState {
             jar_sim,
             spelunking: SpelunkingState::default(),
             spelunking_save: None,
+            spelunking_controls,
             spelunk_sim,
             spelunk_opt,
             ladle: None,
@@ -1326,6 +1334,7 @@ impl AppState {
             sneaking_state: Default::default(),
             sneaking_opt,
             sneaking_breakdown,
+            sneaking_controls,
             pickle: PickleState::default(),
             prisma,
             statue,

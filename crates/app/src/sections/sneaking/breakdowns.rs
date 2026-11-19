@@ -5,80 +5,59 @@
 //! twin, and the shared [`FormulaTree`] supplies the search, expand/collapse
 //! and copy controls.
 
+use super::controls::Figures;
 use super::state::FormulaTab;
 use crate::state::AppState;
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
+use crate::ui::layout::tab_bar;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, SharedString, Styled, div, px,
-};
-use idleon_sneaking::breakdown;
-use idleon_ui::formula::FormulaTree;
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::component::Sizable as _;
+use gpui_kit::component::select::Select;
+use idleon_sneaking::Loadout;
+use idleon_ui::widgets::{Caption, Card, CardHeader};
 
-/// The breakdowns workspace.
-pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(loadout) = state.sneaking.as_ref() else {
-        return div().into_any_element();
-    };
-    let players = loadout.players();
-    let twin = state.sneaking_state.breakdown_twin(players);
+/// The breakdowns workspace. The tree's root is set before render, when the
+/// loadout, the twin or the tab changes.
+pub(crate) fn pane(
+    state: &AppState,
+    loadout: &Loadout,
+    figures: &Figures,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let twin = state.sneaking_state.breakdown_twin(loadout.players());
     let tab = state.sneaking_state.formula_tab;
-    let root = match tab {
-        FormulaTab::Stealth => breakdown::stealth(loadout, twin),
-        FormulaTab::Jade => breakdown::jade(loadout, twin),
-        FormulaTab::Exp => breakdown::exp(loadout, twin),
-        FormulaTab::Door => breakdown::door(loadout, twin),
-        FormulaTab::Runtime => breakdown::runtime(loadout, twin, 1.0),
-    };
     let selected = loadout
         .twin(twin)
         .map_or_else(|| "the first twin".to_string(), |entry| entry.name.clone());
-    let choices: Vec<Choice> = loadout
-        .twins()
-        .iter()
-        .take(players)
-        .map(|entry| {
-            Choice::new(entry.index.to_string(), entry.name.clone())
-                .note(format!("Lv {} · floor {}", entry.level, entry.floor))
-        })
-        .collect();
-    let tree: Entity<FormulaTree> = state.sneaking_breakdown.clone();
-    tree.update(cx, |tree, cx| tree.set_root(root, cx));
-
-    let colors = cx.theme().colors.clone();
-    let entity = cx.entity();
-    let select = Select::new("sneak-breakdown-twin", choices)
-        .label("Twin")
-        .selected(twin.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(index) = value.parse::<usize>() {
-                entity.update(cx, |state, cx| state.sneak_breakdown_twin(index, cx));
-            }
-        });
+    let picker = &state.sneaking_controls.breakdown_twin;
+    picker.show(figures.twin_choices.clone(), Some(&twin), window, cx);
+    let select = div().flex_none().w(px(260.0)).h_6().child(
+        Select::new(picker.state())
+            .id("sneak-breakdown-twin")
+            .accessibility_label("Twin")
+            .small(),
+    );
 
     let entity = cx.entity();
-    let mut tabs = TabBar::new("sneak-formula-tabs")
-        .selected(SharedString::from(format!("sneak-formula-{}", tab.id())));
-    for entry in FormulaTab::ALL {
-        tabs = tabs.tab(WindowTab::new(
-            format!("sneak-formula-{}", entry.id()),
-            entry.label(),
-        ));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        let id = id.as_ref();
-        if let Some(tab) = id
-            .strip_prefix("sneak-formula-")
-            .and_then(FormulaTab::from_id)
-        {
-            entity.update(cx, |state, cx| state.sneak_formula_tab(tab, cx));
-        }
-    });
+    let tabs = tab_bar(
+        "sneak-formula-tabs",
+        FormulaTab::ALL.map(|entry| {
+            (
+                format!("sneak-formula-{}", entry.id()).into(),
+                entry.label().into(),
+            )
+        }),
+        FormulaTab::ALL
+            .iter()
+            .position(|entry| *entry == tab)
+            .unwrap_or_default(),
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| {
+                state.sneak_formula_tab(FormulaTab::ALL[index], cx)
+            });
+        },
+    );
 
     let description = match tab {
         FormulaTab::Stealth => {
@@ -113,16 +92,19 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 .child(select)
                 .child(tabs)
                 .child(div().flex_1())
-                .child(
-                    Caption::new(format!("{selected} · {description}")).text_color(colors.fg_muted),
-                ),
+                .child(Caption::new(format!("{selected} · {description}"))),
         )
         .child(
             Card::new()
                 .header(
                     CardHeader::new(format!("{} breakdown", tab.label())).description(description),
                 )
-                .child(div().h(px(560.0)).min_h_0().child(tree)),
+                .child(
+                    div()
+                        .h(px(560.0))
+                        .min_h_0()
+                        .child(state.sneaking_breakdown.clone()),
+                ),
         )
         .into_any_element()
 }
@@ -132,11 +114,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn every_formula_tab_has_a_label_and_an_id() {
-        for tab in FormulaTab::ALL {
-            assert!(!tab.label().is_empty());
-            assert_eq!(FormulaTab::from_id(tab.id()), Some(tab));
-        }
-        assert_eq!(FormulaTab::from_id("missing"), None);
+    fn every_formula_tab_has_a_label_and_its_own_id() {
+        let ids: std::collections::BTreeSet<_> = FormulaTab::ALL.map(FormulaTab::id).into();
+        assert_eq!(ids.len(), FormulaTab::ALL.len());
+        assert!(FormulaTab::ALL.iter().all(|tab| !tab.label().is_empty()));
     }
 }

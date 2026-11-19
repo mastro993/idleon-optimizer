@@ -9,27 +9,23 @@
 //! is a dash, and its door names the floor that locks it. The rows read the
 //! loadout as edited, so a charm or weapon swap moves every figure it decides.
 
+use super::controls::Floors;
+use super::loadout::tag;
 use crate::state::AppState;
 use crate::ui::assets::asset_image_sized;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
+use gpui::{
+    AnyElement, Context, FontWeight, IntoElement, ParentElement, Role, SharedString, Styled, div,
+    px,
+};
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
 use idleon_sneaking::{ActiveDoor, FloorMastery, Job, NextCaptive};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, Tone};
 
 /// The Floor & Mastery pane: the two decision cards and the table.
-pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(loadout) = state.sneaking.as_ref() else {
-        return div().into_any_element();
-    };
-    let door = loadout.active_door();
-    let captive = loadout.next_captive();
-    let rows = loadout.floor_mastery();
-    let muted = cx.theme().colors.fg_muted;
+pub(super) fn pane(state: &AppState, floors: &Floors, cx: &mut Context<AppState>) -> AnyElement {
     div()
         .id("sneaking-floors")
         .flex()
@@ -41,19 +37,16 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 .flex()
                 .flex_wrap()
                 .gap_3()
-                .child(door_card(state, door.as_ref(), cx))
-                .child(captive_card(state, captive.as_ref(), cx)),
+                .child(door_card(state, floors.door.as_ref(), cx))
+                .child(captive_card(state, floors.captive.as_ref(), cx)),
         )
-        .child(table_card(&rows, cx))
-        .child(
-            Caption::new(
-                "A projected mastery is a what-if: the game relocks the floors and clears the \
-                 flower stacks, so the row resets both. The saved mastery reads the placement as \
-                 it stands. Door and untie ETAs come from the twins standing on that floor, so a \
-                 Nunchaku or Kunai swap moves them.",
-            )
-            .text_color(muted),
-        )
+        .child(table_card(&floors.rows, cx))
+        .child(Caption::new(
+            "A projected mastery is a what-if: the game relocks the floors and clears the flower \
+             stacks, so the row resets both. The saved mastery reads the placement as it stands. \
+             Door and untie ETAs come from the twins standing on that floor, so a Nunchaku or Kunai \
+             swap moves them.",
+        ))
         .into_any_element()
 }
 
@@ -63,7 +56,6 @@ fn door_card(
     door: Option<&ActiveDoor>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
     let (title, eta, detail, floor) = match door {
         Some(door) => (
             format!("Floor {}", door.floor),
@@ -106,28 +98,22 @@ fn door_card(
                     cx,
                 ))
                 .child(
-                    div().flex().flex_col().child(title).child(
-                        Caption::new(format!("Active door · floor {floor}"))
-                            .text_color(colors.fg_muted),
-                    ),
+                    div()
+                        .flex()
+                        .flex_col()
+                        .child(title)
+                        .child(Caption::new(format!("Active door · floor {floor}"))),
                 ),
         ),
         None => body.child(title),
     };
-    body = body.child(
-        div()
-            .id("sneak-active-door")
-            .role(Role::Label)
-            .aria_label(eta.clone())
-            .font_weight(gpui::FontWeight::MEDIUM)
-            .child(eta),
-    );
+    body = body.child(eta_line("sneak-active-door", eta));
     Card::new()
         .header(
             CardHeader::new("Active Door")
                 .description("Saved placement against the one unfinished door"),
         )
-        .child(body.child(Caption::new(detail).text_color(colors.fg_muted)))
+        .child(body.child(Caption::new(detail)))
         .into_any_element()
 }
 
@@ -137,7 +123,6 @@ fn captive_card(
     captive: Option<&NextCaptive>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
     let (title, eta, detail, floor) = match captive {
         Some(captive) => (
             format!("Twin {} · floor {}", captive.twin + 1, captive.floor),
@@ -183,27 +168,46 @@ fn captive_card(
         ),
         None => body.child(title),
     };
-    body = body.child(
-        div()
-            .id("sneak-next-captive")
-            .role(Role::Label)
-            .aria_label(eta.clone())
-            .font_weight(gpui::FontWeight::MEDIUM)
-            .child(eta),
-    );
+    body = body.child(eta_line("sneak-next-captive", eta));
     Card::new()
         .header(
             CardHeader::new("Next Captive")
                 .description("The first captive in roster order and its untie ETA"),
         )
-        .child(body.child(Caption::new(detail).text_color(colors.fg_muted)))
+        .child(body.child(Caption::new(detail)))
         .into_any_element()
 }
 
-/// One row per floor and mastery level.
+fn eta_line(id: &'static str, eta: String) -> AnyElement {
+    div()
+        .id(id)
+        .role(Role::Label)
+        .aria_label(eta.clone())
+        .font_weight(FontWeight::MEDIUM)
+        .child(eta)
+        .into_any_element()
+}
+
+/// A figure over its caption, as each table cell reads.
+fn figure(value: impl Into<SharedString>, caption: Option<AnyElement>) -> AnyElement {
+    div()
+        .flex()
+        .flex_col()
+        .gap_0p5()
+        .child(value.into())
+        .children(caption)
+        .into_any_element()
+}
+
+fn caption(text: impl Into<SharedString>) -> Option<AnyElement> {
+    Some(Caption::new(text).into_any_element())
+}
+
+/// One row per floor and mastery level; the game's twelve floors at up to
+/// three mastery levels, so a plain table.
 fn table_card(rows: &[FloorMastery], cx: &mut Context<AppState>) -> AnyElement {
-    let colors = cx.theme().colors.clone();
-    let mut table = Table::new([
+    let warning = cx.theme().warning;
+    const HEADS: [&str; 10] = [
         "Floor",
         "Mastery",
         "Flowers",
@@ -214,8 +218,8 @@ fn table_card(rows: &[FloorMastery], cx: &mut Context<AppState>) -> AnyElement {
         "Door ETA",
         "Captive",
         "Untie ETA",
-    ]);
-    for row in rows {
+    ];
+    let body = rows.iter().enumerate().map(|(index, row)| {
         let empty = row.twins.is_empty();
         let floor = div()
             .id(SharedString::from(format!(
@@ -236,7 +240,7 @@ fn table_card(rows: &[FloorMastery], cx: &mut Context<AppState>) -> AnyElement {
                         "sneak-floor-empty-{}-{}",
                         row.floor, row.mastery
                     )))
-                    .child(Caption::new("Empty floor").text_color(colors.warning))
+                    .child(Caption::new("Empty floor").text_color(warning))
                     .into_any_element()
             } else {
                 Caption::new(format!(
@@ -244,78 +248,51 @@ fn table_card(rows: &[FloorMastery], cx: &mut Context<AppState>) -> AnyElement {
                     row.twins.len(),
                     jobs(row).join(" / ")
                 ))
-                .text_color(colors.fg_muted)
                 .into_any_element()
             })
             .into_any_element();
-        let mastery = div()
-            .flex()
-            .flex_col()
-            .gap_0p5()
-            .child(format!("M{}", row.mastery))
-            .child(if row.current {
-                Badge::new("current").tone(Tone::Accent).into_any_element()
+        let mastery = figure(
+            format!("M{}", row.mastery),
+            Some(if row.current {
+                tag("current", Tone::Accent).into_any_element()
             } else {
-                Caption::new("projected")
-                    .text_color(colors.fg_muted)
-                    .into_any_element()
-            })
-            .into_any_element();
-        let flowers = div()
-            .flex()
-            .flex_col()
-            .gap_0p5()
-            .child(if row.current {
+                Caption::new("projected").into_any_element()
+            }),
+        );
+        let flowers = figure(
+            if row.current {
                 format::value(row.flowers)
             } else {
                 "—".to_string()
-            })
-            .child(
-                Caption::new(if row.current {
-                    format!("{:.2}x funeral", 1.0 + row.funeral_percent / 100.0)
-                } else {
-                    "fresh reset".to_string()
-                })
-                .text_color(colors.fg_muted),
-            )
-            .into_any_element();
-        let detection = div()
-            .flex()
-            .flex_col()
-            .gap_0p5()
-            .child(row.best_detection.map_or_else(
+            },
+            caption(if row.current {
+                format!("{:.2}x funeral", 1.0 + row.funeral_percent / 100.0)
+            } else {
+                "fresh reset".to_string()
+            }),
+        );
+        let detection = figure(
+            row.best_detection.map_or_else(
                 || "—".to_string(),
                 |chance| format!("{:.1}%", chance * 100.0),
-            ))
-            .child(
-                Caption::new(format!("base {}", format::value(row.detection_base)))
-                    .text_color(colors.fg_muted),
-            )
-            .into_any_element();
-        let door_eta = div()
-            .flex()
-            .flex_col()
-            .gap_0p5()
-            .child(hours(row.door_eta.filter(|hours| *hours > 0.0)))
-            .when(
-                row.door_eta.is_none() && matches!(row.door_state.as_str(), "Active" | "Fresh"),
-                |cell| {
-                    cell.child(
-                        Caption::new(if row.door_damage_per_hour > 0.0 {
-                            "no finite ETA"
-                        } else {
-                            "no door hitter"
-                        })
-                        .text_color(colors.fg_muted),
-                    )
+            ),
+            caption(format!("base {}", format::value(row.detection_base))),
+        );
+        let door_eta = figure(
+            hours(row.door_eta.filter(|hours| *hours > 0.0)),
+            (row.door_eta.is_none() && matches!(row.door_state.as_str(), "Active" | "Fresh")).then(
+                || {
+                    Caption::new(if row.door_damage_per_hour > 0.0 {
+                        "no finite ETA"
+                    } else {
+                        "no door hitter"
+                    })
+                    .into_any_element()
                 },
-            )
-            .into_any_element();
-        let untie = div()
-            .flex()
-            .flex_col()
-            .gap_0p5()
-            .child(if row.captive.is_some() {
+            ),
+        );
+        let untie = figure(
+            if row.captive.is_some() {
                 if row.untie_eta.is_some() {
                     hours(row.untie_eta)
                 } else {
@@ -323,79 +300,61 @@ fn table_card(rows: &[FloorMastery], cx: &mut Context<AppState>) -> AnyElement {
                 }
             } else {
                 "—".to_string()
-            })
-            .when(row.captive.is_some() && row.untie_eta.is_none(), |cell| {
-                cell.child(Caption::new("need a Kunai").text_color(colors.fg_muted))
-            })
-            .into_any_element();
-        table = table.row([
+            },
+            (row.captive.is_some() && row.untie_eta.is_none())
+                .then(|| Caption::new("need a Kunai").into_any_element()),
+        );
+        let cells = [
             floor,
             mastery,
             flowers,
             detection,
-            div()
-                .flex()
-                .flex_col()
-                .gap_0p5()
-                .child(rate(row.jade_per_hour))
-                .child(
-                    Caption::new(format!("base {}", format::value(row.jade_base)))
-                        .text_color(colors.fg_muted),
-                )
-                .into_any_element(),
-            div()
-                .flex()
-                .flex_col()
-                .gap_0p5()
-                .child(rate(row.exp_per_hour))
-                .child(
-                    Caption::new(format!("base {}", format::value(row.exp_base)))
-                        .text_color(colors.fg_muted),
-                )
-                .into_any_element(),
-            div()
-                .flex()
-                .flex_col()
-                .gap_0p5()
-                .child(row.door_state.clone())
-                .child(
-                    Caption::new(if row.door_damage_per_hour > 0.0 {
-                        format!(
-                            "{} HP · {} dmg/hr",
-                            hp(row.door_hp),
-                            format::value(row.door_damage_per_hour)
-                        )
-                    } else {
-                        format!("{} HP", hp(row.door_hp))
-                    })
-                    .text_color(colors.fg_muted),
-                )
-                .into_any_element(),
+            figure(
+                rate(row.jade_per_hour),
+                caption(format!("base {}", format::value(row.jade_base))),
+            ),
+            figure(
+                rate(row.exp_per_hour),
+                caption(format!("base {}", format::value(row.exp_base))),
+            ),
+            figure(
+                row.door_state.clone(),
+                caption(if row.door_damage_per_hour > 0.0 {
+                    format!(
+                        "{} HP · {} dmg/hr",
+                        hp(row.door_hp),
+                        format::value(row.door_damage_per_hour)
+                    )
+                } else {
+                    format!("{} HP", hp(row.door_hp))
+                }),
+            ),
             door_eta,
-            div()
-                .flex()
-                .flex_col()
-                .gap_0p5()
-                .child(
-                    row.captive
-                        .map_or_else(|| "—".to_string(), |twin| format!("Twin {}", twin + 1)),
-                )
-                .child(
-                    Caption::new(if row.captive.is_some() {
-                        format!("{} left", format::value(row.untie_remaining))
-                    } else {
-                        "no captive".to_string()
-                    })
-                    .text_color(colors.fg_muted),
-                )
-                .into_any_element(),
+            figure(
+                row.captive
+                    .map_or_else(|| "—".to_string(), |twin| format!("Twin {}", twin + 1)),
+                caption(if row.captive.is_some() {
+                    format!("{} left", format::value(row.untie_remaining))
+                } else {
+                    "no captive".to_string()
+                }),
+            ),
             untie,
-        ]);
-    }
+        ];
+        TableRow::new()
+            .id(("sneak-floor-row", index))
+            .children(cells.into_iter().map(|cell| TableCell::new().child(cell)))
+    });
+    let table = Table::new()
+        .child(
+            TableHeader::new()
+                .child(TableRow::new().children(HEADS.map(|head| TableHead::new().child(head)))),
+        )
+        .child(TableBody::new().children(body));
     Card::new()
         .header(CardHeader::new("Floor × Mastery").description(
             "Every floor at the saved mastery and its neighbours, with the saved placement's \
-                 detection, Jade, EXP, door and untie figures.",
+             detection, Jade, EXP, door and untie figures.",
         ))
         .child(
             div()
@@ -404,9 +363,7 @@ fn table_card(rows: &[FloorMastery], cx: &mut Context<AppState>) -> AnyElement {
                 .flex_col()
                 .gap_1()
                 .child(table)
-                .child(
-                    Caption::new(format!("{} floor rows", rows.len())).text_color(colors.fg_muted),
-                ),
+                .child(Caption::new(format!("{} floor rows", rows.len()))),
         )
         .into_any_element()
 }

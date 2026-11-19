@@ -6,53 +6,44 @@
 //! their breakdown trees are SN-02, so the floor cards show what the loadout
 //! itself decides: the action, the attempt time and the detection chance.
 
+use super::controls::Figures;
 use crate::state::AppState;
 use crate::ui::assets::asset_image;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Tooltip;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, FontWeight, Hsla, IntoElement, ParentElement, Role, SharedString, Styled,
-    div, px,
+    AnyElement, App, Context, FontWeight, Hsla, IntoElement, ParentElement, Role, SharedString,
+    Styled, Window, div, px,
 };
+use gpui_kit::component::button::Button;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::tooltip::Tooltip;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_sneaking::{Loadout, SlotKind, Twin};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone};
 
 /// The scenario strip: the login context, the mastery pair and the reset action.
-pub(crate) fn scenario(state: &AppState, players: usize, cx: &mut Context<AppState>) -> AnyElement {
-    let loadout = state
-        .sneaking
-        .as_ref()
-        .expect("the caller checked the loadout");
-    let entity = cx.entity();
-    let choices: Vec<Choice> = loadout
-        .twins()
-        .iter()
-        .take(players)
-        .map(|twin| {
-            Choice::new(twin.index.to_string(), twin.name.clone())
-                .note(format!("Lv {} · floor {}", twin.level, twin.floor))
-        })
-        .collect();
-    let selected = state.sneaking_state.login(players);
-    let login = Select::new("sneak-login", choices)
-        .label("Login context")
-        .selected(selected.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(index) = value.parse::<usize>() {
-                entity.update(cx, |state, cx| state.sneak_login(index, cx));
-            }
-        });
+pub(crate) fn scenario(
+    state: &AppState,
+    loadout: &Loadout,
+    figures: &Figures,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let controls = &state.sneaking_controls;
+    let selected = state.sneaking_state.login(loadout.players());
+    controls
+        .login
+        .show(figures.twin_choices.clone(), Some(&selected), window, cx);
+    let login = div().flex_none().w(px(260.0)).h_6().child(
+        Select::new(controls.login.state())
+            .id("sneak-login")
+            .accessibility_label("Login context")
+            .small(),
+    );
     let (mastery, mastery_max) = loadout.mastery();
     let reset = cx.entity();
-    let changed = loadout.changed();
-    let charmed = loadout.charmed();
-    let colors = cx.theme().colors.clone();
     Card::new()
         .header(
             CardHeader::new("Scenario")
@@ -60,10 +51,10 @@ pub(crate) fn scenario(state: &AppState, players: usize, cx: &mut Context<AppSta
                     "The loadout reads the imported save's Ninja rows. Edits stay in this window \
                      until you reset them.",
                 )
-                .action(
-                    Badge::new(format!("Mastery {mastery} / highest {mastery_max}"))
-                        .tone(Tone::Accent),
-                ),
+                .action(tag(
+                    format!("Mastery {mastery} / highest {mastery_max}"),
+                    Tone::Accent,
+                )),
         )
         .child(
             div()
@@ -73,37 +64,30 @@ pub(crate) fn scenario(state: &AppState, players: usize, cx: &mut Context<AppSta
                 .items_center()
                 .gap_3()
                 .child(login)
-                .child(chip(
+                .child(tag(
                     format!("{} active twin(s)", loadout.twins().len()),
-                    colors.fg,
-                    colors.border,
+                    Tone::Neutral,
                 ))
-                .child(if charmed {
-                    chip("Charmed emporium perk", colors.success, colors.success)
+                .child(if figures.charmed {
+                    tag("Charmed emporium perk", Tone::Success)
                 } else {
-                    chip(
-                        "No Charmed perk: no duplicate charm pair",
-                        colors.warning,
-                        colors.warning,
-                    )
+                    tag("No Charmed perk: no duplicate charm pair", Tone::Warning)
                 })
-                .when_some(loadout.first_batch(), |row, (name, hours)| {
-                    row.child(chip(
+                .when_some(figures.first_batch.clone(), |row, (name, hours)| {
+                    row.child(tag(
                         format!("First ×100 batch in {} ({name})", time(hours * 3600.0)),
-                        colors.fg_muted,
-                        colors.border,
+                        Tone::Neutral,
                     ))
                 })
-                .when(changed, |row| {
+                .when(loadout.changed(), |row| {
                     row.child(
                         div().id("sneak-reset").child(
-                            ely_gpui_component::buttons::Button::new(
-                                "sneak-reset-loadout",
-                                "Reset loadout",
-                            )
-                            .on_click(move |_event, _window, cx| {
-                                reset.update(cx, |state, cx| state.sneak_reset(cx));
-                            }),
+                            Button::new("sneak-reset-loadout")
+                                .label("Reset loadout")
+                                .small()
+                                .on_click(move |_event, _window, cx| {
+                                    reset.update(cx, |state, cx| state.sneak_reset(cx));
+                                }),
                         ),
                     )
                 }),
@@ -115,6 +99,7 @@ pub(crate) fn scenario(state: &AppState, players: usize, cx: &mut Context<AppSta
 pub(crate) fn saved_floors(
     state: &AppState,
     loadout: &Loadout,
+    figures: &Figures,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let mut floors: Vec<usize> = loadout
@@ -132,7 +117,7 @@ pub(crate) fn saved_floors(
             .iter()
             .filter(|twin| twin.floor == *floor)
             .collect();
-        grid = grid.child(floor_card(state, loadout, *floor, &members, cx));
+        grid = grid.child(floor_card(state, figures, *floor, &members, cx));
     }
     Card::new()
         .header(CardHeader::new("Saved floor assignments").description(
@@ -145,16 +130,22 @@ pub(crate) fn saved_floors(
 
 fn floor_card(
     state: &AppState,
-    loadout: &Loadout,
+    figures: &Figures,
     floor: usize,
     members: &[&Twin],
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let theme = cx.theme();
+    let (border, muted, sunken, radius) = (
+        theme.border,
+        theme.muted_foreground,
+        theme.muted,
+        theme.radius_lg,
+    );
     let names: Vec<String> = members.iter().map(|twin| twin.name.clone()).collect();
     let mut jobs = std::collections::BTreeMap::new();
     for twin in members {
-        *jobs.entry(loadout.job(twin.index)).or_insert(0usize) += 1;
+        *jobs.entry(figures.twins[twin.index].job).or_insert(0usize) += 1;
     }
     let jobs: Vec<String> = jobs
         .into_iter()
@@ -163,40 +154,40 @@ fn floor_card(
     let rows: Vec<AnyElement> = members
         .iter()
         .map(|twin| {
-            let detection = loadout.detection(twin.index);
+            let twin_figures = &figures.twins[twin.index];
             div()
                 .flex()
                 .items_center()
                 .justify_between()
                 .gap_2()
-                .text_size(px(11.0))
-                .child(div().text_color(colors.fg_muted).child(format!(
+                .text_size(TEXT_CAPTION)
+                .child(div().text_color(muted).child(format!(
                     "{} · {}",
                     twin.name,
-                    loadout.job(twin.index).label()
+                    twin_figures.job.label()
                 )))
                 .child(
                     div()
-                        .text_color(detection_color(detection, &colors))
+                        .text_color(detection_color(twin_figures.detection, cx))
                         .child(format!(
                             "{:.1}% det · {}",
-                            detection * 100.0,
-                            time(loadout.attempt_seconds(twin.index))
+                            twin_figures.detection * 100.0,
+                            time(twin_figures.attempt)
                         )),
                 )
                 .into_any_element()
         })
         .collect();
+    let title = if floor == 0 {
+        "Training floor".to_string()
+    } else {
+        format!("Floor {floor}")
+    };
     div()
         .id(SharedString::from(format!("sneak-floor-{floor}")))
         .role(Role::Label)
         .aria_label(format!(
-            "{}: {} — {}",
-            if floor == 0 {
-                "Training floor".to_string()
-            } else {
-                format!("Floor {floor}")
-            },
+            "{title}: {} — {}",
             names.join(", "),
             jobs.join(" / ")
         ))
@@ -205,35 +196,32 @@ fn floor_card(
         .gap_2()
         .w(px(232.0))
         .p_3()
-        .rounded(px(8.0))
+        .rounded(radius)
         .border_1()
-        .border_color(colors.border)
-        .bg(colors.sunken)
+        .border_color(border)
+        .bg(sunken)
         .child(
             div()
                 .flex()
                 .items_center()
                 .gap_2()
-                .child(asset_image(
+                .child(div().flex_none().child(asset_image(
                     format!("sneak-floor-art-{floor}"),
                     &state.assets,
                     &format!("sneaking/NjR{floor}.png"),
                     px(28.0),
                     cx,
-                ))
+                )))
                 .child(
                     div()
                         .flex()
                         .flex_col()
-                        .child(div().font_weight(FontWeight::MEDIUM).child(if floor == 0 {
-                            "Training floor".to_string()
-                        } else {
-                            format!("Floor {floor}")
-                        }))
+                        .min_w_0()
+                        .child(div().font_weight(FontWeight::MEDIUM).child(title))
                         .child(Caption::new(names.join(", "))),
                 ),
         )
-        .child(div().text_size(px(11.0)).child(jobs.join(" / ")))
+        .child(div().text_size(TEXT_CAPTION).child(jobs.join(" / ")))
         .children(rows)
         .into_any_element()
 }
@@ -242,47 +230,50 @@ fn floor_card(
 pub(crate) fn loadout_card(
     state: &AppState,
     loadout: &Loadout,
+    figures: &Figures,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let target = state.sneaking_state.target(loadout.players());
     let mut cards = div().id("sneaking-loadout").flex().flex_wrap().gap_3();
     for twin in loadout.twins() {
-        cards = cards.child(twin_card(state, loadout, twin, target, cx));
+        cards = cards.child(twin_card(state, figures, twin, target, cx));
     }
-    let colors = cx.theme().colors.clone();
     Card::new()
-        .header(
-            CardHeader::new("Loadout").description(
-                "Pick a slot, then an inventory item, to swap it in. The stealth line is the full \
+        .header(CardHeader::new("Loadout").description(
+            "Pick a slot, then an inventory item, to swap it in. The stealth line is the full \
                  stack: the level base, the charm and account factors, the floor allies and the \
                  flowers. The Breakdowns workspace splits every factor.",
-            ),
-        )
+        ))
         .child(cards)
-        .child(
-            div().child(Caption::new(
-                "Attempt is the time between actions at the current action speed. Detection is the \
-                 chance that an action costs a KO, from stealth against the floor's detection base.",
-            ))
-            .text_color(colors.fg_muted),
-        )
+        .child(Caption::new(
+            "Attempt is the time between actions at the current action speed. Detection is the \
+             chance that an action costs a KO, from stealth against the floor's detection base.",
+        ))
         .into_any_element()
 }
 
 fn twin_card(
     state: &AppState,
-    loadout: &Loadout,
+    figures: &Figures,
     twin: &Twin,
     target: Option<(usize, usize)>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
-    let detection = loadout.detection(twin.index);
+    let theme = cx.theme();
+    let (border, sunken, radius, fg, muted, danger) = (
+        theme.border,
+        theme.muted,
+        theme.radius_lg,
+        theme.foreground,
+        theme.muted_foreground,
+        theme.danger,
+    );
+    let twin_figures = &figures.twins[twin.index];
+    let detection = twin_figures.detection;
     let mut slots = div().flex().gap_2();
     for slot in SlotKind::ALL {
         slots = slots.child(slot_button(state, twin, slot, target, cx));
     }
-    let issues = loadout.twin_issues(twin.index);
     div()
         .id(SharedString::from(format!("sneak-twin-{}", twin.index)))
         .role(Role::Label)
@@ -298,10 +289,10 @@ fn twin_card(
         .gap_2()
         .w(px(280.0))
         .p_3()
-        .rounded(px(8.0))
+        .rounded(radius)
         .border_1()
-        .border_color(colors.border)
-        .bg(colors.sunken)
+        .border_color(border)
+        .bg(sunken)
         .child(
             div()
                 .flex()
@@ -314,76 +305,45 @@ fn twin_card(
                 )
                 .child(Caption::new(format!("Lv {}", twin.level)))
                 .child(Caption::new(format!("Floor {}", twin.floor)))
-                .when(!twin.untied, |row| {
-                    row.child(Badge::new("Captive").tone(Tone::Warning))
-                }),
+                .when(!twin.untied, |row| row.child(tag("Captive", Tone::Warning))),
         )
         .child(
             div()
                 .flex()
                 .flex_col()
                 .gap_0p5()
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .child(stat(
                     "Loadout stealth",
-                    format::value(loadout.stealth(twin.index)),
-                    colors.fg,
+                    format::value(twin_figures.stealth),
+                    fg,
                 ))
-                .child(stat(
-                    "Attempt",
-                    time(loadout.attempt_seconds(twin.index)),
-                    colors.fg_muted,
-                ))
-                .child(stat(
-                    "KO",
-                    time(loadout.ko_seconds(twin.index)),
-                    colors.fg_muted,
-                ))
+                .child(stat("Attempt", time(twin_figures.attempt), muted))
+                .child(stat("KO", time(twin_figures.ko), muted))
                 .child(stat(
                     "Detection",
                     format!("{:.1}%", detection * 100.0),
-                    detection_color(detection, &colors),
+                    detection_color(detection, cx),
                 )),
         )
         .child(slots)
-        .when_some(bonus_totals(loadout, twin.index), |card, bonuses| {
-            card.child(
-                div()
-                    .text_size(px(10.0))
-                    .text_color(colors.fg_muted)
-                    .child(bonuses),
-            )
+        .when_some(twin_figures.bonuses.clone(), |card, bonuses| {
+            card.child(Caption::new(bonuses))
         })
-        .children(issues.into_iter().map(|issue| {
+        .children(twin_figures.issues.iter().map(|issue| {
             div()
                 .flex()
                 .items_center()
                 .gap_1()
-                .child(Badge::new("Invalid").tone(Tone::Danger))
+                .child(tag("Invalid", Tone::Danger))
                 .child(
                     div()
-                        .text_size(px(10.0))
-                        .text_color(colors.danger)
-                        .child(issue.message()),
+                        .text_size(TEXT_CAPTION)
+                        .text_color(danger)
+                        .child(issue.clone()),
                 )
         }))
         .into_any_element()
-}
-
-/// The charm bonus totals a twin's equipped charms give, as one line.
-fn bonus_totals(loadout: &Loadout, twin: usize) -> Option<String> {
-    let bonuses = loadout.bonuses(twin);
-    let parts: Vec<String> = bonuses
-        .nonzero()
-        .map(|(bonus_type, value)| {
-            format!(
-                "{} {:.1}",
-                idleon_sneaking::charm_bonus_label(bonus_type),
-                value
-            )
-        })
-        .collect();
-    (!parts.is_empty()).then(|| parts.join(" · "))
 }
 
 fn slot_button(
@@ -393,20 +353,25 @@ fn slot_button(
     target: Option<(usize, usize)>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let colors = cx.theme().colors.clone();
+    let theme = cx.theme();
     let item = twin.slot(slot);
     let selected = target == Some((twin.index, slot.index()));
     let entity = cx.entity();
     let twin_index = twin.index;
     let slot_index = slot.index();
-    let changed = twin.changed(slot);
     let border = if selected {
-        colors.accent
-    } else if changed {
-        colors.warning
+        theme.primary
+    } else if twin.changed(slot) {
+        theme.warning
     } else {
-        colors.border
+        theme.border
     };
+    let background = if selected {
+        theme.secondary_active
+    } else {
+        theme.secondary
+    };
+    let (hover, muted, radius) = (theme.secondary_hover, theme.muted_foreground, theme.radius);
     let fallback = item.key.clone();
     let art = item
         .def()
@@ -417,7 +382,7 @@ fn slot_button(
     } else {
         format!("{} +{}", item.name(), item.level)
     };
-    let tooltip = match (item.is_blank(), idleon_sneaking::equip_info(item)) {
+    let tooltip = SharedString::from(match (item.is_blank(), idleon_sneaking::equip_info(item)) {
         (false, Some(info)) => format!(
             "{} · {} +{}\n{}\n{}",
             slot.label(),
@@ -427,7 +392,7 @@ fn slot_button(
             info.detail
         ),
         _ => format!("{} (empty)", slot.label()),
-    };
+    });
     let mut button = div()
         .id(SharedString::from(format!(
             "sneak-slot-{twin_index}-{slot_index}"
@@ -443,21 +408,17 @@ fn slot_button(
         .w(px(62.0))
         .h(px(72.0))
         .p_1()
-        .rounded(px(6.0))
+        .rounded(radius)
         .border_1()
         .border_color(border)
-        .bg(if selected {
-            colors.active
-        } else {
-            colors.surface
-        })
-        .hover(|style| style.bg(colors.hover))
+        .bg(background)
+        .hover(move |style| style.bg(hover))
         .on_click(move |_event, _window, cx| {
             entity.update(cx, |state, cx| {
                 state.sneak_select(twin_index, slot_index, cx)
             });
         })
-        .tooltip(Tooltip::text(tooltip));
+        .tooltip(move |window, cx| Tooltip::new(tooltip.clone()).build(window, cx));
     if !item.is_blank() {
         button = button.child(asset_image(
             format!("sneak-slot-art-{twin_index}-{slot_index}"),
@@ -470,13 +431,13 @@ fn slot_button(
     button
         .child(
             div()
-                .text_size(px(9.0))
-                .text_color(colors.fg_muted)
+                .text_size(TEXT_CAPTION)
+                .text_color(muted)
                 .child(slot.label()),
         )
         .child(
             div()
-                .text_size(px(10.0))
+                .text_size(TEXT_CAPTION)
                 .truncate()
                 .child(if item.is_blank() {
                     "Empty".to_string()
@@ -487,19 +448,13 @@ fn slot_button(
         .into_any_element()
 }
 
-fn chip(text: impl Into<SharedString>, fg: Hsla, border: Hsla) -> AnyElement {
-    div()
-        .flex()
-        .items_center()
-        .px_2()
-        .py_1()
-        .rounded(px(6.0))
-        .border_1()
-        .border_color(border)
-        .text_size(px(11.0))
-        .text_color(fg)
+/// A small outlined label in `tone`.
+pub(super) fn tag(text: impl Into<SharedString>, tone: Tone) -> Tag {
+    Tag::new()
+        .with_variant(tone.into())
+        .outline()
+        .small()
         .child(text.into())
-        .into_any_element()
 }
 
 fn stat(name: &str, value: String, color: Hsla) -> AnyElement {
@@ -513,14 +468,15 @@ fn stat(name: &str, value: String, color: Hsla) -> AnyElement {
         .into_any_element()
 }
 
-fn detection_color(detection: f64, colors: &ely_gpui_component::theme::Palette) -> Hsla {
-    if detection <= 0.05 {
-        colors.success
+fn detection_color(detection: f64, cx: &App) -> Hsla {
+    let tone = if detection <= 0.05 {
+        Tone::Success
     } else if detection <= 0.3 {
-        colors.warning
+        Tone::Warning
     } else {
-        colors.danger
-    }
+        Tone::Danger
+    };
+    tone.color(cx)
 }
 
 /// Seconds as `12.3s`, minutes as `4m 5s` and hours as `6.3h`.

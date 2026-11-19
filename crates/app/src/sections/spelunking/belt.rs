@@ -5,57 +5,52 @@
 //! rules are enforced by the normaliser as well, so an overfilled belt is
 //! reported instead of silently rewritten.
 
+use super::controls::Derived;
+use super::{select, tag};
 use crate::state::AppState;
 use crate::ui::assets::asset_image;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, Styled, div, px};
-use idleon_spelunking::{Inputs, PresetKind, data};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::component::button::Button;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
+use idleon_spelunking::{PresetKind, data};
+use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, ChoiceSelect, TEXT_MONO, Tone};
 
 /// The belt card.
-pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let equipped_count = state
-        .spelunking
-        .elixirs
-        .iter()
-        .filter(|id| **id >= 0)
-        .count();
+pub(crate) fn card(
+    state: &AppState,
+    derived: &Derived,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let inputs = &derived.inputs;
+    let spelunking = &state.spelunking;
+    let controls = &state.spelunking_controls;
+    let warning = cx.theme().warning;
+    let equipped_count = spelunking.elixirs.iter().filter(|id| **id >= 0).count();
     let equipped = slots(
         state,
-        inputs,
+        derived,
         PresetKind::Belt,
-        inputs.slots,
-        &state.spelunking.elixirs,
-        &entity,
+        &controls.elixirs,
+        window,
         cx,
     );
-    let memory_count = state
-        .spelunking
-        .memorized
-        .iter()
-        .filter(|id| **id >= 0)
-        .count();
+    let memory_count = spelunking.memorized.iter().filter(|id| **id >= 0).count();
     let memorized = slots(
         state,
-        inputs,
+        derived,
         PresetKind::Memory,
-        inputs.memory_slots,
-        &state.spelunking.memorized,
-        &entity,
+        &controls.memorized,
+        window,
         cx,
     );
     let presets: Vec<AnyElement> = data()
         .elixir_presets
         .iter()
-        .map(|preset| {
-            let issues = state.spelunking.preset_issues(inputs, preset);
+        .zip(&derived.preset_issues)
+        .map(|(preset, issues)| {
             let preset = preset.clone();
             let apply_entity = cx.entity();
             let kind = match preset.kind {
@@ -74,12 +69,12 @@ pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>
                         .flex()
                         .items_center()
                         .gap_2()
-                        .child(Badge::new(kind).tone(Tone::Info))
-                        .child(div().text_size(px(12.0)).child(preset.label.clone()))
+                        .child(tag(kind, Tone::Info))
+                        .child(div().text_size(TEXT_MONO).child(preset.label.clone()))
                         .child(
-                            Button::new(format!("spelunk-preset-{}", preset.id), "Apply")
-                                .size(ControlSize::Sm)
-                                .variant(ButtonVariant::Secondary)
+                            Button::new(format!("spelunk-preset-{}", preset.id))
+                                .label("Apply")
+                                .small()
                                 .disabled(!issues.is_empty())
                                 .on_click(move |_event, _window, cx| {
                                     apply_entity.update(cx, |state, cx| {
@@ -88,20 +83,17 @@ pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>
                                 }),
                         ),
                 )
-                .children(if issues.is_empty() {
-                    Vec::new()
-                } else {
-                    vec![Caption::new(issues.join(" ")).text_color(cx.theme().colors.warning)]
+                .when(!issues.is_empty(), |row| {
+                    row.child(Caption::new(issues.join(" ")).text_color(warning))
                 })
                 .into_any_element()
         })
         .collect();
     let repeats = (1.0 + inputs.shop.get(58).copied().unwrap_or(0.0) / 100.0).floor();
-    let mut selected: Vec<i32> = state
-        .spelunking
+    let mut selected: Vec<i32> = spelunking
         .elixirs
         .iter()
-        .chain(state.spelunking.memorized.iter())
+        .chain(spelunking.memorized.iter())
         .copied()
         .filter(|id| *id >= 0)
         .collect();
@@ -117,40 +109,36 @@ pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>
             } else {
                 format!(
                     "Applied at entry {repeats:.0} time(s) when memorized; {} belt charges.",
-                    idleon_ui::format::value(elixir.charges)
+                    format::value(elixir.charges)
                 )
             };
             div()
                 .flex()
                 .flex_col()
                 .gap_1()
-                .text_size(px(12.0))
+                .text_size(TEXT_MONO)
                 .child(
                     div()
                         .flex()
+                        .flex_wrap()
                         .items_center()
                         .gap_2()
-                        .child(div().child(format!("{} ({})", elixir.name, note)))
-                        .child(
-                            Badge::new(format!(
-                                "{} charges",
-                                idleon_ui::format::value(elixir.charges)
-                            ))
-                            .tone(Tone::Neutral),
-                        ),
+                        .child(div().min_w_0().child(format!("{} ({})", elixir.name, note)))
+                        .child(tag(
+                            format!("{} charges", format::value(elixir.charges)),
+                            Tone::Neutral,
+                        )),
                 )
-                .child(Caption::new(elixir.description.clone()).text_color(muted))
+                .child(Caption::new(elixir.description.clone()))
                 .into_any_element()
         })
         .collect::<Vec<_>>();
 
     Card::new()
-        .header(
-            CardHeader::new("Elixir belt").description(
-                "The equipped belt spends charges during a run; the memorized set applies at entry \
+        .header(CardHeader::new("Elixir belt").description(
+            "The equipped belt spends charges during a run; the memorized set applies at entry \
                  without spending them.",
-            ),
-        )
+        ))
         .child(
             div()
                 .flex()
@@ -158,143 +146,89 @@ pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>
                 .gap_2()
                 .child(slot_heading("Equipped", equipped_count))
                 .child(equipped)
-                .child(slot_heading(
-                    "Memorized",
-                    memory_count,
-                ))
+                .child(slot_heading("Memorized", memory_count))
                 .child(memorized)
-                .when_some(
-                    (!effects.is_empty()).then_some(effects),
-                    |card, effects| {
-                        card.child(
-                            div()
-                                .flex()
-                                .flex_col()
-                                .gap_2()
-                                .child(Caption::new("Selected elixir effects").text_color(muted))
-                                .children(effects),
-                        )
-                    },
-                ),
+                .when(!effects.is_empty(), |card| {
+                    card.child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap_2()
+                            .child(Caption::new("Selected elixir effects"))
+                            .children(effects),
+                    )
+                }),
         )
         .child(
             div()
                 .flex()
                 .flex_col()
                 .gap_2()
-                .child(Caption::new("Built-in presets").text_color(muted))
-                .child(
-                    div()
-                        .flex()
-                        .flex_wrap()
-                        .gap_3()
-                        .children(presets),
-                )
-                .child(
-                    Caption::new(
-                        "Each preset replaces only its half of the belt. These pictured loadouts are \
-                         not optimizer recommendations.",
-                    )
-                    .text_color(muted),
-                ),
+                .child(Caption::new("Built-in presets"))
+                .child(div().flex().flex_wrap().gap_3().children(presets))
+                .child(Caption::new(
+                    "Each preset replaces only its half of the belt. These pictured loadouts are \
+                     not optimizer recommendations.",
+                )),
         )
         .into_any_element()
 }
 
 fn slot_heading(label: &'static str, count: usize) -> AnyElement {
     div()
-        .text_size(px(12.0))
+        .text_size(TEXT_MONO)
         .child(format!("{label} ({count} selected)"))
         .into_any_element()
 }
 
 fn slots(
     state: &AppState,
-    inputs: &Inputs,
+    derived: &Derived,
     kind: PresetKind,
-    count: usize,
-    values: &[i32],
-    entity: &gpui::Entity<AppState>,
+    controls: &[ChoiceSelect<i32>],
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    if count == 0 {
-        let muted = cx.theme().colors.fg_muted;
-        return div()
-            .child(Caption::new("Locked").text_color(muted))
-            .into_any_element();
+    let (choices, values, name, label, row_id) = match kind {
+        PresetKind::Belt => (
+            &derived.elixirs,
+            &state.spelunking.elixirs,
+            "elixir",
+            "Equipped",
+            "spelunk-belt",
+        ),
+        PresetKind::Memory => (
+            &derived.memorized,
+            &state.spelunking.memorized,
+            "memorized",
+            "Memorized",
+            "spelunk-memory",
+        ),
+    };
+    if choices.is_empty() {
+        return Caption::new("Locked").into_any_element();
     }
-    let mut row = div()
-        .id(match kind {
-            PresetKind::Belt => "spelunk-belt",
-            PresetKind::Memory => "spelunk-memory",
-        })
-        .flex()
-        .flex_wrap()
-        .gap_2();
-    for slot in 0..count {
+    let mut row = div().id(row_id).flex().flex_wrap().gap_2();
+    for (slot, items) in choices.iter().enumerate() {
         let current = values.get(slot).copied().unwrap_or(-1);
-        let mut choices = vec![Choice::new("-1", "Empty")];
-        for elixir in inputs.elixirs.iter().take(inputs.elixir_owned) {
-            let id = elixir.id;
-            let used = match kind {
-                PresetKind::Belt => {
-                    values
-                        .iter()
-                        .enumerate()
-                        .filter(|(index, value)| *index != slot && **value == id as i32)
-                        .count()
-                        >= inputs.dupes
-                }
-                PresetKind::Memory => values
-                    .iter()
-                    .enumerate()
-                    .any(|(index, value)| index != slot && *value == id as i32),
-            };
-            let choice = Choice::new(id.to_string(), elixir.name.clone()).note(format!(
-                "{} charges",
-                idleon_ui::format::value(elixir.charges)
-            ));
-            choices.push(if used { choice.disabled() } else { choice });
-        }
-        let entity = entity.clone();
-        let select = Select::new(
-            format!(
-                "spelunk-{}-{slot}",
-                match kind {
-                    PresetKind::Belt => "elixir",
-                    PresetKind::Memory => "memorized",
-                }
-            ),
-            choices,
-        )
-        .label(format!(
-            "{} slot {}",
-            match kind {
-                PresetKind::Belt => "Equipped",
-                PresetKind::Memory => "Memorized",
-            },
-            slot + 1
-        ))
-        .selected(current.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(id) = value.parse::<i32>() {
-                entity.update(cx, |state, cx| match kind {
-                    PresetKind::Belt => state.set_spelunk_elixir(slot, id, cx),
-                    PresetKind::Memory => state.set_spelunk_memorized(slot, id, cx),
-                });
-            }
-        });
-        let icon = inputs
-            .elixirs
-            .get(current.max(0) as usize)
-            .filter(|_| current >= 0);
+        let picker = select(
+            &controls[slot],
+            format!("spelunk-{name}-{slot}"),
+            format!("{label} slot {}", slot + 1),
+            items,
+            &current,
+            window,
+            cx,
+        );
+        let icon = usize::try_from(current)
+            .ok()
+            .and_then(|id| derived.inputs.elixirs.get(id));
         let slot_id = slot as u64;
         row = row.child(
             div()
                 .id(("spelunk-elixir-slot", slot_id))
                 .flex()
-                .items_end()
+                .items_center()
                 .gap_1()
                 .when_some(icon, |cell, elixir| {
                     cell.child(asset_image(
@@ -305,7 +239,7 @@ fn slots(
                         cx,
                     ))
                 })
-                .child(select),
+                .child(div().flex_none().w(px(170.0)).h_6().child(picker)),
         );
     }
     row.into_any_element()

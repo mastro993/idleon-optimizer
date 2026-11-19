@@ -658,7 +658,13 @@ paired shorter-party advice, and the bounded Amber phase search (a diverse grid,
 refinement rounds and an adaptive fresh-seed comparison with the rope-exit filter). Both searches
 run off the UI thread through the shared task runner with progress and cancel, score the planner
 objectives, keep the winner against the selected baseline and write a copyable plan; the result
-shows every compared row, its depth, Amber, settled count and rope/toll/blocked split.
+shows every compared row, its depth, Amber, settled count and rope/toll/blocked split. The section
+draws with GPUI Kit (#352): its selects and number fields are kit controls built once in
+`controls.rs` that show the section's own persisted values (the party, belt, memory and
+maximum-stamina controls are added as the save needs them), the run's event log is a virtualized
+`DataTable` filled when a run is stored and lists every stored event, and the save's inputs, the
+configuration check, the search space, the depth profile and every option list are read when the
+save or the section state changes, never per frame.
 Details: [`docs/sections/spelunking.md`](sections/spelunking.md).
 
 The Opal Optimizer section implements OP-01, OP-02 and OP-03. The `Current state` tab shows the
@@ -711,7 +717,9 @@ damage and hits per hour and the hours the door needs to clear; `Loadout::next_c
 prints the first captive in roster order and its untie ETA. A floor with no twin says so, its
 detection is a dash, and a door with no hitter prints its state instead of an endless ETA.
 The Gambit point chain and the terms that the All-Talent resolver rescales stay explicit inputs, and
-each such node says so in its note.
+each such node says so in its note. The section draws with GPUI Kit (#352): its three selects are kit
+controls built once in `controls.rs`, and the loadout figures, the floor table and the breakdown tree
+are read when the save, a loadout edit or the selection changes, never per frame.
 Details: [`docs/sections/sneaking.md`](sections/sneaking.md).
 
 The Prisma section implements PR-01 and PR-02: the plan for one character and cauldron (every

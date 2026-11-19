@@ -9,6 +9,8 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Hsla, IntoElement, ParentElement, PathBuilder, Role, Styled, canvas, div, point, px,
 };
+use idleon_ui::widgets::TEXT_CAPTION;
+use std::rc::Rc;
 
 /// One line, one value per depth offset; `None` leaves a gap.
 pub(crate) struct Series {
@@ -40,7 +42,7 @@ impl Series {
 pub(crate) fn chart(
     id: &'static str,
     aria: String,
-    series: Vec<Series>,
+    series: Rc<Vec<Series>>,
     depths: (usize, usize),
     rule: Option<(f64, String)>,
     log: bool,
@@ -66,7 +68,7 @@ pub(crate) fn chart(
                 .items_center()
                 .gap_1()
                 .child(div().w(px(10.0)).h(px(3.0)).bg(series.color))
-                .child(div().text_size(px(11.0)).child(series.name.clone()))
+                .child(div().text_size(TEXT_CAPTION).child(series.name.clone()))
         })
         .collect::<Vec<_>>();
     let rule_text = rule
@@ -98,7 +100,7 @@ pub(crate) fn chart(
                         .items_end()
                         .w(px(72.0))
                         .h(px(height))
-                        .text_size(px(10.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(grid)
                         .children(
                             ticks
@@ -140,7 +142,7 @@ pub(crate) fn chart(
                                         bounds.origin.y
                                             + px(height * (1.0 - fraction.clamp(0.0, 1.0) as f32))
                                     };
-                                    for series in &data.series {
+                                    for series in data.series.iter() {
                                         let len = series.values.len();
                                         let mut run: Vec<(usize, f64)> = Vec::new();
                                         let mut paint = |run: &mut Vec<(usize, f64)>| {
@@ -220,7 +222,7 @@ pub(crate) fn chart(
                 .justify_between()
                 .pl(px(80.0))
                 .pr(px(2.0))
-                .text_size(px(10.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(grid)
                 .children(
                     labels
@@ -239,13 +241,13 @@ pub(crate) fn chart(
                 .children(legend),
         )
         .when_some(rule_text, |chart, text| {
-            chart.child(div().text_size(px(11.0)).text_color(grid).child(text))
+            chart.child(div().text_size(TEXT_CAPTION).text_color(grid).child(text))
         })
         .into_any_element()
 }
 
 struct ChartData {
-    series: Vec<Series>,
+    series: Rc<Vec<Series>>,
     maximum: f64,
     log: bool,
     rule: Option<f64>,
