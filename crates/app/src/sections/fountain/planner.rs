@@ -379,12 +379,18 @@ pub(crate) fn step_table() -> RowsDelegate<StepRow> {
     RowsDelegate::new(vec![
         RowColumn::number("index", "#", |row: &StepRow| row.index.clone())
             .column(|column| column.width(px(48.0))),
-        RowColumn::text("water", "Water", |row: &StepRow| row.water.clone()),
-        RowColumn::text("upgrade", "Upgrade", |row: &StepRow| row.name.clone()),
-        RowColumn::number("level", "Level", |row: &StepRow| row.level.clone()),
-        RowColumn::number("cost", "Cost", |row: &StepRow| row.cost.clone()),
-        RowColumn::number("gain", "Gain", |row: &StepRow| row.gain.clone()),
-        RowColumn::number("eta", "Cumulative ETA", |row: &StepRow| row.eta.clone()),
+        RowColumn::text("water", "Water", |row: &StepRow| row.water.clone())
+            .column(|column| column.width(px(100.0))),
+        RowColumn::text("upgrade", "Upgrade", |row: &StepRow| row.name.clone())
+            .column(|column| column.width(px(220.0))),
+        RowColumn::number("level", "Level", |row: &StepRow| row.level.clone())
+            .column(|column| column.width(px(80.0))),
+        RowColumn::number("cost", "Cost", |row: &StepRow| row.cost.clone())
+            .column(|column| column.width(px(170.0))),
+        RowColumn::number("gain", "Gain", |row: &StepRow| row.gain.clone())
+            .column(|column| column.width(px(110.0))),
+        RowColumn::number("eta", "Cumulative ETA", |row: &StepRow| row.eta.clone())
+            .column(|column| column.width(px(170.0))),
     ])
 }
 

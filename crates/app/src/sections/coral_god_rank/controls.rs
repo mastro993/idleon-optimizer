@@ -304,9 +304,17 @@ pub(crate) fn controls_pane(
                     ),
                 )
                 .child(
-                    Alert::new("coral-validation", message)
-                        .with_variant(tone.into())
-                        .banner(),
+                    // The kit alert does not expose its text, so the harness
+                    // reads the verdict from this wrapper's label.
+                    div()
+                        .id("coral-validation")
+                        .role(gpui::Role::Label)
+                        .aria_label(message.clone())
+                        .child(
+                            Alert::new("coral-validation-alert", message)
+                                .with_variant(tone.into())
+                                .banner(),
+                        ),
                 ),
         );
 

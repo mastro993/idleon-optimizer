@@ -408,7 +408,7 @@ fn level_plan(levels: &[LevelStep], cx: &mut Context<AppState>) -> AnyElement {
                 fountain::currency_label(step.currency)
             ));
         TableRow::new()
-            .id(("fountain-level-row", step.level as usize))
+            .id(("fountain-level-row", step.level))
             .child(text(format!("{} → {}", step.level, step.level + 1)))
             .child(number(format!(
                 "{} {}",

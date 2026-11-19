@@ -2560,13 +2560,15 @@ const INTERACTIONS = {
     if (!/SOUR — Total Ribbons: 0 → [1-9]/.test(planned)) {
       throw new Error(`cooking-mastery: the next unlock plans SOUR as ${planned}`);
     }
-    // The budget stepper spends less: the plan says how much and the rows drop.
-    await lane.call('click_element', { id: 'cooking-mastery-budget-less' });
-    await lane.call('click_element', { id: 'cooking-mastery-budget-less' });
+    // The budget field spends less: the plan says how much and the rows drop.
+    // The kit number field steps with Down while focused.
+    await lane.call('click_element', { id: 'cooking-mastery-budget' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'cooking-mastery-distribution') ?? '').includes('with 17 of'),
-      'cooking-mastery: the budget stepper re-plans'
+      'cooking-mastery: the budget field re-plans'
     );
     await waitForNode(
       lane,
@@ -2611,13 +2613,14 @@ const INTERACTIONS = {
     if (!turkey.includes('2 points now')) {
       throw new Error(`cooking-mastery: the saved yellow points read ${turkey}`);
     }
-    // The budget stepper spends less, and the plan says how much.
-    await lane.call('click_element', { id: 'cooking-mastery-yellow-budget-less' });
-    await lane.call('click_element', { id: 'cooking-mastery-yellow-budget-less' });
+    // The budget field spends less, and the plan says how much.
+    await lane.call('click_element', { id: 'cooking-mastery-yellow-budget' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'cooking-mastery-yellow') ?? '').includes('17 of 19 yellow points'),
-      'cooking-mastery: the budget stepper re-plans the allocation'
+      'cooking-mastery: the budget field re-plans the allocation'
     );
     await lane.call('click_element', { id: 'cooking-mastery-tab-exp' });
     await waitForNode(lane, 'cooking-mastery-summary', 'cooking-mastery: the EXP tab reopens');

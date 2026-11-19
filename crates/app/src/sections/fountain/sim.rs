@@ -11,7 +11,9 @@ use super::table::{data_height, tag};
 use crate::state::AppState;
 use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
+};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::table::DataTable;
@@ -190,18 +192,22 @@ pub(crate) struct TimelineRow {
 /// The timeline's columns.
 pub(crate) fn timeline_table() -> RowsDelegate<TimelineRow> {
     RowsDelegate::new(vec![
-        RowColumn::text("time", "Time", |row: &TimelineRow| row.time.clone()),
-        RowColumn::text("event", "Event", |row: &TimelineRow| row.event.clone()),
+        RowColumn::text("time", "Time", |row: &TimelineRow| row.time.clone())
+            .column(|column| column.width(px(110.0))),
+        RowColumn::text("event", "Event", |row: &TimelineRow| row.event.clone())
+            .column(|column| column.width(px(120.0))),
         RowColumn::text("details", "Details", |row: &TimelineRow| {
             row.details.clone()
         })
-        .column(|column| column.width(gpui::px(360.0))),
+        .column(|column| column.width(px(520.0))),
         RowColumn::number("marble", "Marble /hr", |row: &TimelineRow| {
             row.marble_rate.clone()
-        }),
+        })
+        .column(|column| column.width(px(130.0))),
         RowColumn::number("base", "Base Currency /hr", |row: &TimelineRow| {
             row.base_rate.clone()
-        }),
+        })
+        .column(|column| column.width(px(170.0))),
     ])
 }
 

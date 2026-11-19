@@ -36,10 +36,14 @@ pub(crate) struct ActionRow {
 /// The action table's columns.
 pub(crate) fn action_table() -> RowsDelegate<ActionRow> {
     RowsDelegate::new(vec![
-        RowColumn::text("type", "Type", |row: &ActionRow| row.kind.clone()),
-        RowColumn::text("target", "Target", |row: &ActionRow| row.target.clone()),
-        RowColumn::number("qty", "Qty", |row: &ActionRow| row.quantity.clone()),
-        RowColumn::number("cost", "Cost", |row: &ActionRow| row.cost.clone()),
+        RowColumn::text("type", "Type", |row: &ActionRow| row.kind.clone())
+            .column(|column| column.width(px(160.0))),
+        RowColumn::text("target", "Target", |row: &ActionRow| row.target.clone())
+            .column(|column| column.width(px(280.0))),
+        RowColumn::number("qty", "Qty", |row: &ActionRow| row.quantity.clone())
+            .column(|column| column.width(px(80.0))),
+        RowColumn::number("cost", "Cost", |row: &ActionRow| row.cost.clone())
+            .column(|column| column.width(px(150.0))),
     ])
 }
 
