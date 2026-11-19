@@ -57,11 +57,7 @@ pub(crate) struct View {
 }
 
 /// The artifacts tab: the KPIs, the island ranking and the island's own artifacts.
-pub(crate) fn artifacts_tab(
-    state: &mut AppState,
-    _table_height: gpui::Pixels,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
+pub(crate) fn artifacts_tab(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let key = (state.sailing_key(), state.sailing_state.breakdown_boat);
     let view = cached(state, |controls| &mut controls.artifacts, key, cx, build);
     let Some(view) = view.as_ref() else {

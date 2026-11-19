@@ -180,7 +180,7 @@ pub(crate) fn view(
         Tab::Replacements => replacements::replacements_tab(state, table_height, window, cx),
         Tab::ChestOdds => odds::odds_tab(state, table_height, cx),
         Tab::Simulation => simulation::simulation_tab(state, window, cx),
-        Tab::Artifacts => artifacts::artifacts_tab(state, table_height, cx),
+        Tab::Artifacts => artifacts::artifacts_tab(state, cx),
         Tab::Breakdowns => breakdowns::breakdowns_tab(state, window, cx),
     };
     let header = header(state, cx);
