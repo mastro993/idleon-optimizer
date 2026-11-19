@@ -59,11 +59,10 @@ fn the_current_map_leads_the_list_and_hidden_maps_never_do() {
     let first = options.first().expect("a current map is always listed");
     assert_eq!(first.class.map, 200);
     assert!(first.current);
-    // The map label shows the target name with its underscores turned
-    // into spaces; this map's target is the `_` placeholder, so it reads as one.
+    // This map's target is the `_` placeholder, so the label names no mob.
     assert_eq!(
         first.label(snapshot.map_bonus(200)),
-        "Magma Rivertown -   (current)"
+        "Magma Rivertown (current)"
     );
     assert!(options.iter().all(|option| option.class.map != 3));
 

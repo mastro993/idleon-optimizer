@@ -457,10 +457,15 @@ fn viewport(state: &AppState, selected: u64, cx: &mut Context<AppState>) -> AnyE
                     ),
             )
             .child(
+                // Keep clear of the compare box in the card's corner; a long
+                // delta ends in an ellipsis rather than running under it.
                 div()
                     .flex()
                     .items_center()
                     .gap_2()
+                    .min_w_0()
+                    .mr(px(20.0 * zoom))
+                    .truncate()
                     .child(Caption::new(when))
                     .when(points.free > 0, |row| {
                         row.child(

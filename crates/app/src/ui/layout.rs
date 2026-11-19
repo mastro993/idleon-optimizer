@@ -132,6 +132,9 @@ fn split_pane_inner(
             .id(id)
             .flex()
             .flex_1()
+            // Without it a wide table in the primary pane widens the row and
+            // pushes the fixed rail past the window's edge.
+            .min_w_0()
             .min_h_0()
             .gap_3()
             .child(

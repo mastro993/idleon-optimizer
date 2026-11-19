@@ -200,7 +200,7 @@ pub(crate) fn view(
             SharedString::from(entry.label()),
         )
     });
-    let header = div().id("royal-tab-strip").flex().px_3().pt_2().child(
+    let header = div().id("royal-tab-strip").flex().pt_2().child(
         tab_bar("royal-tabs", tabs, selected, move |index, _window, cx| {
             entity.update(cx, |state, cx| state.set_royal_tab(Tab::ALL[index], cx));
         })
@@ -228,7 +228,7 @@ pub(crate) fn view(
             div()
                 .flex_1()
                 .min_h_0()
-                .child(div().p_3().child(pane))
+                .child(div().py_3().child(pane))
                 .overflow_y_scrollbar()
                 .id("royal-pane"),
         )

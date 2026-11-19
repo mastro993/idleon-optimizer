@@ -46,6 +46,13 @@ plain text already draws in.
 Sections read colors, radii and fonts from `cx.theme()` (the kit's `ActiveTheme`) or the
 `idleon_ui` tokens, never a literal.
 
+## Screenshot baseline
+
+`script/mcp-sections.mjs --baseline` compares every section capture with a reference set, which
+catches unintended visual changes. The set lives on the `ui-baseline` draft release, not in git.
+[`agent-harness.md`](../agent-harness.md#screenshot-baseline) says how to fetch, compare and refresh
+it.
+
 ## Pages
 
 | Page | What it covers |

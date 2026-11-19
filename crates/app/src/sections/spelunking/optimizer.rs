@@ -475,18 +475,25 @@ fn result_card(
         TableRow::new()
             .id(("spelunk-optimizer-compared", index))
             .child(
-                TableCell::new().child(
-                    div()
-                        .id(format!("spelunk-optimizer-row-{index}"))
-                        .flex()
-                        .flex_col()
-                        .child(if row.reference_only {
-                            format!("{} (reference only)", row.label)
-                        } else {
-                            row.label.clone()
-                        })
-                        .child(Caption::new(short_config(&row.summary.config))),
-                ),
+                // The configuration line wraps inside its share instead of
+                // spilling under the figures.
+                TableCell::new()
+                    .overflow_hidden()
+                    .whitespace_normal()
+                    .child(
+                        div()
+                            .id(format!("spelunk-optimizer-row-{index}"))
+                            .flex()
+                            .flex_col()
+                            .w_full()
+                            .min_w_0()
+                            .child(if row.reference_only {
+                                format!("{} (reference only)", row.label)
+                            } else {
+                                row.label.clone()
+                            })
+                            .child(Caption::new(short_config(&row.summary.config))),
+                    ),
             )
             .child(
                 TableCell::new()

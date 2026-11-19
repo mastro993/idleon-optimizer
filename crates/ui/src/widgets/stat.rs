@@ -129,12 +129,16 @@ impl RenderOnce for Statistic {
                     .child(self.label),
             )
             .child(
+                // `min_w_0` lets a long value wrap inside its cell instead of
+                // running into the next one on a narrow window.
                 h_flex()
+                    .min_w_0()
                     .items_baseline()
                     .gap_1()
                     .children(self.prefix.map(unit))
                     .child(
                         div()
+                            .min_w_0()
                             .font_family(theme.mono_font_family.clone())
                             .text_size(value_size)
                             .font_weight(FontWeight::MEDIUM)

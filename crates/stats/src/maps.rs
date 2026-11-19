@@ -119,12 +119,21 @@ pub struct MapOption {
     pub evidence: String,
 }
 
+impl MapClass {
+    /// The AFK target's display name, or `None` when the map has none: the
+    /// game names a missing target `_` or `Nothing`.
+    pub fn mob(&self) -> Option<String> {
+        let mob = clean_name(&self.target_name);
+        let mob = mob.trim();
+        (!mob.is_empty() && mob != "Nothing").then(|| mob.to_string())
+    }
+}
+
 impl MapOption {
     /// The selector label.
     pub fn label(&self, map_bonus: Option<&[f64]>) -> String {
         let mut label = self.class.name.clone();
-        let mob = clean_name(&self.class.target_name);
-        if !mob.is_empty() && mob != "Nothing" {
+        if let Some(mob) = self.class.mob() {
             label.push_str(" - ");
             label.push_str(&mob);
         }

@@ -21,7 +21,7 @@ pub(crate) fn upgrades_pane(state: &AppState, cx: &App) -> AnyElement {
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
+        .py_3()
         .child(page_card(&state.cglunko, state.cglunko_page, cx))
         .child(Caption::new(
             "Next Cost is the cost of the next level: the base raised to that level plus the level, divided by the Active Drops discount, five times as much on the odd indexes, and paid from the upgrade's own stone. The Optimizer tab spends these saved balances.",

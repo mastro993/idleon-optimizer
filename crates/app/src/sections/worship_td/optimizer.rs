@@ -35,7 +35,7 @@ pub(crate) fn pane(
     let stale = task_state.stale;
     let entity = cx.entity();
 
-    let mut body = v_flex().id("worship-optimizer-body").gap_3().p_3().child(
+    let mut body = v_flex().id("worship-optimizer-body").gap_3().py_3().child(
         Card::new()
             .header(CardHeader::new("Search").description(
                 "Every candidate is simulated by the same engine the Plan pane runs. \

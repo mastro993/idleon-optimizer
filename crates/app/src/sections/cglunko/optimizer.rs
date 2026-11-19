@@ -32,7 +32,7 @@ pub(crate) fn optimizer_pane(state: &AppState, entity: Entity<AppState>, cx: &Ap
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
+        .py_3()
         .child(controls(state, task.running, &entity))
         .child(Caption::new(
             "Each purchase is the best marginal DR gain per stone the page's saved balances can afford at the levels the plan has reached, so every step pays the cost at that level, never an earlier cheaper price.",

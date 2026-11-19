@@ -121,7 +121,7 @@ pub(crate) fn overview_pane(state: &AppState) -> AnyElement {
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
+        .py_3()
         .child(div().id("cglunko-kpi-row-1").child(first_row))
         .child(div().id("cglunko-kpi-row-2").child(second_row))
         .child(div().id("cglunko-kpi-row-3").child(third_row))

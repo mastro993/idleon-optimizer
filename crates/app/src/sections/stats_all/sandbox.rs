@@ -162,6 +162,11 @@ pub(super) fn affected_formulas(state: &State, cx: &mut Context<AppState>) -> An
     let entity = cx.entity();
     let rows = &state.affected;
     let count = format!("Affected formulas ({})", rows.len());
+    // The card header already names the list, so the line shows the bare count.
+    let shown = match rows.len() {
+        1 => "1 formula".to_string(),
+        n => format!("{n} formulas"),
+    };
     let mut list = div().id("stats-affected-rows").flex().flex_col().gap_1();
     if rows.is_empty() {
         let line = match state.sandbox.as_ref().map(stats::Sandbox::count) {
@@ -225,10 +230,10 @@ pub(super) fn affected_formulas(state: &State, cx: &mut Context<AppState>) -> An
             div()
                 .id("stats-affected-count")
                 .role(Role::Label)
-                .aria_label(count.clone())
+                .aria_label(count)
                 .text_size(TEXT_CAPTION)
                 .text_color(muted)
-                .child(count),
+                .child(shown),
         )
         .child(list)
         .into_any_element()
