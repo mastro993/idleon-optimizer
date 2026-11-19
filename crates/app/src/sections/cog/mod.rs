@@ -11,29 +11,43 @@
 mod actions;
 
 mod board;
+mod controls;
 mod insights;
+mod table;
 mod walkthrough;
 
+pub(crate) use controls::Controls;
+
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
-use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
-use ely_gpui_component::feedback::{Banner, EmptyState};
-use ely_gpui_component::forms::{Checkbox, NumberInput};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
-use ely_gpui_component::typography::Caption;
+use controls::WEIGHTS;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
+    AnyElement, App, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled,
+    Window, div, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::{
+    Button, ButtonVariants as _, Toggle, ToggleGroup, ToggleVariants as _,
+};
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::table::DataTable;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Icon, Sizable as _};
 use idleon_cog::{
     BOARD_SIZE, Board, BoardTotals, Cog, CogResult, CogSave, Goal, Objective, PerfectBoard,
-    PerfectStats, SwapStep, SwapWalkthrough, WeightError, WeightInputs, board_insights,
-    compute_totals, empty_board, perfect_stats, player_slot, slot_to_pos,
+    PerfectStats, SwapWalkthrough, WeightError, WeightInputs, empty_board, perfect_stats,
+    player_slot, slot_to_pos,
 };
 use idleon_ui::format;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, KpiStrip, Statistic, TEXT_BODY, Tone, show_number,
+};
+use table::{Col, table, text};
 
 /// The inputs a stored optimizer result was produced from, so a later edit
 /// marks it stale.
@@ -197,7 +211,7 @@ impl State {
 /// The section view: controls, summaries, the board and the swap list.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     if !state.cog.save.has_board() {
@@ -205,48 +219,59 @@ pub(crate) fn view(
     }
     let task = state.cog_task(cx);
     let perfect = state.cog_perfect_task(cx);
-    let preview = state.cog.walkthrough.as_ref().map(SwapWalkthrough::board);
     let perfect_board = if state.cog.show_perfect {
         perfect.result.as_ref().map(|perfect| &perfect.board)
     } else {
         None
     };
-    let board = perfect_board.or(preview).unwrap_or(&state.cog.board);
-    let now = compute_totals(board);
-    let before = compute_totals(&state.cog.save.board);
-    let filled = board.iter().flatten().count();
-    let board_changed = board != &state.cog.save.board;
+    let preview = state.cog.walkthrough.as_ref().map(SwapWalkthrough::board);
+    let board: &Board = perfect_board.or(preview).unwrap_or(&state.cog.board);
+    let after = match perfect_board {
+        Some(board) => Some(board),
+        None => task.result.as_ref().map(|result| &result.board),
+    };
+    let swaps = task.result.as_ref().map(|result| result.swaps.as_slice());
+    state
+        .cog_controls
+        .sync(state.save_revision, &state.cog, board, swaps, after, cx);
+    for goal in WEIGHTS {
+        let field = state.cog_controls.weight(goal);
+        show_number(field, state.cog.weights.get(goal), 0, window, cx);
+    }
+
+    let state: &AppState = state;
+    let entity = cx.entity();
+    let cx: &App = cx;
+    let figures = state.cog_controls.figures();
+    let board_changed = *board != state.cog.save.board;
     let has_result = task.result.is_some()
         || perfect.result.is_some()
         || state.cog.walkthrough.is_some()
         || (task.cancelled && board_changed);
     let running = task.running || perfect.running;
-    let insights = board_insights(board, state.cog.goal);
-    let muted = cx.theme().colors.fg_muted;
 
     let mut body = div()
-        .id("cog-body")
         .flex()
         .flex_col()
         .gap_3()
-        .child(summary(state, &now, &before, filled))
-        .child(controls(state, cx, has_result, running))
-        .child(board::card(state, board, insights.as_ref(), cx))
+        .child(summary(state, figures))
+        .child(controls(state, &entity, has_result, running))
+        .child(board::card(state, board, figures.insights.as_ref(), cx))
         .child(insights::insights_card(
-            insights.as_ref(),
+            figures.insights.as_ref(),
             state.cog.goal,
-            muted,
         ))
         .child(insights::roll_ranges_card(
-            state.cog.goal,
+            &state.cog_controls.ranges,
             state.cog.save.max_construction_level,
             state.cog.save.construction_level,
+            cx,
         ))
-        .child(insights::shelf_card(&state.cog.save, state.cog.goal, muted));
+        .child(insights::shelf_card(state));
     if task.running
         && let Some(progress) = task.progress.clone()
     {
-        let entity = cx.entity();
+        let entity = entity.clone();
         body = body.child(idleon_ui::run_chrome::progress_card(
             "cog",
             "Optimizing the cog board",
@@ -260,7 +285,7 @@ pub(crate) fn view(
     if perfect.running
         && let Some(progress) = perfect.progress.clone()
     {
-        let entity = cx.entity();
+        let entity = entity.clone();
         body = body.child(idleon_ui::run_chrome::progress_card(
             "cog-perfect",
             "Building the perfect cog board",
@@ -283,29 +308,57 @@ pub(crate) fn view(
             board_changed,
         ));
     }
+    let before = &figures.before;
+    let after = &state.cog_controls.after;
     if state.cog.show_perfect {
-        if let Some(result) = perfect.result.clone() {
-            body = body.child(perfect_card(&result, &before, perfect.stale));
+        if let Some(result) = perfect.result.as_ref() {
+            body = body.child(perfect_card(result, before, after, perfect.stale, cx));
         }
-    } else if let Some(result) = task.result.clone() {
-        body = body.child(result_card(&result, &before, task.stale));
+    } else if let Some(result) = task.result.as_ref() {
+        body = body.child(result_card(result, before, after, task.stale));
         body = body.child(match state.cog.walkthrough.as_ref() {
-            Some(walkthrough) => walkthrough::card(walkthrough, cx),
-            None => swaps(&result.swaps),
+            Some(walkthrough) => walkthrough::card(state, walkthrough, &entity),
+            None => swaps_card(state, result.swaps.is_empty()),
         });
     }
 
-    ScrollArea::new("cog-scroll")
-        .vertical()
+    div()
+        .id("cog-body")
+        .flex()
+        .flex_col()
         .flex_1()
         .min_h_0()
         .child(body)
+        .overflow_y_scrollbar()
+        .id("cog-scroll")
         .into_any_element()
+}
+
+/// `value` with `decimals` places and its whole part grouped in thousands,
+/// as Ely's statistic drew it: `30,808.96`.
+pub(super) fn grouped(value: f64, decimals: usize) -> String {
+    let text = format!("{value:.decimals$}");
+    match text.split_once('.') {
+        Some((whole, fraction)) => {
+            format!("{}.{fraction}", format::exact(whole.parse().unwrap_or(0.0)))
+        }
+        None => format::exact(value),
+    }
+}
+
+/// A small outlined tag.
+pub(super) fn tag(label: impl Into<SharedString>, tone: Tone) -> Tag {
+    Tag::new()
+        .with_variant(tone.into())
+        .outline()
+        .small()
+        .child(label.into())
 }
 
 /// No save has been imported yet.
 fn empty_state(cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
+    let muted = cx.theme().muted_foreground;
     Card::new()
         .header(
             CardHeader::new("Cog board").description(
@@ -313,28 +366,37 @@ fn empty_state(cx: &mut Context<AppState>) -> AnyElement {
             ),
         )
         .child(
-            EmptyState::new(
-                "cog-empty",
-                IconName::Map,
-                "Import a save to read the cog board",
-            )
-            .body(
-                "The section reads the board, the shelf and the construction level from the \
-                 decoded save. Without one there is nothing to place.",
-            )
-            .action(
-                Button::new("cog-import", "Import a save")
-                    .icon(IconName::Upload)
-                    .on_click(move |_event, window, cx| {
-                        entity.update(cx, |state, cx| state.open_import(window, cx));
-                    }),
+            div().id("cog-empty").child(
+                Empty::new()
+                    .header(
+                        EmptyHeader::new()
+                            .media(
+                                EmptyMedia::new().child(Icon::new(IconName::Map).text_color(muted)),
+                            )
+                            .title(EmptyTitle::new().child("Import a save to read the cog board"))
+                            .description(EmptyDescription::new().child(
+                                "The section reads the board, the shelf and the construction \
+                                 level from the decoded save. Without one there is nothing to place.",
+                            )),
+                    )
+                    .content(
+                        EmptyContent::new().child(
+                            Button::new("cog-import")
+                                .label("Import a save")
+                                .icon(IconName::Upload)
+                                .on_click(move |_event, window, cx| {
+                                    entity.update(cx, |state, cx| state.open_import(window, cx));
+                                }),
+                        ),
+                    ),
             ),
         )
         .into_any_element()
 }
 
 /// The three saved totals, the construction level and the occupied slots.
-fn summary(state: &AppState, now: &BoardTotals, before: &BoardTotals, filled: usize) -> AnyElement {
+fn summary(state: &AppState, figures: &controls::Figures) -> AnyElement {
+    let (now, before, filled) = (&figures.now, &figures.before, figures.filled);
     let level = state.cog.save.construction_level;
     let objective = if state.cog.weighted {
         None
@@ -350,53 +412,53 @@ fn summary(state: &AppState, now: &BoardTotals, before: &BoardTotals, filled: us
             format::fmt_val(now.player_con_exp_hr),
             format::fmt_val(now.total_flaggy)
         ))
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(kpi(
-            objective,
-            "cog-kpi-build",
-            "Build Speed",
-            now.total_build,
-            before.total_build,
-            "Base build × board surrounds",
-        ))
-        .child(kpi(
-            objective,
-            "cog-kpi-conexp",
-            "Construction EXP/hr",
-            now.player_con_exp_hr,
-            before.player_con_exp_hr,
-            "Best player × surround × totalD",
-        ))
-        .child(kpi(
-            objective,
-            "cog-kpi-flaggy",
-            "Flaggy Rate",
-            now.total_flaggy,
-            before.total_flaggy,
-            "Base Flaggy × board surrounds",
-        ))
-        .child(kpi(
-            None,
-            "cog-kpi-level",
-            "Construction Level",
-            f64::from(level),
-            0.0,
-            "Highest saved Lv0 construction",
-        ))
-        .child(kpi(
-            None,
-            "cog-kpi-cogs",
-            "Board Cogs",
-            filled as f64,
-            0.0,
-            "Filled of 96 slots",
-        ))
+        .child(
+            KpiStrip::new()
+                .child(kpi(
+                    objective,
+                    "cog-kpi-build",
+                    "Build Speed",
+                    now.total_build,
+                    before.total_build,
+                    "Base build × board surrounds",
+                ))
+                .child(kpi(
+                    objective,
+                    "cog-kpi-conexp",
+                    "Construction EXP/hr",
+                    now.player_con_exp_hr,
+                    before.player_con_exp_hr,
+                    "Best player × surround × totalD",
+                ))
+                .child(kpi(
+                    objective,
+                    "cog-kpi-flaggy",
+                    "Flaggy Rate",
+                    now.total_flaggy,
+                    before.total_flaggy,
+                    "Base Flaggy × board surrounds",
+                ))
+                .child(kpi(
+                    None,
+                    "cog-kpi-level",
+                    "Construction Level",
+                    f64::from(level),
+                    0.0,
+                    "Highest saved Lv0 construction",
+                ))
+                .child(kpi(
+                    None,
+                    "cog-kpi-cogs",
+                    "Board Cogs",
+                    filled as f64,
+                    0.0,
+                    "Filled of 96 slots",
+                )),
+        )
         .into_any_element()
 }
 
-/// One summary card: label, scaled figure and its change from the save.
+/// One summary figure: label, scaled figure and its change from the save.
 fn kpi(
     objective: Option<Goal>,
     id: &'static str,
@@ -404,11 +466,9 @@ fn kpi(
     value: f64,
     before: f64,
     caption: &'static str,
-) -> AnyElement {
+) -> Statistic {
     let (scaled, suffix) = format::scale(value);
-    let mut statistic = Statistic::new(id, label, scaled)
-        .decimals(2)
-        .size(TextSize::Xl);
+    let mut statistic = Statistic::new(id, label, grouped(scaled, 2));
     if !suffix.is_empty() {
         statistic = statistic.suffix(suffix);
     }
@@ -422,43 +482,55 @@ fn kpi(
     } else {
         ""
     };
-    KpiCard::new(statistic)
-        .caption(format!("{change}{caption}{goal_note}"))
-        .into_any_element()
+    statistic.caption(format!("{change}{caption}{goal_note}"))
+}
+
+/// The goal switch: one segment per goal. Segment `n` is
+/// `cog-goal.segment-<n>`. A click on the checked segment keeps it: the kit
+/// clears every flag then.
+fn goal_switch(current: Goal, entity: &Entity<AppState>) -> ToggleGroup {
+    const GOALS: [Goal; 3] = [Goal::Build, Goal::ConExp, Goal::Flaggy];
+    let entity = entity.clone();
+    ToggleGroup::new("cog-goal")
+        .segmented()
+        .single()
+        .outline()
+        .small()
+        .children(GOALS.iter().enumerate().map(|(index, goal)| {
+            Toggle::new(SharedString::from(format!("cog-goal.segment-{index}")))
+                .label(goal.label())
+                .checked(*goal == current)
+        }))
+        .on_click(move |checked, _window, cx| {
+            if let Some(index) = checked.iter().position(|checked| *checked) {
+                entity.update(cx, |state, cx| state.set_cog_goal(GOALS[index], cx));
+            }
+        })
 }
 
 /// The objective controls: single goal or custom weights, Optimize, Perfect
 /// Board and Reset.
 fn controls(
     state: &AppState,
-    cx: &mut Context<AppState>,
+    entity: &Entity<AppState>,
     has_result: bool,
     running: bool,
 ) -> AnyElement {
-    let entity = cx.entity();
     let problem = state.cog.weight_problem();
     let weighted = state.cog.weighted;
-    let goal_entity = entity.clone();
-    let goal = SegmentedControl::new("cog-goal", state.cog.goal.id())
-        .size(ControlSize::Sm)
-        .segment(Goal::Build.id(), Goal::Build.label(), None)
-        .segment(Goal::ConExp.id(), Goal::ConExp.label(), None)
-        .segment(Goal::Flaggy.id(), Goal::Flaggy.label(), None)
-        .on_change(move |value, _window, cx| {
-            if let Some(goal) = Goal::from_id(value.as_ref()) {
-                goal_entity.update(cx, |state, cx| state.set_cog_goal(goal, cx));
-            }
-        });
     let weighted_entity = entity.clone();
-    let custom = Checkbox::new("cog-weighted", state.cog.weighted)
+    let custom = Checkbox::new("cog-weighted")
         .label("Custom weights")
-        .on_change(move |on, _window, cx| {
+        .checked(weighted)
+        .on_click(move |on, _window, cx| {
+            let on = *on;
             weighted_entity.update(cx, |state, cx| state.set_cog_weighted(on, cx));
         });
     let optimize_entity = entity.clone();
-    let optimize = Button::new("cog-optimize", "Optimize")
-        .variant(ButtonVariant::Primary)
-        .size(ControlSize::Sm)
+    let optimize = Button::new("cog-optimize")
+        .label("Optimize")
+        .primary()
+        .small()
         .icon(IconName::Play)
         .disabled(running || problem.is_some() || !state.cog.save.has_board())
         .on_click(move |_event, _window, cx| {
@@ -466,18 +538,19 @@ fn controls(
         });
     let perfect_entity = entity.clone();
     let can_perfect = player_slot(&state.cog.save.board).is_some();
-    let perfect = Button::new("cog-perfect", "Perfect Board")
-        .variant(ButtonVariant::Secondary)
-        .size(ControlSize::Sm)
+    let perfect = Button::new("cog-perfect")
+        .label("Perfect Board")
+        .small()
         .icon(IconName::Sparkles)
         .disabled(running || !can_perfect)
         .on_click(move |_event, _window, cx| {
             perfect_entity.update(cx, |state, cx| state.perfect_cog(cx));
         });
     let reset_entity = entity.clone();
-    let reset = Button::new("cog-reset", "Reset")
-        .variant(ButtonVariant::Subtle)
-        .size(ControlSize::Sm)
+    let reset = Button::new("cog-reset")
+        .label("Reset")
+        .secondary()
+        .small()
         .icon(IconName::RotateCcw)
         .disabled(!has_result && state.cog.board == state.cog.save.board)
         .on_click(move |_event, _window, cx| {
@@ -486,21 +559,20 @@ fn controls(
 
     let weights = state.cog.weights;
     let weight_field = |id: &'static str, label: &'static str, goal: Goal| {
-        let entity = entity.clone();
-        NumberInput::new(SharedString::from(id), weights.get(goal))
-            .label(label)
-            .range(0.0, 100.0)
-            .precision(0)
-            .step(1.0)
-            .size(ControlSize::Sm)
-            .on_change(move |value, _window, cx| {
-                entity.update(cx, |state, cx| state.set_cog_weight(goal, value, cx));
-            })
+        div()
+            .flex()
+            .items_center()
+            .gap_2()
+            .child(Caption::new(label))
+            .child(crate::ui::number_field(
+                id,
+                state.cog_controls.weight(goal),
+                label,
+            ))
     };
     let weight_row = div()
         .id("cog-weights")
         .flex()
-        .flex_wrap()
         .items_center()
         .gap_3()
         .child(weight_field(
@@ -547,10 +619,9 @@ fn controls(
         .child(
             div()
                 .flex()
-                .flex_wrap()
                 .items_center()
                 .gap_3()
-                .child(goal)
+                .child(goal_switch(state.cog.goal, entity))
                 .child(custom)
                 .child(optimize)
                 .child(perfect)
@@ -558,11 +629,18 @@ fn controls(
         )
         .when(weighted, |controls| controls.child(weight_row))
         .when_some(problem, |controls, problem| {
-            controls.child(Banner::new(
-                "cog-weight-error",
-                Severity::Danger,
-                problem.message(),
-            ))
+            // The wrapper carries the message as its label, which the harness reads.
+            controls.child(
+                div()
+                    .id("cog-weight-error")
+                    .role(Role::Label)
+                    .aria_label(problem.message())
+                    .child(
+                        Alert::new("cog-weight-alert", problem.message())
+                            .with_variant(Tone::Danger.into())
+                            .banner(),
+                    ),
+            )
         })
         .when_some(normalised, |controls, text| {
             controls.child(
@@ -590,9 +668,22 @@ fn objective_label(objective: &Objective) -> String {
     }
 }
 
+/// The stale badge, or nothing.
+fn stale_action(stale: bool, id: &'static str) -> AnyElement {
+    if stale {
+        idleon_ui::run_chrome::stale_badge(id).into_any_element()
+    } else {
+        div().into_any_element()
+    }
+}
+
 /// The result banner: every category before and after, plus the swap count.
-fn result_card(result: &CogResult, before: &BoardTotals, stale: bool) -> AnyElement {
-    let after = compute_totals(&result.board);
+fn result_card(
+    result: &CogResult,
+    before: &BoardTotals,
+    after: &BoardTotals,
+    stale: bool,
+) -> AnyElement {
     let objective = objective_label(&result.objective);
     let weighted = matches!(result.objective, Objective::Weighted { .. });
     let summary = format!(
@@ -605,7 +696,6 @@ fn result_card(result: &CogResult, before: &BoardTotals, stale: bool) -> AnyElem
         .role(Role::Label)
         .aria_label(summary.clone())
         .flex()
-        .flex_wrap()
         .gap_4()
         .child(delta("Build Speed", before.total_build, after.total_build))
         .child(delta(
@@ -635,27 +725,16 @@ fn result_card(result: &CogResult, before: &BoardTotals, stale: bool) -> AnyElem
                     result.swaps.len(),
                     result.improvement_pct
                 ))
-                .action(if stale {
-                    idleon_ui::run_chrome::stale_badge("cog").into_any_element()
-                } else {
-                    div().into_any_element()
-                }),
+                .action(stale_action(stale, "cog")),
         )
         .child(
             div()
-                .p_3()
-                .flex()
-                .flex_col()
-                .gap_2()
-                .child(
-                    div()
-                        .id("cog-objective")
-                        .role(Role::Label)
-                        .aria_label(format!("Objective: {objective}"))
-                        .child(Caption::new(format!("Objective: {objective}"))),
-                )
-                .child(row),
+                .id("cog-objective")
+                .role(Role::Label)
+                .aria_label(format!("Objective: {objective}"))
+                .child(Caption::new(format!("Objective: {objective}"))),
         )
+        .child(row)
         .when(stale, |card| {
             card.child(idleon_ui::run_chrome::stale_banner("cog"))
         })
@@ -663,8 +742,13 @@ fn result_card(result: &CogResult, before: &BoardTotals, stale: bool) -> AnyElem
 }
 
 /// The perfect board's explanation: the layer table and the perfect stats.
-fn perfect_card(perfect: &PerfectBoard, before: &BoardTotals, stale: bool) -> AnyElement {
-    let after = compute_totals(&perfect.board);
+fn perfect_card(
+    perfect: &PerfectBoard,
+    before: &BoardTotals,
+    after: &BoardTotals,
+    stale: bool,
+    cx: &App,
+) -> AnyElement {
     let (col, row) = slot_to_pos(perfect.player_slot);
     let summary = format!(
         "Perfect {} board: player at ({col},{row}), {} Excogia blocks, {} Yang cogs, score {}",
@@ -673,18 +757,24 @@ fn perfect_card(perfect: &PerfectBoard, before: &BoardTotals, stale: bool) -> An
         perfect.yang_placed,
         format::fmt_val(perfect.score)
     );
-    let layers = perfect.layers.iter().fold(
-        Table::new(["Layer", "What it placed", "Slots"]),
-        |table, layer| {
-            table.row([
+    let layers = table(
+        "cog-perfect-table",
+        &[
+            Col::Text("Layer"),
+            Col::Text("What it placed"),
+            Col::Number("Slots"),
+        ],
+        perfect.layers.iter().map(|layer| {
+            vec![
                 div()
                     .id(format!("cog-perfect-layer-{}", layer.id))
                     .child(layer.label)
                     .into_any_element(),
-                div().child(layer.detail.clone()).into_any_element(),
-                div().child(layer.slots.to_string()).into_any_element(),
-            ])
-        },
+                text(layer.detail.clone()),
+                text(layer.slots.to_string()),
+            ]
+        }),
+        cx,
     );
     let t3 = perfect_stats(3, perfect.construction_level);
     let t4 = perfect_stats(4, perfect.construction_level);
@@ -709,50 +799,39 @@ fn perfect_card(perfect: &PerfectBoard, before: &BoardTotals, stale: bool) -> An
                 .description(
                     "Theoretical placement from perfect cogs; the layers are applied in order and only kept when they raise the score.",
                 )
-                .action(if stale {
-                    idleon_ui::run_chrome::stale_badge("cog-perfect").into_any_element()
-                } else {
-                    div().into_any_element()
-                }),
+                .action(stale_action(stale, "cog-perfect")),
         )
         .child(
             div()
-                .p_3()
+                .id("cog-perfect-result")
+                .role(Role::Label)
+                .aria_label(summary.clone())
                 .flex()
-                .flex_col()
-                .gap_3()
-                .child(
-                    div()
-                        .id("cog-perfect-result")
-                        .role(Role::Label)
-                        .aria_label(summary.clone())
-                        .flex()
-                        .flex_wrap()
-                        .gap_4()
-                        .child(delta("Build Speed", before.total_build, after.total_build))
-                        .child(delta(
-                            "Construction EXP/hr",
-                            before.player_con_exp_hr,
-                            after.player_con_exp_hr,
-                        ))
-                        .child(delta(
-                            "Flaggy Rate",
-                            before.total_flaggy,
-                            after.total_flaggy,
-                        )),
-                )
-                .child(Caption::new(summary))
-                .child(
-                    ScrollArea::new("cog-perfect-layers")
-                        .vertical()
-                        .h(px(240.0))
-                        .child(layers),
-                )
-                .child(Caption::new(stats_line))
-                .child(Caption::new(
-                    "The tiny-cog board is not part of this section yet; this perfect board covers the 12×8 board.",
+                .gap_4()
+                .child(delta("Build Speed", before.total_build, after.total_build))
+                .child(delta(
+                    "Construction EXP/hr",
+                    before.player_con_exp_hr,
+                    after.player_con_exp_hr,
+                ))
+                .child(delta(
+                    "Flaggy Rate",
+                    before.total_flaggy,
+                    after.total_flaggy,
                 )),
         )
+        .child(Caption::new(summary))
+        .child(
+            div()
+                .h(px(240.0))
+                .child(layers)
+                .overflow_y_scrollbar()
+                .id("cog-perfect-layers"),
+        )
+        .child(Caption::new(stats_line))
+        .child(Caption::new(
+            "The tiny-cog board is not part of this section yet; this perfect board covers the 12×8 board.",
+        ))
         .when(stale, |card| {
             card.child(idleon_ui::run_chrome::stale_banner("cog-perfect"))
         })
@@ -769,6 +848,7 @@ fn delta(label: &'static str, before: f64, after: f64) -> AnyElement {
     div()
         .flex()
         .flex_col()
+        .items_start()
         .gap_0p5()
         .child(Caption::new(label))
         .child(
@@ -776,9 +856,9 @@ fn delta(label: &'static str, before: f64, after: f64) -> AnyElement {
                 .flex()
                 .items_center()
                 .gap_1()
-                .child(div().text_size(px(14.0)).child(format::fmt_val(after)))
-                .child(
-                    Badge::new(if change == 0.0 {
+                .child(div().text_size(TEXT_BODY).child(format::fmt_val(after)))
+                .child(tag(
+                    if change == 0.0 {
                         "no change".to_string()
                     } else {
                         format!(
@@ -789,51 +869,33 @@ fn delta(label: &'static str, before: f64, after: f64) -> AnyElement {
                                 0.0
                             }
                         )
-                    })
-                    .tone(tone),
-                ),
+                    },
+                    tone,
+                )),
         )
         .child(Caption::new(format!("was {}", format::fmt_val(before))))
         .into_any_element()
 }
 
 /// The swap list from the save board to the optimized one.
-fn swaps(steps: &[SwapStep]) -> AnyElement {
-    if steps.is_empty() {
+fn swaps_card(state: &AppState, empty: bool) -> AnyElement {
+    if empty {
         return Card::new()
             .header(CardHeader::new("Swap list"))
-            .child(div().id("cog-swaps-empty").p_3().child(Caption::new(
+            .child(div().id("cog-swaps-empty").child(Caption::new(
                 "No swaps needed: the save board is already the best placement found.",
             )))
             .into_any_element();
     }
-    let table = steps.iter().enumerate().fold(
-        Table::new(["#", "From", "To", "At", "Source"]),
-        |table, (index, step)| {
-            table.row([
-                div().child((index + 1).to_string()).into_any_element(),
-                div()
-                    .child(idleon_cog::display_name(&step.from))
-                    .into_any_element(),
-                div()
-                    .child(idleon_cog::display_name(&step.to))
-                    .into_any_element(),
-                div()
-                    .child(format!("({},{})", step.col, step.row))
-                    .into_any_element(),
-                div().child(step.source_label()).into_any_element(),
-            ])
-        },
-    );
     Card::new()
         .header(CardHeader::new("Swap list").description(
             "Each row names the cog leaving the slot, the cog arriving and where it comes from.",
         ))
         .child(
-            ScrollArea::new("cog-swaps")
-                .vertical()
+            div()
+                .id("cog-swaps")
                 .h(px(260.0))
-                .child(table),
+                .child(DataTable::new(&state.cog_controls.swaps)),
         )
         .into_any_element()
 }
@@ -841,6 +903,7 @@ fn swaps(steps: &[SwapStep]) -> AnyElement {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use idleon_cog::{SwapStep, compute_totals};
 
     fn sample_save() -> CogSave {
         let mut board = empty_board();
