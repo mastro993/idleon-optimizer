@@ -26,24 +26,11 @@ pub(crate) enum PlanSource {
 }
 
 impl PlanSource {
-    pub(crate) fn id(self) -> &'static str {
-        match self {
-            PlanSource::Guide => "guide",
-            PlanSource::Heuristic => "heuristic",
-        }
-    }
-
     pub(crate) fn label(self) -> &'static str {
         match self {
             PlanSource::Guide => "Guide preset",
             PlanSource::Heuristic => "Coverage heuristic",
         }
-    }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        [PlanSource::Guide, PlanSource::Heuristic]
-            .into_iter()
-            .find(|source| source.id() == id)
     }
 
     /// Whether this source has a plan for `trial`.

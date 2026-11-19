@@ -4147,8 +4147,10 @@ const INTERACTIONS = {
     if (!damage.includes('3.0 - 25.0')) {
       throw new Error(`monument: the roll damage reads ${damage}`);
     }
-    // A damage boost multiplies the roll, so the odds card follows the stepper.
-    await lane.call('click_element', { id: 'monument-boosts-up' });
+    // A damage boost multiplies the roll, so the odds card follows the field.
+    // The kit number field steps with Up; its own buttons carry no unique id.
+    await lane.call('click_element', { id: 'monument-boosts' });
+    await lane.call('keyboard', { keystroke: 'up' });
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'monument-odds-damage') ?? '').includes('3.0 - 27.5'),
@@ -4466,14 +4468,20 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'worship-map') ?? '').includes('replay'),
       'worship-td: the map switches to the replay',
     );
-    await lane.call('focus_element', { id: 'thumb-0' });
+    // A press on the kit slider seeks and focuses it; Home and End then reach
+    // the ends of the timeline.
+    const scrub = (await lane.tree()).find((node) => node.id === 'worship-replay-scrub')?.bounds;
+    if (!scrub) throw new Error('worship-td: the replay scrubber is not in the tree');
+    await lane.call('click_coordinates', {
+      x: scrub.x + scrub.width / 2,
+      y: scrub.y + scrub.height / 2,
+    });
     await lane.call('keyboard', { keystroke: 'home' });
     await waitFor(
       lane,
       (nodes) => /Replay frame 0 of \d+/.test(labelOf(nodes, 'worship-replay') ?? ''),
       'worship-td: the scrubber seeks the start of the timeline',
     );
-    await lane.call('focus_element', { id: 'thumb-0' });
     await lane.call('keyboard', { keystroke: 'end' });
     await waitFor(
       lane,

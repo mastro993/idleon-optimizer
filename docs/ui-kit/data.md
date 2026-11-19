@@ -55,6 +55,11 @@ Table::new()
 Number columns are right-aligned (`text_right()` on the head and its cells). An element id the
 harness selects stays on the same element: wrap the cell's content in a `div().id(..)`, as above.
 
+Give each `Table` an id through a wrapper (`div().id("<id>-table").child(Table::new()…)`) when
+another table sits under the same nearest element id, as in a pane of cards (a `Card` carries no
+id). The kit derives a table's accessibility node from that id path, so two such tables collide and
+a debug build panics with `Duplicate a11y node id`.
+
 Give each `TableRow` a short id of its own (`TableRow::new().id(("forecast-row", ix))`). The kit's
 default row id spells out the type path of the table, its body and the row, and from inside a
 scroll area with a long id it outgrows the bridge's 256-byte limit. The bridge then drops the row

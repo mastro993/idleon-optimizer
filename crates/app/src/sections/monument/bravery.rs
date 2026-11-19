@@ -2,28 +2,31 @@
 //! and the permanent reward levels.
 
 use super::{
-    MilestoneFirst, bonuses_card, empty_card, error_line, metric_card, milestones_card, notes_card,
-    unavailable_card,
+    Metric, MilestoneFirst, bonuses_card, empty_card, error_line, metrics, milestones_card,
+    notes_card, scroll_pane, unavailable_card,
 };
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::forms::NumberInput;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::theme::ControlSize;
-use ely_gpui_component::typography::Caption;
+use crate::ui::number_field;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui::{
+    AnyElement, App, Context, Entity, Focusable as _, IntoElement, ParentElement, Styled, Window,
+    px,
+};
+use gpui_kit::component::button::Button;
+use gpui_kit::component::input::InputState;
+use gpui_kit::component::{Disableable as _, Sizable as _, h_flex, v_flex};
 use idleon_monument::{Odds, Snapshot};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, show_number};
 
 /// The Bravery pane.
 pub(crate) fn pane(
-    state: &mut AppState,
-    snapshot: Option<&Snapshot>,
+    state: &AppState,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let body = match snapshot {
-        Some(snapshot) if snapshot.available => loaded(state, snapshot, cx),
+    let body = match &state.monument_controls.derived.snapshot {
+        Some(snapshot) if snapshot.available => loaded(state, snapshot, window, cx),
         Some(snapshot) => unavailable_card("Bravery", &snapshot.notes, cx),
         None => empty_card(
             "Bravery",
@@ -31,91 +34,74 @@ pub(crate) fn pane(
             cx,
         ),
     };
-    div()
-        .id("monument-pane-bravery")
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_h_0()
-        .child(
-            ScrollArea::new("monument-bravery-scroll")
-                .vertical()
-                .flex_1()
-                .min_h_0()
-                .child(
-                    div()
-                        .id("monument-bravery-body")
-                        .flex()
-                        .flex_col()
-                        .gap_3()
-                        .child(body),
-                ),
-        )
-        .into_any_element()
+    scroll_pane(
+        "monument-pane-bravery",
+        "monument-bravery-scroll",
+        v_flex().id("monument-bravery-body").gap_3().child(body),
+    )
 }
 
-fn loaded(state: &mut AppState, snapshot: &Snapshot, cx: &mut Context<AppState>) -> AnyElement {
+fn loaded(
+    state: &AppState,
+    snapshot: &Snapshot,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let stats = &snapshot.stats;
-    let cards = div()
-        .id("monument-bravery-stats")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(metric_card(
-            "monument-hours",
-            "Saved training",
-            format!("{} hours", format::value(stats.hours)),
-            "Paying Respect; not reward levels".into(),
-            cx,
-        ))
-        .child(metric_card(
-            "monument-milestones",
-            "Unlocked milestones",
-            format!("{} / 8", stats.milestones),
-            "Milestones are saved; the next row shows its ETA".into(),
-            cx,
-        ))
-        .child(metric_card(
-            "monument-opal",
-            "Next opal offer chance",
-            format::percent(stats.opal_chance),
-            "Uses saved opals; each additional opal lowers later offers".into(),
-            cx,
-        ))
-        .child(metric_card(
-            "monument-swords",
-            "Swords",
-            format::value(f64::from(stats.swords)),
-            "Swords this story can throw".into(),
-            cx,
-        ))
-        .child(metric_card(
-            "monument-damage",
-            "Initial sword damage",
-            format!(
-                "{} - {}",
-                format::value(stats.min_dmg),
-                format::value(stats.max_dmg)
+    let cards = metrics(
+        "monument-bravery-stats",
+        vec![
+            Metric::new(
+                "monument-hours",
+                "Saved training",
+                format!("{} hours", format::value(stats.hours)),
+                "Paying Respect; not reward levels",
             ),
-            "Fresh story: zero boosts, full rethrows".into(),
-            cx,
-        ))
-        .child(metric_card(
-            "monument-reroll-summary",
-            "Rethrows / retellings",
-            format!("{} / {}", stats.max_rerolls, stats.retellings),
-            "Per story".into(),
-            cx,
-        ));
+            Metric::new(
+                "monument-milestones",
+                "Unlocked milestones",
+                format!("{} / 8", stats.milestones),
+                "Milestones are saved; the next row shows its ETA",
+            ),
+            Metric::new(
+                "monument-opal",
+                "Next opal offer chance",
+                format::percent(stats.opal_chance),
+                "Uses saved opals; each additional opal lowers later offers",
+            ),
+            Metric::new(
+                "monument-swords",
+                "Swords",
+                format::value(f64::from(stats.swords)),
+                "Swords this story can throw",
+            ),
+            Metric::new(
+                "monument-damage",
+                "Initial sword damage",
+                format!(
+                    "{} - {}",
+                    format::value(stats.min_dmg),
+                    format::value(stats.max_dmg)
+                ),
+                "Fresh story: zero boosts, full rethrows",
+            ),
+            Metric::new(
+                "monument-reroll-summary",
+                "Rethrows / retellings",
+                format!("{} / {}", stats.max_rerolls, stats.retellings),
+                "Per story",
+            ),
+        ],
+    );
 
-    let mut column = div().flex().flex_col().gap_3().child(cards);
+    let mut column = v_flex().gap_3().child(cards);
     if !snapshot.notes.is_empty() {
         column = column.child(notes_card("monument-bravery-notes", &snapshot.notes, cx));
     }
-    column = column.child(controls_card(state, snapshot, cx));
-    match state.monument_odds() {
+    column = column.child(controls_card(state, snapshot, window, cx));
+    match &state.monument_controls.derived.odds {
         Some(Ok(odds)) => {
-            column = column.child(odds_cards(&odds, cx));
+            column = column.child(odds_cards(odds));
         }
         Some(Err(error)) => {
             column = column.child(error_line("monument-bravery-error", error.to_string(), cx));
@@ -139,38 +125,27 @@ fn loaded(state: &mut AppState, snapshot: &Snapshot, cx: &mut Context<AppState>)
             min: snapshot.stats.min_dmg,
             max: snapshot.stats.max_dmg,
         },
+        cx,
     ));
-    column = column.child(bonuses_card(&snapshot.bonuses));
+    column = column.child(bonuses_card(&snapshot.bonuses, cx));
     column.into_any_element()
 }
 
 fn controls_card(
-    state: &mut AppState,
+    state: &AppState,
     snapshot: &Snapshot,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let entity = cx.entity();
-    let wave = entity.clone();
-    let boosts = entity.clone();
-    let rerolls = entity.clone();
-    let reset_rerolls = entity.clone();
-    let hp = entity.clone();
-    let clear_hp = entity.clone();
-
-    let reroll_value = state.monument.rerolls.unwrap_or(snapshot.stats.max_rerolls) as f64;
-    let hp_value = state.monument.remaining_hp.unwrap_or(0.0);
-    let hp_input = NumberInput::new("monument-hp", hp_value)
-        .range(0.000001, 1.0e300)
-        .precision(0)
-        .label("HP before last sword")
-        .on_change(move |value, _window, cx| {
-            hp.update(cx, |state, cx| state.set_monument_hp(value, cx));
-        });
-    let hp_input = if state.monument.remaining_hp.is_none() {
-        hp_input.blank("Unknown")
-    } else {
-        hp_input
-    };
+    let monument = &state.monument;
+    let controls = &state.monument_controls;
+    show_number(&controls.wave, f64::from(monument.wave), 0, window, cx);
+    show_number(&controls.boosts, f64::from(monument.boosts), 0, window, cx);
+    let rerolls = monument.rerolls.unwrap_or(snapshot.stats.max_rerolls);
+    show_number(&controls.rerolls, f64::from(rerolls), 0, window, cx);
+    show_optional(&controls.hp, monument.remaining_hp, window, cx);
+    let reset_rerolls = cx.entity();
+    let clear_hp = cx.entity();
 
     Card::new()
         .header(
@@ -178,114 +153,86 @@ fn controls_card(
                 .description("Enemy number, boost stacks and the rethrows left in this story."),
         )
         .child(
-            div()
+            h_flex()
                 .id("monument-controls")
-                .flex()
-                .flex_wrap()
                 .items_end()
                 .gap_3()
-                .child(number_field(
-                    "monument-wave",
+                .child(labelled(
                     "Enemy number",
-                    f64::from(state.monument.wave),
-                    (1.0, 1001.0),
-                    1.0,
-                    move |value, _window, cx| {
-                        wave.update(cx, |state, cx| state.set_monument_wave(value, cx));
-                    },
+                    number_field("monument-wave", &controls.wave, "Enemy number"),
                 ))
-                .child(number_field(
-                    "monument-boosts",
+                .child(labelled(
                     "Current boost stacks",
-                    f64::from(state.monument.boosts),
-                    (0.0, 100_000.0),
-                    1.0,
-                    move |value, _window, cx| {
-                        boosts.update(cx, |state, cx| state.set_monument_boosts(value, cx));
-                    },
+                    number_field("monument-boosts", &controls.boosts, "Current boost stacks"),
                 ))
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Rethrows remaining"))
+                .child(labelled(
+                    "Rethrows remaining",
+                    h_flex()
+                        .gap_2()
+                        .child(number_field(
+                            "monument-rerolls",
+                            &controls.rerolls,
+                            "Rethrows remaining",
+                        ))
                         .child(
-                            div()
-                                .flex()
-                                .items_center()
-                                .gap_2()
-                                .child(
-                                    NumberInput::new("monument-rerolls", reroll_value)
-                                        .range(0.0, snapshot.stats.max_rerolls as f64)
-                                        .precision(0)
-                                        .label("Rethrows remaining")
-                                        .on_change(move |value, _window, cx| {
-                                            rerolls.update(cx, |state, cx| {
-                                                state.set_monument_rerolls(value, cx);
-                                            });
-                                        }),
-                                )
-                                .child(
-                                    Button::new("monument-rerolls-max", "Max")
-                                        .size(ControlSize::Sm)
-                                        .disabled(state.monument.rerolls.is_none())
-                                        .on_click(move |_event, _window, cx| {
-                                            reset_rerolls.update(cx, |state, cx| {
-                                                state.reset_monument_rerolls(cx);
-                                            });
-                                        }),
-                                ),
+                            Button::new("monument-rerolls-max")
+                                .label("Max")
+                                .small()
+                                .disabled(monument.rerolls.is_none())
+                                .on_click(move |_event, _window, cx| {
+                                    reset_rerolls.update(cx, |state, cx| {
+                                        state.reset_monument_rerolls(cx);
+                                    });
+                                }),
                         ),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("HP before last sword (optional)"))
+                ))
+                .child(labelled(
+                    "HP before last sword (optional)",
+                    h_flex()
+                        .gap_2()
                         .child(
-                            div().flex().items_center().gap_2().child(hp_input).child(
-                                Button::new("monument-hp-clear", "Clear")
-                                    .size(ControlSize::Sm)
-                                    .disabled(state.monument.remaining_hp.is_none())
-                                    .on_click(move |_event, _window, cx| {
-                                        clear_hp.update(cx, |state, cx| {
-                                            state.clear_monument_hp(cx);
-                                        });
-                                    }),
-                            ),
+                            number_field("monument-hp", &controls.hp, "HP before last sword")
+                                .w(px(150.0)),
+                        )
+                        .child(
+                            Button::new("monument-hp-clear")
+                                .label("Clear")
+                                .small()
+                                .disabled(monument.remaining_hp.is_none())
+                                .on_click(move |_event, _window, cx| {
+                                    clear_hp.update(cx, |state, cx| {
+                                        state.clear_monument_hp(cx);
+                                    });
+                                }),
                         ),
-                ),
+                )),
         )
         .into_any_element()
 }
 
-fn number_field(
-    id: &'static str,
-    label: &'static str,
-    value: f64,
-    range: (f64, f64),
-    step: f64,
-    on_change: impl Fn(f64, &mut Window, &mut gpui::App) + 'static,
-) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(Caption::new(label))
-        .child(
-            NumberInput::new(id, value)
-                .range(range.0, range.1)
-                .step(step)
-                .precision(0)
-                .label(label)
-                .on_change(on_change),
-        )
-        .into_any_element()
+/// `value` in `field`, or a blank field showing its placeholder for `None`.
+fn show_optional(
+    field: &Entity<InputState>,
+    value: Option<f64>,
+    window: &mut Window,
+    cx: &mut App,
+) {
+    match value {
+        Some(value) => show_number(field, value, 0, window, cx),
+        None => {
+            if !field.focus_handle(cx).is_focused(window) && !field.read(cx).value().is_empty() {
+                field.update(cx, |field, cx| field.set_value("", window, cx));
+            }
+        }
+    }
 }
 
-fn odds_cards(odds: &Odds, cx: &mut Context<AppState>) -> AnyElement {
+/// A control under its caption.
+pub(super) fn labelled(label: &'static str, control: impl IntoElement) -> impl IntoElement {
+    v_flex().gap_1().child(Caption::new(label)).child(control)
+}
+
+fn odds_cards(odds: &Odds) -> AnyElement {
     let boost_sub = if odds.automatic {
         "Study guarantees the skip and grants a stack"
     } else if odds.stats.rightmost {
@@ -293,19 +240,14 @@ fn odds_cards(odds: &Odds, cx: &mut Context<AppState>) -> AnyElement {
     } else {
         "The right-most boost schematic is not owned"
     };
-    let mut cards = div()
-        .id("monument-bravery-odds")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(metric_card(
+    let mut figures = vec![
+        Metric::new(
             "monument-odds-hp",
             "Enemy HP",
             format::value(odds.hp),
             format!("Enemy number {}", odds.wave + 1),
-            cx,
-        ))
-        .child(metric_card(
+        ),
+        Metric::new(
             "monument-odds-damage",
             "This roll damage",
             format!(
@@ -313,44 +255,38 @@ fn odds_cards(odds: &Odds, cx: &mut Context<AppState>) -> AnyElement {
                 format::value(odds.stats.min_dmg),
                 format::value(odds.stats.max_dmg)
             ),
-            "Per sword; based on the entered run state".into(),
-            cx,
-        ))
-        .child(metric_card(
+            "Per sword; based on the entered run state",
+        ),
+        Metric::new(
             "monument-odds-kill",
             "Fresh full-volley kill",
             format::percent(odds.kill),
-            "Independent rolls; before any rethrows".into(),
-            cx,
-        ))
-        .child(metric_card(
+            "Independent rolls; before any rethrows",
+        ),
+        Metric::new(
             "monument-odds-boost",
             "Right-most finishing / boost",
             format::percent(odds.boost_chance),
-            boost_sub.into(),
-            cx,
-        ));
+            boost_sub,
+        ),
+    ];
     if let Some(chance) = odds.last_sword_chance {
-        cards = cards.child(metric_card(
+        figures.push(Metric::new(
             "monument-odds-last",
             "One last-sword kill",
             format::percent(chance),
-            "Conditional on the HP entered".into(),
-            cx,
+            "Conditional on the HP entered",
         ));
     }
-    cards = cards.child(metric_card(
+    figures.push(Metric::new(
         "monument-odds-next",
         "Next stack damage gain",
         format!("+{:.2}%", (odds.next_damage_factor - 1.0) * 100.0),
-        "10 percentage points added to the boost factor".into(),
-        cx,
+        "10 percentage points added to the boost factor",
     ));
-    div()
-        .flex()
-        .flex_col()
+    v_flex()
         .gap_3()
-        .child(cards)
+        .child(metrics("monument-bravery-odds", figures))
         .child(Caption::new(
             "Boost odds exclude early kills. They assume the right-most sword lands strictly later, not simultaneous animation completions. Existing stacks multiply maximum damage by 1 + 0.1 × stacks.",
         ))
