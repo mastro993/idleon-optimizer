@@ -191,8 +191,14 @@ fn controls(
                 .gap_4()
                 .child(field("Seed", seed))
                 .child(field("Manual reaction", reaction))
-                .child(field("Manual tool", boxed(tool)))
-                .child(field("Entry", boxed(entry)))
+                .child(field(
+                    "Manual tool",
+                    boxed(&controls.run_tool, tool, window, cx),
+                ))
+                .child(field(
+                    "Entry",
+                    boxed(&controls.run_entry, entry, window, cx),
+                ))
                 .child(div().flex().items_center().gap_2().child(run).child(cancel))
                 .child(Caption::new(format!(
                     "{} · {}",

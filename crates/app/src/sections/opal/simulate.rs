@@ -84,7 +84,10 @@ fn inputs(
         .icon(IconName::RotateCcw)
         .small()
         .disabled(state.opal.manual == saved)
-        .on_click(move |_event, _window, cx| {
+        .on_click(move |_event, window, cx| {
+            // The reset replaces what was typed, so it ends the edit: a focused
+            // field would keep its typed number (`show_number`).
+            window.blur(cx);
             entity.update(cx, |state, cx| state.opal.reset_manual(cx));
         });
     Card::new()

@@ -11,7 +11,7 @@ use super::table::{Col, figure, note, table, tag, text};
 use crate::state::AppState;
 use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::select::Select;
@@ -19,7 +19,9 @@ use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _, h_fl
 use idleon_opal::Opal;
 use idleon_opal::{NAMES, Plan, PlanTarget, VILLAGERS};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Tone, show_number};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Tone, labeled, number_width, show_number,
+};
 
 /// The optimizer pane: the run controls, the progress chrome and the plan.
 pub(crate) fn optimizer_pane(
@@ -136,7 +138,10 @@ fn controls(
         .icon(IconName::RotateCcw)
         .small()
         .disabled(total == saved)
-        .on_click(move |_event, _window, cx| {
+        .on_click(move |_event, window, cx| {
+            // The reset replaces what was typed, so it ends the edit: a focused
+            // field would keep its typed number (`show_number`).
+            window.blur(cx);
             reset_entity.update(cx, |state, cx| state.opal.use_saved_total(cx));
         });
 
@@ -157,22 +162,27 @@ fn controls(
         .child(
             h_flex()
                 .id("opal-plan-controls")
+                .flex_wrap()
+                .items_end()
                 .gap_3()
-                .child(
-                    div().flex_none().w(px(220.0)).child(
-                        Select::new(section.target_select.state())
-                            .id("opal-target")
-                            .accessibility_label("Target")
-                            .small(),
-                    ),
-                )
-                .child(Caption::new("Total").text_color(muted))
-                .child(ui::number_field(
-                    "opal-total",
-                    &section.total_field,
-                    "Total opals",
+                .child(labeled(
+                    "Target",
+                    div()
+                        .flex_none()
+                        .max_w_full()
+                        .w(section.target_select.width(window, cx))
+                        .child(
+                            Select::new(section.target_select.state())
+                                .id("opal-target")
+                                .accessibility_label("Target")
+                                .small(),
+                        ),
                 ))
-                .child(Caption::new("opals").text_color(muted))
+                .child(labeled(
+                    "Total opals",
+                    ui::number_field("opal-total", &section.total_field, "Total opals")
+                        .w(number_width(&section.total_field, window, cx)),
+                ))
                 .child(reset)
                 .child(
                     Caption::new(format!(

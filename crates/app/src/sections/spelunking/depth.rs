@@ -67,7 +67,10 @@ pub(crate) fn card(
             .gap_4()
             .child(field("From depth", from))
             .child(field("Through depth", to))
-            .child(field("Reference tool", boxed(tool))),
+            .child(field(
+                "Reference tool",
+                boxed(&controls.depth_tool, tool, window, cx),
+            )),
     );
     let depth: &Depth = &derived.depth;
     let card = match &depth.profile {

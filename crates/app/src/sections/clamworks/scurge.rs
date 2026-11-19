@@ -15,15 +15,14 @@ use crate::ui;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div,
-    px,
 };
 use gpui_kit::component::alert::Alert;
 use gpui_kit::component::select::Select;
-use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
+use gpui_kit::component::{Sizable as _, h_flex, v_flex};
 use idleon_clamworks::Clamworks;
 use idleon_clamworks::scurge::{Error, Mode, Plan, Row};
 use idleon_ui::format;
-use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP, Tone, show_number};
+use idleon_ui::widgets::{Card, CardHeader, PANEL_GAP, Tone, labeled, number_width, show_number};
 
 pub(crate) fn scurge_pane(
     state: &mut AppState,
@@ -43,15 +42,6 @@ pub(crate) fn scurge_pane(
         })
         .child(upgrades_card(&saved, cx));
     pane("clamworks-scurge-scroll", body)
-}
-
-/// A control under its caption.
-fn labelled(label: &'static str, control: impl IntoElement, cx: &App) -> AnyElement {
-    v_flex()
-        .gap_1()
-        .child(Caption::new(label).text_color(cx.theme().muted_foreground))
-        .child(control)
-        .into_any_element()
 }
 
 /// The panel's own controls: the mode, its limit, the players on the map and the
@@ -91,47 +81,51 @@ fn controls_card(
     show_number(&controls.scurge_kills, kills, 0, window, cx);
     let row = h_flex()
         .id("clamworks-scurge-controls")
+        .flex_wrap()
         .items_end()
         .gap_3()
-        .child(labelled(
+        .child(labeled(
             "Panel",
-            div().flex_none().w(px(200.0)).child(
-                Select::new(controls.scurge_mode.state())
-                    .id("clamworks-scurge-mode")
-                    .accessibility_label("Scurge panel")
-                    .small(),
-            ),
-            cx,
+            div()
+                .flex_none()
+                .max_w_full()
+                .w(controls.scurge_mode.width(window, cx))
+                .child(
+                    Select::new(controls.scurge_mode.state())
+                        .id("clamworks-scurge-mode")
+                        .accessibility_label("Scurge panel")
+                        .small(),
+                ),
         ))
         // The upgrade panel holds Self Affliction, so its limit is not an entry.
         .when(!optimizing, |row| {
-            row.child(labelled(
+            row.child(labeled(
                 "Max Self Affliction",
                 ui::number_field(
                     "clamworks-scurge-max-affliction",
                     &controls.max_affliction,
                     "Maximum Self Affliction level",
-                ),
-                cx,
+                )
+                .w(number_width(&controls.max_affliction, window, cx)),
             ))
         })
-        .child(labelled(
+        .child(labeled(
             "Other players",
             ui::number_field(
                 "clamworks-scurge-other-players",
                 &controls.other_players,
                 "Other real players on the map",
-            ),
-            cx,
+            )
+            .w(number_width(&controls.other_players, window, cx)),
         ))
-        .child(labelled(
+        .child(labeled(
             "Kills / hour",
             ui::number_field(
                 "clamworks-scurge-kills",
                 &controls.scurge_kills,
                 "Kills per hour",
-            ),
-            cx,
+            )
+            .w(number_width(&controls.scurge_kills, window, cx)),
         ));
     let card = Card::new()
         .header(CardHeader::new("Scurge combat").description(

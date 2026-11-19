@@ -204,9 +204,12 @@ fn plot_tile(
                 .gap_0p5()
                 .p_2()
                 .child(
+                    // A narrow tile moves the family under the plot number
+                    // rather than cutting its name short.
                     h_flex()
+                        .flex_wrap()
                         .justify_between()
-                        .gap_1()
+                        .gap_x_1()
                         .child(
                             div()
                                 .text_size(TEXT_CAPTION)

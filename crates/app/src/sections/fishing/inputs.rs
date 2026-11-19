@@ -11,7 +11,7 @@ use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window};
 use gpui_kit::component::alert::Alert;
 use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
-use idleon_ui::widgets::{Caption, Card, CardHeader, Tone, show_number};
+use idleon_ui::widgets::{Caption, Card, CardHeader, Tone, labeled, number_width, show_number};
 
 /// The account inputs card.
 pub(crate) fn card(
@@ -26,12 +26,11 @@ pub(crate) fn card(
     for (field, input) in ACCOUNT_FIELDS.iter().zip(fields) {
         show_number(input, (field.get)(&account), field.precision, window, cx);
         cells.push(
-            v_flex()
-                .flex_none()
-                .gap_1()
-                .child(Caption::new(field.label).text_color(muted))
-                .child(number_field(field.id, input, field.label))
-                .into_any_element(),
+            labeled(
+                field.label,
+                number_field(field.id, input, field.label).w(number_width(input, window, cx)),
+            )
+            .into_any_element(),
         );
     }
     let second = cells.split_off(5);
@@ -52,8 +51,8 @@ pub(crate) fn card(
                     .with_variant(Tone::Info.into())
                     .banner(),
                 )
-                .child(h_flex().items_end().gap_4().children(cells))
-                .child(h_flex().items_end().gap_4().children(second))
+                .child(h_flex().flex_wrap().items_end().gap_4().children(cells))
+                .child(h_flex().flex_wrap().items_end().gap_4().children(second))
                 .child(
                     Caption::new(
                         "The selected lure and line add their own SPEED to the speed bonus and their D0–D3 to the depths.",

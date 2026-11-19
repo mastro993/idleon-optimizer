@@ -6,14 +6,16 @@ use crate::state::AppState;
 use crate::ui::number_field;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, Role, Styled, Window, div, px,
+    AnyElement, App, Context, Entity, IntoElement, ParentElement, Role, Styled, Window, div, px,
 };
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::Button;
 use gpui_kit::component::select::Select;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_ui::formula::FormulaTree;
-use idleon_ui::widgets::{Caption, Card, CardHeader, Choice, ChoiceSelect, TEXT_MONO, show_number};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, ChoiceSelect, TEXT_MONO, labeled, number_width, show_number,
+};
 
 /// The character, toolkit, location and claim length, with the account card's
 /// values applied to the selected toolkit.
@@ -84,37 +86,35 @@ pub(crate) fn pane(
                 .gap_3()
                 .child(
                     h_flex()
+                        .flex_wrap()
                         .items_end()
                         .gap_4()
-                        .child(field(
+                        .child(select(
+                            &controls.character,
+                            "fishing-character",
                             "Character",
-                            select(&controls.character, "fishing-character", "Character", 320.0),
+                            window,
+                            cx,
                         ))
-                        .child(field(
-                            "Lure",
-                            select(&controls.lure, "fishing-lure", "Lure", 260.0),
-                        ))
-                        .child(field(
-                            "Line",
-                            select(&controls.line, "fishing-line", "Line", 260.0),
-                        )),
+                        .child(select(&controls.lure, "fishing-lure", "Lure", window, cx))
+                        .child(select(&controls.line, "fishing-line", "Line", window, cx)),
                 )
                 .child(
                     h_flex()
+                        .flex_wrap()
                         .items_end()
                         .gap_4()
-                        .child(field(
+                        .child(select(
+                            &controls.location,
+                            "fishing-location",
                             "Fishing location",
-                            select(
-                                &controls.location,
-                                "fishing-location",
-                                "Fishing location",
-                                420.0,
-                            ),
+                            window,
+                            cx,
                         ))
-                        .child(field(
+                        .child(labeled(
                             "Hours away",
-                            number_field("fishing-hours", &controls.hours, "Hours away"),
+                            number_field("fishing-hours", &controls.hours, "Hours away")
+                                .w(number_width(&controls.hours, window, cx)),
                         ))
                         .children(rod),
                 ),
@@ -148,28 +148,23 @@ fn character_choices(state: &AppState) -> Vec<Choice<usize>> {
         .collect()
 }
 
-/// A small select boxed to `width`, so a row of them keeps its order.
+/// A labelled small select as wide as its longest option, capped by the row.
 fn select<V: Clone + PartialEq + 'static>(
     select: &ChoiceSelect<V>,
     id: &'static str,
     label: &'static str,
-    width: f32,
+    window: &mut Window,
+    cx: &App,
 ) -> impl IntoElement {
-    div().w(px(width)).child(
-        Select::new(select.state())
-            .id(id)
-            .accessibility_label(label)
-            .small(),
+    labeled(
+        label,
+        div().max_w_full().w(select.width(window, cx)).child(
+            Select::new(select.state())
+                .id(id)
+                .accessibility_label(label)
+                .small(),
+        ),
     )
-}
-
-fn field(label: &'static str, control: impl IntoElement) -> AnyElement {
-    v_flex()
-        .flex_none()
-        .gap_1()
-        .child(Caption::new(label))
-        .child(control)
-        .into_any_element()
 }
 
 /// The shared formula tree under a fixed height, so its own scroll area works.
