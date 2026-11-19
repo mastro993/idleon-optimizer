@@ -373,9 +373,9 @@ The app, GPUI Kit and the automation bridge must share one GPUI build.
 | GPUI | `gpui-pre = 0.3.12`, patched to the bridge's vendored tree |
 | `gpui_platform` | `gpui-pre-platform = 0.3.12`, features `font-kit`, `wayland`, `x11` |
 | GPUI Kit | `gpui-kit = 0.10.0` (exact), features `component`, `assets` |
-| gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.12`, commit `68cadf1` |
+| gpui-mcp | submodule `vendor/gpui-mcp`, branch `main`, commit `d162da7` |
 
-GPUI Kit 0.10.0 pins `0.3.12` exactly and the bridge's `gpui-pre-0.3.12` branch vendors it, so
+GPUI Kit 0.10.0 pins `0.3.12` exactly and the bridge's `main` vendors it, so
 both sit in one graph (`cargo tree -i gpui-pre` lists one GPUI). A bump moves them together and the
 smoke harness is the check.
 

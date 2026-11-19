@@ -97,8 +97,16 @@ fn open_window(
     state_dir: Option<PathBuf>,
     import: Option<PathBuf>,
 ) -> Result<()> {
+    // A harness or agent that launches the app sets `GPUI_MCP_BACKGROUND`, so the
+    // window opens under whatever the user is doing instead of over it; the
+    // bridge draws the frames macOS skips for a window that is not in front.
+    #[cfg(feature = "automation")]
+    let background = gpui_mcp::launched_in_background();
+    #[cfg(not(feature = "automation"))]
+    let background = false;
     let bounds = Bounds::centered(None, size(px(1440.0), px(900.0)), cx);
     let options = WindowOptions {
+        focus: !background,
         window_bounds: Some(WindowBounds::Windowed(bounds)),
         titlebar: Some(TitlebarOptions {
             title: Some("Idleon Research Optimizer".into()),
@@ -116,6 +124,8 @@ fn open_window(
         cx.new(move |cx| AppState::new(window, endpoint, initial, state_dir, import, cx))
     })
     .context("window failed to open")?;
-    cx.activate(true);
+    if !background {
+        cx.activate(true);
+    }
     Ok(())
 }

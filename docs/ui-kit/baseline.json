@@ -6,12 +6,6 @@
     "cpu": "Apple M4 Pro",
     "os": "macOS 26.7.1"
   },
-  "budget": {
-    "frame_p95_ms": 8.3,
-    "frame_max_ms": 16.7,
-    "idle_frames": 0,
-    "first_frame_ms": 500
-  },
   "results": [
     {
       "name": "startup",
@@ -77,8 +71,7 @@
           "rendered": 33,
           "reused": 0
         }
-      ],
-      "over_budget": []
+      ]
     },
     {
       "name": "home-idle-3s",
@@ -97,8 +90,7 @@
       "over_8ms": 0,
       "over_16ms": 0,
       "worst": [],
-      "views": [],
-      "over_budget": []
+      "views": []
     },
     {
       "name": "home-scroll",
@@ -147,10 +139,6 @@
           "rendered": 31,
           "reused": 0
         }
-      ],
-      "over_budget": [
-        "p95 45.1 ms",
-        "max 45.3 ms"
       ]
     },
     {
@@ -200,10 +188,6 @@
           "rendered": 15,
           "reused": 0
         }
-      ],
-      "over_budget": [
-        "p95 42.9 ms",
-        "max 42.9 ms"
       ]
     },
     {
@@ -253,10 +237,6 @@
           "rendered": 3,
           "reused": 0
         }
-      ],
-      "over_budget": [
-        "p95 43.4 ms",
-        "max 43.4 ms"
       ]
     },
     {
@@ -307,11 +287,7 @@
           "reused": 0
         }
       ],
-      "open_ms": 802,
-      "over_budget": [
-        "p95 43 ms",
-        "max 735.6 ms"
-      ]
+      "open_ms": 802
     },
     {
       "name": "stats-all-scroll",
@@ -361,10 +337,7 @@
           "reused": 0
         }
       ],
-      "scroll_target": "stats-all-scroll",
-      "over_budget": [
-        "p95 12.9 ms"
-      ]
+      "scroll_target": "stats-all-scroll"
     },
     {
       "name": "research-open",
@@ -419,11 +392,7 @@
           "reused": 0
         }
       ],
-      "open_ms": 143,
-      "over_budget": [
-        "p95 43.6 ms",
-        "max 50.4 ms"
-      ]
+      "open_ms": 143
     },
     {
       "name": "research-scroll",
@@ -478,11 +447,7 @@
           "reused": 0
         }
       ],
-      "scroll_target": "dashboard-scroll",
-      "over_budget": [
-        "p95 31.9 ms",
-        "max 32.2 ms"
-      ]
+      "scroll_target": "dashboard-scroll"
     },
     {
       "name": "spelunking-open",
@@ -532,11 +497,7 @@
           "reused": 0
         }
       ],
-      "open_ms": 130,
-      "over_budget": [
-        "p95 43.6 ms",
-        "max 43.6 ms"
-      ]
+      "open_ms": 130
     },
     {
       "name": "spelunking-scroll",
@@ -586,11 +547,7 @@
           "reused": 0
         }
       ],
-      "scroll_target": "scroll-body",
-      "over_budget": [
-        "p95 31.8 ms",
-        "max 31.8 ms"
-      ]
+      "scroll_target": "scroll-body"
     },
     {
       "name": "royal-guardian-open",
@@ -640,10 +597,7 @@
           "reused": 0
         }
       ],
-      "open_ms": 80,
-      "over_budget": [
-        "max 45.1 ms"
-      ]
+      "open_ms": 80
     },
     {
       "name": "royal-guardian-scroll",
@@ -688,10 +642,7 @@
           "reused": 0
         }
       ],
-      "scroll_target": "royal-pane.scroll-body",
-      "over_budget": [
-        "p95 8.4 ms"
-      ]
+      "scroll_target": "royal-pane.scroll-body"
     },
     {
       "name": "jelly-operator-open",
@@ -741,10 +692,7 @@
           "reused": 0
         }
       ],
-      "open_ms": 66,
-      "over_budget": [
-        "max 43.6 ms"
-      ]
+      "open_ms": 66
     },
     {
       "name": "jelly-operator-scroll",
@@ -794,8 +742,7 @@
           "reused": 0
         }
       ],
-      "scroll_target": "jelly-scroll",
-      "over_budget": []
+      "scroll_target": "jelly-scroll"
     },
     {
       "name": "worship-td-open",
@@ -845,11 +792,7 @@
           "reused": 0
         }
       ],
-      "open_ms": 76,
-      "over_budget": [
-        "p95 10.4 ms",
-        "max 43.2 ms"
-      ]
+      "open_ms": 76
     },
     {
       "name": "worship-td-scroll",
@@ -869,8 +812,7 @@
       "over_16ms": 0,
       "worst": [],
       "views": [],
-      "scroll_target": "worship-body",
-      "over_budget": []
+      "scroll_target": "worship-body"
     },
     {
       "name": "combat-sim-open",
@@ -920,11 +862,7 @@
           "reused": 0
         }
       ],
-      "open_ms": 69,
-      "over_budget": [
-        "p95 9.4 ms",
-        "max 44.9 ms"
-      ]
+      "open_ms": 69
     },
     {
       "name": "combat-sim-scroll",
@@ -974,8 +912,7 @@
           "reused": 0
         }
       ],
-      "scroll_target": "combat-slot-scroll",
-      "over_budget": []
+      "scroll_target": "combat-slot-scroll"
     },
     {
       "name": "farming-open",
@@ -1025,11 +962,7 @@
           "reused": 0
         }
       ],
-      "open_ms": 73,
-      "over_budget": [
-        "p95 12.4 ms",
-        "max 43.2 ms"
-      ]
+      "open_ms": 73
     },
     {
       "name": "farming-scroll",
@@ -1074,8 +1007,7 @@
           "reused": 0
         }
       ],
-      "scroll_target": "farming-overview-scroll",
-      "over_budget": []
+      "scroll_target": "farming-overview-scroll"
     },
     {
       "name": "killroy-open",
@@ -1125,10 +1057,7 @@
           "reused": 0
         }
       ],
-      "open_ms": 59,
-      "over_budget": [
-        "max 43.6 ms"
-      ]
+      "open_ms": 59
     },
     {
       "name": "killroy-scroll",
@@ -1148,8 +1077,7 @@
       "over_16ms": 0,
       "worst": [],
       "views": [],
-      "scroll_target": "section-killroy",
-      "over_budget": []
+      "scroll_target": "section-killroy"
     },
     {
       "name": "switch-10x",
@@ -1203,10 +1131,6 @@
           "rendered": 101,
           "reused": 0
         }
-      ],
-      "over_budget": [
-        "p95 34.6 ms",
-        "max 35.5 ms"
       ]
     },
     {
@@ -1256,10 +1180,6 @@
           "rendered": 8,
           "reused": 0
         }
-      ],
-      "over_budget": [
-        "p95 43.4 ms",
-        "max 43.4 ms"
       ]
     },
     {
@@ -1309,10 +1229,6 @@
           "rendered": 8,
           "reused": 0
         }
-      ],
-      "over_budget": [
-        "p95 44 ms",
-        "max 44 ms"
       ]
     },
     {
@@ -1363,11 +1279,7 @@
           "reused": 0
         }
       ],
-      "widest_px": 1728,
-      "over_budget": [
-        "p95 45.7 ms",
-        "max 46.6 ms"
-      ]
+      "widest_px": 1728
     }
   ],
   "errors": []

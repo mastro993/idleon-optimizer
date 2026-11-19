@@ -31,8 +31,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const SOCKET_TAIL = '/idleon-lane-XXXXXX/mcp-0000000000000000.sock'.length;
 const endpointRoot = () => (tmpdir().length + SOCKET_TAIL < 104 ? tmpdir() : '/tmp');
 
-/// macOS stops drawing an occluded window, and the bridge waits for frames, so
-/// bring this instance forward before driving it.
+/// macOS stops drawing an occluded window, and the bridge's frame keeper draws
+/// those frames while it is driven, so a lane never brings its window forward.
+/// This is the fallback for the few calls that still need the window in front.
 export const activate = (pid) => {
   if (process.platform !== 'darwin' || !pid) return;
   try {
@@ -102,7 +103,12 @@ export class McpLane {
       if (section) appArgs.push('--section', section);
       if (importFile) appArgs.push('--import', importFile);
       spawnedAt = performance.now();
-      appProcess = spawn(appBin, appArgs, { stdio: 'ignore' });
+      // The bridge keeps drawing the window while an agent drives it, so it can
+      // stay behind whatever the user is doing and never take focus.
+      appProcess = spawn(appBin, appArgs, {
+        stdio: 'ignore',
+        env: { ...process.env, GPUI_MCP_BACKGROUND: '1' },
+      });
       const deadline = Date.now() + 30000;
       let published = false;
       while (Date.now() < deadline && !published) {
@@ -124,7 +130,6 @@ export class McpLane {
       lane.app = await lane.#discover();
       lane.pid = appProcess?.pid ?? lane.app.pid;
       lane.spawnedAt = spawnedAt;
-      activate(lane.pid);
       return lane;
     } catch (error) {
       lane.close();
@@ -214,8 +219,10 @@ export class McpLane {
     this.child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);
   }
 
-  /// Call a tool, retrying once after reactivating an occluded window. Returns
-  /// the text and structured content so callers can read images as well.
+  /// Call a tool, retrying once after bringing an occluded window forward. The
+  /// bridge draws frames for a window the platform stopped drawing, so the retry
+  /// only covers a call that still outlived it. Returns the text and structured
+  /// content so callers can read images as well.
   async call(name, args = {}) {
     for (let attempt = 1; ; attempt += 1) {
       const result = await this.request('tools/call', { name, arguments: args });
@@ -237,12 +244,10 @@ export class McpLane {
     return Object.values(parsed.nodes ?? {});
   }
 
-  /// A PNG capture of the whole window or one element. Native capture stalls
-  /// when macOS stops drawing an occluded window, so bring the app forward and
-  /// retry a deadline twice.
+  /// A PNG capture of the whole window or one element. Native capture reads the
+  /// window from the compositor, so a covered one still captures; only a
+  /// minimized or hidden window does not.
   async screenshot(elementId = null) {
-    activate(this.pid);
-    await sleep(120);
     for (let attempt = 1; ; attempt += 1) {
       try {
         const { content } = elementId
