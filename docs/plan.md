@@ -426,7 +426,17 @@ reads (`Holes`, `Spelunk`), while the account skill values (efficiency, EXP mult
 Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card until the stats dashboard
 decodes them, and the ranking and the depth search hold efficiency and the EXP multiplier
 fixed across combinations, because recomputing them per toolkit needs the skill
-systems. Details: [`docs/sections/fishing.md`](sections/fishing.md).
+systems. The section draws with GPUI Kit (#356): its selects and number fields are kit controls
+built once, the 225-row ranking is a virtualized table, and every pool, the ranking and the Trench
+projection are evaluated when the save or an input changes, not on every frame.
+Details: [`docs/sections/fishing.md`](sections/fishing.md).
+
+The Sailing section implements SL-01 to SL-04: the fleet assignment, ship breakpoints, captain
+quality, the replacement matrix, chest outcomes, the artifact ranking, the four formula breakdowns
+and the fleet pile simulation. It draws with GPUI Kit (#356): the tables that grow with the fleet
+(boats, captains, boat upgrades) are virtualized, and each tab reads the fleet once per save and
+control change; a stored simulation is formatted once, when it lands.
+Details: [`docs/sections/sailing.md`](sections/sailing.md).
 
 The Clamworks section implements CW-01 to CW-04: the overview with the pearl-value
 breakdown, every pearl upgrade, the upgrade priority ranking, the AFK claim with its drop

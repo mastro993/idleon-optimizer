@@ -5,94 +5,207 @@
 //! what would replace it? The reference is the fleet's strongest source, and the
 //! sources are ranked strongest first so the order never depends on the input.
 
-use super::captain_code;
+use super::controls::cached;
+use super::table::{self, Cell};
+use super::{captain_code, field};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::forms::NumberInput;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::Tooltip;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
-use ely_gpui_component::typography::Caption;
+use crate::ui::number_field;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div, px};
+use gpui::{
+    AnyElement, App, Context, IntoElement, ParentElement, Pixels, SharedString, Styled, Window, div,
+};
+use gpui_kit::component::table::DataTable;
+use gpui_kit::component::{ActiveTheme as _, v_flex};
 use idleon_sailing::{
     ReplacementOutcome, RouteMetrics, chest_loot_multiplier, ranked, replacement_outcome, strongest,
 };
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, show_number};
 
 /// The tiers the matrix compares, the ordinary chest tiers.
 const TIERS: usize = 5;
 
-/// The replacements tab: the controls, the reference KPIs and the matrix.
-pub(crate) fn replacements_tab(
-    state: &AppState,
-    table_height: Pixels,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let plan = state.fleet_plan(state.sailing_state.island, state.sailing_state.goal);
-    let sources = ranked(&plan.routes);
-    let reference = strongest(&plan.routes).cloned();
-    div()
-        .id("replacements-body")
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_h_0()
-        .gap_3()
-        .child(controls(state, cx))
-        .child(kpis(state, &sources, reference.as_ref(), cx))
-        .child(table(state, &sources, reference.as_ref(), table_height, cx))
-        .into_any_element()
+/// The figures the tab shows, read once per key.
+pub(crate) struct View {
+    sources: usize,
+    strongest: SharedString,
+    strongest_value: SharedString,
+    rate: SharedString,
 }
 
-fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
+/// One target-tier cell: its text and the factors behind it.
+pub(crate) struct Chance {
+    text: SharedString,
+    tip: SharedString,
+}
+
+/// One ranked source, formatted.
+pub(crate) struct Row {
+    boat: usize,
+    rank: SharedString,
+    captain: SharedString,
+    value: SharedString,
+    share: SharedString,
+    tiers: [Chance; TIERS],
+    miracle: Chance,
+}
+
+pub(crate) fn columns() -> Vec<Cell<Row>> {
+    vec![
+        Cell::element(
+            "Rank",
+            60.0,
+            |row, _| {
+                div()
+                    .id(("replacements-rank", row.boat))
+                    .child(row.rank.clone())
+                    .into_any_element()
+            },
+            |row| row.rank.clone(),
+        ),
+        Cell::text("Boat", 70.0, |row| format!("Boat {}", row.boat + 1).into()),
+        Cell::text("Captain", 70.0, |row| row.captain.clone()),
+        Cell::number("Tier 0 value", 100.0, |row| row.value.clone()),
+        Cell::number("% max", 70.0, |row| row.share.clone()),
+        Cell::element("Strongest Tier 0", 190.0, tier_cell::<0>, |row| {
+            row.tiers[0].text.clone()
+        }),
+        Cell::element("Strongest Tier 1", 190.0, tier_cell::<1>, |row| {
+            row.tiers[1].text.clone()
+        }),
+        Cell::element("Strongest Tier 2", 190.0, tier_cell::<2>, |row| {
+            row.tiers[2].text.clone()
+        }),
+        Cell::element("Strongest Tier 3", 190.0, tier_cell::<3>, |row| {
+            row.tiers[3].text.clone()
+        }),
+        Cell::element("Strongest Tier 4", 190.0, tier_cell::<4>, |row| {
+            row.tiers[4].text.clone()
+        }),
+        Cell::element(
+            "Miracle find",
+            110.0,
+            |row, _| {
+                table::tip(
+                    ("replacements-miracle", row.boat),
+                    row.miracle.tip.clone(),
+                    row.miracle.text.clone(),
+                )
+            },
+            |row| row.miracle.text.clone(),
+        ),
+    ]
+}
+
+fn tier_cell<const TIER: usize>(row: &Row, _: &App) -> AnyElement {
+    let cell = &row.tiers[TIER];
+    table::tip(
+        SharedString::from(format!("replacements-cell-{}-{TIER}", row.boat)),
+        cell.tip.clone(),
+        cell.text.clone(),
+    )
+}
+
+/// The replacements tab: the controls, the reference KPIs and the matrix.
+pub(crate) fn replacements_tab(
+    state: &mut AppState,
+    table_height: Pixels,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let key = state.sailing_key();
+    let view = cached(state, |controls| &mut controls.replacements, key, cx, build);
+    let muted = cx.theme().muted_foreground;
     let talent = state.sailing.unending_loot_search;
-    let input = NumberInput::new("replacements-uls", talent)
-        .range(0.0, 100.0)
-        .step(1.0)
-        .precision(0)
-        .size(ControlSize::Sm)
-        .label("Unending Loot Search")
-        .on_change(move |value, _window, cx| {
-            entity.update(cx, |state, cx| {
-                state.set_unending_loot_search(value, cx);
-            });
-        });
-    Card::new()
+    let uls = &state.sailing_controls.unending_loot_search;
+    show_number(uls, talent, 0, window, cx);
+    let controls = Card::new()
         .header(CardHeader::new("Replacement threshold").description(
             "Unending Loot Search (talent 325) drives the near-full scan; without it no ordinary chest is replaced.",
         ))
+        .child(div().id("replacements-controls").child(field(
+            "Unending Loot Search %",
+            number_field("replacements-uls", uls, "Unending Loot Search"),
+        )));
+    let kpis = div()
+        .id("replacements-kpis")
+        .role(gpui::Role::Label)
+        .aria_label(format!(
+            "{} sources · strongest {}",
+            view.sources, view.strongest
+        ))
         .child(
-            div()
-                .id("replacements-controls")
-                .flex()
-                .flex_wrap()
-                .items_end()
-                .gap_4()
-                .p_3()
+            KpiStrip::new()
+                .child(
+                    Statistic::new(
+                        "replacements-sources",
+                        "Ranked sources",
+                        view.sources.to_string(),
+                    )
+                    .caption("strongest Tier 0 value first"),
+                )
                 .child(
                     div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .min_w(px(160.0))
-                        .child(Caption::new("Unending Loot Search %"))
-                        .child(input),
+                        .id("replacements-strongest")
+                        .role(gpui::Role::Label)
+                        .aria_label(format!("{} · {}", view.strongest, view.strongest_value))
+                        .child(
+                            Statistic::new(
+                                "replacements-strongest-source",
+                                "Strongest source",
+                                view.strongest.clone(),
+                            )
+                            .caption(format!("{} Tier 0 value per payout", view.strongest_value)),
+                        ),
+                )
+                .child(
+                    Statistic::new(
+                        "replacements-talent",
+                        "Unending Loot Search",
+                        format!("{talent:.0}"),
+                    )
+                    .suffix("%")
+                    .caption("talent 325; the save does not model talents"),
+                )
+                .child(
+                    Statistic::new("replacements-rate", "Replacements/hr", view.rate.clone())
+                        .caption("Tier 0 targets, either ordinary path"),
                 ),
-        )
-        .into_any_element()
+        );
+    let mut body = v_flex()
+        .id("replacements-body")
+        .gap_3()
+        .child(controls)
+        .child(kpis);
+    if view.sources > 0 {
+        body = body.child(
+            Card::new()
+                .header(CardHeader::new("Strongest-Source Replacement Matrix").description(
+                    "Same-tier promotion plus the natural higher tier an incoming chest can roll on its own island.",
+                ))
+                .child(
+                    div()
+                        .id("replacements-table")
+                        .h(table::data_height(view.sources, 33.0, table_height))
+                        .child(DataTable::new(&state.sailing_controls.replacements_table)),
+                )
+                .child(
+                    Caption::new(
+                        "Cells are exact chance × the conditional Unending Loot Search roll, or the chance of a natural tier that beats the reference. Both need the same island and exactly one empty slot, and assume the scan reaches this target. Miracle generation is independent of island and value; pile order and future evolution arrive with SL-03.",
+                    )
+                    .text_color(muted),
+                ),
+        );
+    }
+    body.into_any_element()
 }
 
-fn kpis(
-    state: &AppState,
-    sources: &[&RouteMetrics],
-    reference: Option<&RouteMetrics>,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let (name, value) = match reference {
+/// Rank the sources once and fill the matrix.
+fn build(state: &AppState, cx: &mut App) -> View {
+    let plan = state.fleet_plan(state.sailing_state.island, state.sailing_state.goal);
+    let sources = ranked(&plan.routes);
+    let reference = strongest(&plan.routes).cloned();
+    let (strongest, strongest_value) = match &reference {
         Some(reference) => (
             format!(
                 "Boat {} / Captain {}",
@@ -106,205 +219,85 @@ fn kpis(
         ),
         None => ("—".into(), "—".into()),
     };
-    let talent = state.sailing.unending_loot_search;
-    div()
-        .id("replacements-kpis")
-        .role(gpui::Role::Label)
-        .aria_label(format!("{} sources · strongest {name}", sources.len()))
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "replacements-sources",
-                    "Ranked sources",
-                    sources.len() as f64,
-                )
-                .decimals(0),
-            )
-            .caption("strongest Tier 0 value first"),
-        )
-        .child(
-            div()
-                .id("replacements-strongest")
-                .role(gpui::Role::Label)
-                .aria_label(format!("{name} · {value}"))
-                .child(
-                    Card::new().child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .gap_1()
-                            .p_3()
-                            .child(Caption::new("Strongest source").text_color(muted))
-                            .child(div().text_size(px(20.0)).child(name))
-                            .child(
-                                Caption::new(format!("{value} Tier 0 value per payout"))
-                                    .text_color(muted),
-                            ),
-                    ),
-                ),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("replacements-talent", "Unending Loot Search", talent)
-                    .decimals(0)
-                    .suffix("%")
-                    .size(TextSize::Lg),
-            )
-            .caption("talent 325; the save does not model talents"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "replacements-rate",
-                    "Replacements/hr",
-                    reference.map_or(0.0, |reference| {
-                        sources
-                            .iter()
-                            .map(|source| {
-                                replacement_outcome(source, reference, 0, &state.sailing)
-                                    .total_rate_per_hour
-                            })
-                            .sum()
-                    }),
-                )
-                .decimals(2),
-            )
-            .caption("Tier 0 targets, either ordinary path"),
-        )
-        .into_any_element()
+    let rate: f64 = reference.as_ref().map_or(0.0, |reference| {
+        sources
+            .iter()
+            .map(|source| {
+                replacement_outcome(source, reference, 0, &state.sailing).total_rate_per_hour
+            })
+            .sum()
+    });
+    let rows = match &reference {
+        Some(reference) => sources
+            .iter()
+            .enumerate()
+            .map(|(rank, source)| row(state, rank, source, reference))
+            .collect(),
+        None => Vec::new(),
+    };
+    let view = View {
+        sources: if reference.is_some() {
+            sources.len()
+        } else {
+            0
+        },
+        strongest: strongest.into(),
+        strongest_value: strongest_value.into(),
+        rate: format!("{rate:.2}").into(),
+    };
+    table::set_rows(&state.sailing_controls.replacements_table, rows, cx);
+    view
 }
 
-fn table(
-    state: &AppState,
-    sources: &[&RouteMetrics],
-    reference: Option<&RouteMetrics>,
-    table_height: Pixels,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let Some(reference) = reference else {
-        return div().into_any_element();
-    };
-    let mut headers = vec![
-        "Rank".to_string(),
-        "Boat".to_string(),
-        "Captain".to_string(),
-        "Tier 0 value".to_string(),
-        "% max".to_string(),
-    ];
-    for tier in 0..TIERS {
-        headers.push(match tier {
-            0 => "Strongest Tier 0".to_string(),
-            4 => "Strongest Tier 4".to_string(),
-            tier => format!("Strongest Tier {tier}"),
-        });
-    }
-    headers.push("Miracle find".into());
-    let mut table = Table::new(headers);
-    for (rank, source) in sources.iter().enumerate() {
-        let captain = source
+fn row(state: &AppState, rank: usize, source: &RouteMetrics, reference: &RouteMetrics) -> Row {
+    let miracle = replacement_outcome(source, reference, 0, &state.sailing);
+    Row {
+        boat: source.boat,
+        rank: (rank + 1).to_string().into(),
+        captain: source
             .captain
             .map(captain_code)
-            .unwrap_or_else(|| "—".into());
-        let mut cells: Vec<AnyElement> = vec![
-            div()
-                .id(("replacements-rank", source.boat))
-                .child((rank + 1).to_string())
-                .into_any_element(),
-            div()
-                .child(format!("Boat {}", source.boat + 1))
-                .into_any_element(),
-            div().child(captain).into_any_element(),
-            div()
-                .child(format::rate(source.loot.value))
-                .into_any_element(),
-            div()
-                .child(format!(
-                    "{}%",
-                    if reference.loot.value > 0.0 {
-                        (source.loot.value / reference.loot.value * 100.0).round()
-                    } else {
-                        0.0
-                    }
-                ))
-                .into_any_element(),
-        ];
-        for tier in 0..TIERS {
-            cells.push(cell(state, source, reference, tier as u32));
-        }
-        let miracle = replacement_outcome(source, reference, 0, &state.sailing);
-        cells.push(
-            div()
-                .id(("replacements-miracle", source.boat))
-                .tooltip(Tooltip::text(format!(
-                    "Natural Miracle generation per incoming chest\nExpected finds: {} /hr\n3+ empty slots add a chest; 0-2 replace the first scanned non-Miracle.\nUnending Loot Search cannot promote Tier 4 to Miracle.",
-                    format::value(miracle.miracle_generation_rate_per_hour)
-                )))
-                .child(chance(miracle.miracle_generation_chance))
-                .into_any_element(),
-        );
-        table = table.row(cells);
+            .unwrap_or_else(|| "—".into())
+            .into(),
+        value: format::rate(source.loot.value).into(),
+        share: format!(
+            "{}%",
+            if reference.loot.value > 0.0 {
+                (source.loot.value / reference.loot.value * 100.0).round()
+            } else {
+                0.0
+            }
+        )
+        .into(),
+        tiers: std::array::from_fn(|tier| cell(state, source, reference, tier as u32)),
+        miracle: Chance {
+            text: chance(miracle.miracle_generation_chance).into(),
+            tip: format!(
+                "Natural Miracle generation per incoming chest\nExpected finds: {} /hr\n3+ empty slots add a chest; 0-2 replace the first scanned non-Miracle.\nUnending Loot Search cannot promote Tier 4 to Miracle.",
+                format::value(miracle.miracle_generation_rate_per_hour)
+            )
+            .into(),
+        },
     }
-
-    let table = ScrollArea::new("replacements-table-scroll")
-        .vertical()
-        .h(table_height)
-        .child(div().min_w_0().child(table));
-    Card::new()
-        .header(
-            CardHeader::new("Strongest-Source Replacement Matrix").description(
-                "Same-tier promotion plus the natural higher tier an incoming chest can roll on its own island.",
-            ),
-        )
-        .child(
-            div()
-                .id("replacements-table")
-                .min_h_0()
-                .overflow_hidden()
-                .p_3()
-                .child(table),
-        )
-        .child(
-            div()
-                .px_3()
-                .pb_2()
-                .text_size(px(11.0))
-                .text_color(cx.theme().colors.fg_muted)
-                .child(
-                    "Cells are exact chance × the conditional Unending Loot Search roll, or the chance of a natural tier that beats the reference. Both need the same island and exactly one empty slot, and assume the scan reaches this target. Miracle generation is independent of island and value; pile order and future evolution arrive with SL-03.",
-                ),
-        )
-        .into_any_element()
 }
 
 /// One target-tier cell: the replacement chance and which path produced it.
-fn cell(
-    state: &AppState,
-    source: &RouteMetrics,
-    reference: &RouteMetrics,
-    tier: u32,
-) -> AnyElement {
+fn cell(state: &AppState, source: &RouteMetrics, reference: &RouteMetrics, tier: u32) -> Chance {
     let outcome = replacement_outcome(source, reference, tier, &state.sailing);
     let path = match outcome.threshold.required_tier {
         Some(required) if required <= 4 => Some(format!("T{required}-4")),
         _ if outcome.same_tier_upgrade_chance > 0.0 => Some("Unending Loot Search".to_string()),
         _ => None,
     };
-    let body = match path {
-        Some(_) => chance(outcome.total_chance),
-        None if outcome.total_chance <= 0.0 => "Never".to_string(),
-        None => chance(outcome.total_chance),
-    };
-    div()
-        .id(format!("replacements-cell-{}-{tier}", source.boat))
-        .tooltip(Tooltip::text(breakdown(source, reference, &outcome, tier)))
-        .child(match path {
+    let body = chance(outcome.total_chance);
+    Chance {
+        text: match path {
             Some(path) => format!("{body} · {path}"),
             None => body,
-        })
-        .into_any_element()
+        }
+        .into(),
+        tip: breakdown(source, reference, &outcome, tier).into(),
+    }
 }
 
 /// The cell tooltip: every factor behind the chance.

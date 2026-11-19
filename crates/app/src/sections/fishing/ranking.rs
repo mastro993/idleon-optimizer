@@ -3,54 +3,221 @@
 //! `Use` action that applies a row to the toolbar.
 //!
 //! The table shows all 225 rows instead of a top ten, because the section
-//! contract asks for the all-combination table.
+//! contract asks for the all-combination table. It is a virtualized
+//! `DataTable` whose rows are built when the evaluation changes
+//! (`docs/ui-kit/data.md`).
 
+use super::controls::objective_choices;
+use super::table;
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Pixels, Role, Styled, div, px};
-use idleon_fishing::{self as fishing, Evaluation, Objective};
+use gpui::{
+    AnyElement, App, Context, FontFeatures, IntoElement, ParentElement, Pixels, Role, SharedString,
+    Styled, WeakEntity, Window, div, px,
+};
+use gpui_kit::component::button::Button;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::table::{Column, DataTable, TableDelegate, TableState};
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
+use idleon_fishing::{self as fishing, Evaluation};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_MONO, Tone};
+use std::sync::Arc;
 
-/// The ranking card. `rows` is already sorted by `objective`.
-pub(crate) fn card(
+/// Where a row stands against the best.
+#[derive(Clone, Copy, PartialEq)]
+enum Standing {
+    Best,
+    Tied,
+    Behind,
+}
+
+/// One lure/line combination, formatted.
+pub(crate) struct RankRow {
+    rank: usize,
+    label: SharedString,
+    standing: Standing,
+    lure: SharedString,
+    line: SharedString,
+    saved: bool,
+    selected: bool,
+    exp: SharedString,
+    fish: SharedString,
+    delta: SharedString,
+    delta_tone: Tone,
+    toolkit: (usize, usize),
+}
+
+/// The ranked combinations and the app their `Use` buttons edit.
+pub(crate) struct Ranking {
+    app: WeakEntity<AppState>,
+    rows: Vec<RankRow>,
+}
+
+/// The ranking's table state, with no selection, sorting or column moves.
+pub(crate) fn state(
+    app: WeakEntity<AppState>,
+    window: &mut Window,
+    cx: &mut Context<TableState<Ranking>>,
+) -> TableState<Ranking> {
+    TableState::new(
+        Ranking {
+            app,
+            rows: Vec::new(),
+        },
+        window,
+        cx,
+    )
+    .row_selectable(false)
+    .col_selectable(false)
+    .col_movable(false)
+    .sortable(false)
+}
+
+impl TableDelegate for Ranking {
+    fn columns_count(&self, _: &App) -> usize {
+        7
+    }
+
+    fn rows_count(&self, _: &App) -> usize {
+        self.rows.len()
+    }
+
+    fn column(&self, col_ix: usize, _: &App) -> Column {
+        match col_ix {
+            0 => Column::new("rank", "#").width(px(110.0)),
+            1 => Column::new("lure", "Lure").width(px(170.0)),
+            2 => Column::new("line", "Line").width(px(260.0)),
+            3 => Column::new("exp", "EXP").width(px(100.0)).text_right(),
+            4 => Column::new("fish", "Fish").width(px(100.0)).text_right(),
+            5 => Column::new("delta", "vs selected")
+                .width(px(110.0))
+                .text_right(),
+            _ => Column::new("use", "").width(px(80.0)),
+        }
+    }
+
+    fn render_td(
+        &mut self,
+        row_ix: usize,
+        col_ix: usize,
+        _: &mut Window,
+        cx: &mut Context<TableState<Self>>,
+    ) -> impl IntoElement {
+        let Some(row) = self.rows.get(row_ix) else {
+            return div().into_any_element();
+        };
+        let rank = row.rank;
+        match col_ix {
+            0 => h_flex()
+                .id(("fishing-rank", rank))
+                .role(Role::Label)
+                .aria_label(row.label.clone())
+                .gap_2()
+                .child(rank.to_string())
+                .when(row.standing == Standing::Best, |cell| {
+                    cell.child(table::tag("Best", Tone::Success))
+                })
+                .when(row.standing == Standing::Tied, |cell| {
+                    cell.child(table::tag("tie", Tone::Neutral))
+                })
+                .into_any_element(),
+            1 => div()
+                .id(("fishing-lure-cell", rank))
+                .child(row.lure.clone())
+                .into_any_element(),
+            2 => h_flex()
+                .id(("fishing-line-cell", rank))
+                .gap_2()
+                .child(row.line.clone())
+                .when(row.saved, |cell| {
+                    cell.child(table::tag("saved", Tone::Info))
+                })
+                .when(row.selected, |cell| {
+                    cell.child(table::tag("selected", Tone::Accent))
+                })
+                .into_any_element(),
+            3 => mono(("fishing-rank-exp", rank), row.exp.clone(), None, cx),
+            4 => mono(("fishing-rank-fish", rank), row.fish.clone(), None, cx),
+            5 => mono(
+                ("fishing-rank-delta", rank),
+                row.delta.clone(),
+                Some(row.delta_tone.color(cx)),
+                cx,
+            ),
+            _ if row.selected => div().into_any_element(),
+            _ => {
+                let (lure, line) = row.toolkit;
+                let app = self.app.clone();
+                Button::new(("fishing-use", rank))
+                    .label("Use")
+                    .xsmall()
+                    .on_click(move |_event, _window, cx| {
+                        app.update(cx, |state, cx| state.use_fishing_toolkit(lure, line, cx))
+                            .ok();
+                    })
+                    .into_any_element()
+            }
+        }
+    }
+
+    fn cell_label(&self, row_ix: usize, col_ix: usize, _: &App) -> Option<SharedString> {
+        let row = self.rows.get(row_ix)?;
+        Some(match col_ix {
+            0 => row.label.clone(),
+            1 => row.lure.clone(),
+            2 => row.line.clone(),
+            3 => row.exp.clone(),
+            4 => row.fish.clone(),
+            5 => row.delta.clone(),
+            _ => "Use".into(),
+        })
+    }
+
+    fn cell_text(&self, row_ix: usize, col_ix: usize, cx: &App) -> String {
+        self.cell_label(row_ix, col_ix, cx)
+            .map(String::from)
+            .unwrap_or_default()
+    }
+}
+
+/// A number in the mono face with tabular figures, under `id`.
+fn mono(
+    id: (&'static str, usize),
+    text: SharedString,
+    color: Option<gpui::Hsla>,
+    cx: &App,
+) -> AnyElement {
+    div()
+        .id(id)
+        .font_family(cx.theme().mono_font_family.clone())
+        .text_size(TEXT_MONO)
+        .font_features(FontFeatures(Arc::new(vec![("tnum".into(), 1)])))
+        .when_some(color, |cell, color| cell.text_color(color))
+        .child(text)
+        .into_any_element()
+}
+
+/// What the card says about the ranking, formatted once per evaluation.
+pub(crate) struct Summary {
+    title: SharedString,
+    description: SharedString,
+    best: SharedString,
+    tied: usize,
+    best_toolkit: Option<(usize, usize)>,
+    count: usize,
+    objective: SharedString,
+    tie_note: SharedString,
+}
+
+/// Format the ranking once and hand its rows to the table.
+pub(crate) fn fill(
     state: &AppState,
     rows: &[Evaluation],
     evaluation: &Evaluation,
-    table_height: Pixels,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    cx: &mut App,
+) -> Summary {
     let objective = state.fishing.objective;
-    let objective_select = Select::new(
-        "fishing-objective",
-        [
-            Choice::new("exp", Objective::Exp.label()),
-            Choice::new("fish", Objective::Fish.label()),
-        ],
-    )
-    .label("Rank by")
-    .size(ControlSize::Sm)
-    .selected(match objective {
-        Objective::Exp => "exp",
-        Objective::Fish => "fish",
-    });
-    let objective_entity = cx.entity();
-    let objective_select = objective_select.on_change(move |value, _window, cx| {
-        let objective = if value == "fish" {
-            Objective::Fish
-        } else {
-            Objective::Exp
-        };
-        objective_entity.update(cx, |state, cx| state.set_fishing_objective(objective, cx));
-    });
-
     let best = &rows[0];
     let reference = objective.metric(&evaluation.outcome);
     let best_metric = objective.metric(&best.outcome);
@@ -59,103 +226,67 @@ pub(crate) fn card(
     let best_selection = (best.lure.idx, best.line.idx);
     let is_best_selected = best_selection == selected;
     let saved = saved_selection(state);
-
-    let mut table = Table::new(["#", "Lure", "Line", "EXP", "Fish", "vs selected", ""]);
-    let entity = cx.entity();
-    for (index, row) in rows.iter().enumerate() {
-        // The rank the table prints, so an id and a row never disagree.
-        let rank = index + 1;
-        let selection = (row.lure.idx, row.line.idx);
-        let is_selected = selection == selected;
-        let is_saved = selection == saved;
-        let metric = objective.metric(&row.outcome);
-        let delta = if reference > 0.0 {
-            (metric / reference - 1.0) * 100.0
-        } else {
-            0.0
-        };
-        let standing = if index == 0 {
-            " · best"
-        } else if metric == best_metric {
-            " · tied for best"
-        } else {
-            ""
-        };
-        let mut rank_cell = div()
-            .id(("fishing-rank", rank))
-            .role(Role::Label)
-            .aria_label(format!(
-                "Rank {rank}: {} + {}{standing}",
-                row.lure.name, row.line.name
-            ))
-            .flex()
-            .items_center()
-            .gap_2()
-            .child(rank.to_string());
-        if index == 0 {
-            rank_cell = rank_cell.child(Badge::new("Best").tone(Tone::Success));
-        } else if metric == best_metric {
-            rank_cell = rank_cell.child(Badge::new("tie"));
-        }
-        let mut line = div()
-            .id(("fishing-line-cell", rank))
-            .flex()
-            .items_center()
-            .gap_2()
-            .child(row.line.name.clone());
-        if is_saved {
-            line = line.child(Badge::new("saved").tone(Tone::Info));
-        }
-        if is_selected {
-            line = line.child(Badge::new("selected").tone(Tone::Accent));
-        }
-        let action = if is_selected {
-            div().into_any_element()
-        } else {
-            let (lure, line) = selection;
-            let entity = entity.clone();
-            Button::new(("fishing-use", rank), "Use")
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    entity.update(cx, |state, cx| state.use_fishing_toolkit(lure, line, cx));
-                })
-                .into_any_element()
-        };
-        let delta_style = if delta > 0.005 {
-            Tone::Success
-        } else if delta < -0.005 {
-            Tone::Warning
-        } else {
-            Tone::Neutral
-        };
-        table = table.row([
-            rank_cell.into_any_element(),
-            div()
-                .id(("fishing-lure-cell", rank))
-                .child(row.lure.name.clone())
-                .into_any_element(),
-            line.into_any_element(),
-            div()
-                .id(("fishing-rank-exp", rank))
-                .child(format::number(row.outcome.exp))
-                .into_any_element(),
-            div()
-                .id(("fishing-rank-fish", rank))
-                .child(format::number(row.outcome.fish_total))
-                .into_any_element(),
-            div()
-                .id(("fishing-rank-delta", rank))
-                .text_color(delta_color(delta_style, cx))
-                .child(if delta.abs() < 0.005 {
+    let table_rows = rows
+        .iter()
+        .enumerate()
+        .map(|(index, row)| {
+            // The rank the table prints, so an id and a row never disagree.
+            let rank = index + 1;
+            let toolkit = (row.lure.idx, row.line.idx);
+            let metric = objective.metric(&row.outcome);
+            let delta = if reference > 0.0 {
+                (metric / reference - 1.0) * 100.0
+            } else {
+                0.0
+            };
+            let standing = if index == 0 {
+                Standing::Best
+            } else if metric == best_metric {
+                Standing::Tied
+            } else {
+                Standing::Behind
+            };
+            RankRow {
+                rank,
+                label: format!(
+                    "Rank {rank}: {} + {}{}",
+                    row.lure.name,
+                    row.line.name,
+                    match standing {
+                        Standing::Best => " · best",
+                        Standing::Tied => " · tied for best",
+                        Standing::Behind => "",
+                    }
+                )
+                .into(),
+                standing,
+                lure: row.lure.name.clone().into(),
+                line: row.line.name.clone().into(),
+                saved: toolkit == saved,
+                selected: toolkit == selected,
+                exp: format::number(row.outcome.exp).into(),
+                fish: format::number(row.outcome.fish_total).into(),
+                delta: if delta.abs() < 0.005 {
                     "—".to_string()
                 } else {
                     format!("{delta:+.1}%")
-                })
-                .into_any_element(),
-            action,
-        ]);
-    }
-
+                }
+                .into(),
+                delta_tone: if delta > 0.005 {
+                    Tone::Success
+                } else if delta < -0.005 {
+                    Tone::Warning
+                } else {
+                    Tone::Neutral
+                },
+                toolkit,
+            }
+        })
+        .collect();
+    state.fishing_controls.ranking.update(cx, |table, cx| {
+        table.delegate_mut().rows = table_rows;
+        cx.notify();
+    });
     let tie_note = if tied > 1 {
         format!(
             "Ranks 1–{tied} share the top {}: the fish split and counts are floored, so equal depth and speed totals round to the same score. Ties rank by EXP, then fish, then lure and line order.",
@@ -170,78 +301,96 @@ pub(crate) fn card(
             objective.unit()
         )
     };
-
-    Card::new()
-        .header(
-            CardHeader::new(format!("Best lure + line · {}", evaluation.location.label))
-                .description(format!(
-                    "All 225 lure/line combinations · ranked by {} · {}h claim · {} + {}",
-                    objective.label(),
-                    format::number(evaluation.outcome.hours),
-                    best.lure.name,
-                    best.line.name
-                )),
+    Summary {
+        title: format!("Best lure + line · {}", evaluation.location.label).into(),
+        description: format!(
+            "All 225 lure/line combinations · ranked by {} · {}h claim · {} + {}",
+            objective.label(),
+            format::number(evaluation.outcome.hours),
+            best.lure.name,
+            best.line.name
         )
+        .into(),
+        best: format!("{} + {}", best.lure.name, best.line.name).into(),
+        tied,
+        best_toolkit: (!is_best_selected).then_some(best_selection),
+        count: rows.len(),
+        objective: objective.label().into(),
+        tie_note: tie_note.into(),
+    }
+}
+
+/// The ranking card.
+pub(crate) fn card(
+    state: &AppState,
+    summary: &Summary,
+    table_height: Pixels,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let theme = cx.theme();
+    let (muted, border) = (theme.muted_foreground, theme.border);
+    let controls = &state.fishing_controls;
+    controls.objective.show(
+        objective_choices(),
+        Some(&state.fishing.objective),
+        window,
+        cx,
+    );
+    let entity = cx.entity();
+    let use_best = summary.best_toolkit.map(|(lure, line)| {
+        Button::new("fishing-use-best")
+            .label("Use best")
+            .small()
+            .on_click(move |_event, _window, cx| {
+                entity.update(cx, |state, cx| state.use_fishing_toolkit(lure, line, cx));
+            })
+    });
+    Card::new()
+        .header(CardHeader::new(summary.title.clone()).description(summary.description.clone()))
         .child(
-            div()
+            v_flex()
                 .id("fishing-ranking")
-                .flex()
-                .flex_col()
                 .gap_3()
-                .p_3()
                 .child(
-                    div()
-                        .flex()
-                        .items_end()
+                    h_flex()
                         .gap_4()
-                        .child(objective_select)
                         .child(
-                            div()
+                            div().w(px(160.0)).child(
+                                Select::new(controls.objective.state())
+                                    .id("fishing-objective")
+                                    .accessibility_label("Rank by")
+                                    .small(),
+                            ),
+                        )
+                        .child(
+                            h_flex()
                                 .id("fishing-best-toolkit")
                                 .role(Role::Label)
-                                .aria_label(format!(
-                                    "Best lure + line: {} + {}",
-                                    best.lure.name, best.line.name
-                                ))
-                                .flex()
-                                .items_center()
+                                .aria_label(format!("Best lure + line: {}", summary.best))
                                 .gap_2()
-                                .text_size(px(12.0))
-                                .child(format!(
-                                    "Best: {} + {}",
-                                    best.lure.name, best.line.name
-                                ))
-                                .when(tied > 1, |row| {
-                                    row.child(Badge::new(format!("{tied} tied")))
+                                .text_size(TEXT_MONO)
+                                .child(format!("Best: {}", summary.best))
+                                .when(summary.tied > 1, |row| {
+                                    row.child(table::tag(
+                                        format!("{} tied", summary.tied),
+                                        Tone::Neutral,
+                                    ))
                                 }),
                         )
-                        .when(!is_best_selected, |row| {
-                            let entity = entity.clone();
-                            let (lure, line) = best_selection;
-                            row.child(
-                                Button::new("fishing-use-best", "Use best")
-                                    .size(ControlSize::Sm)
-                                    .on_click(move |_event, _window, cx| {
-                                        entity.update(cx, |state, cx| {
-                                            state.use_fishing_toolkit(lure, line, cx)
-                                        });
-                                    }),
-                            )
-                        }),
-                )
-                .child(
-                    ScrollArea::new("fishing-ranking-scroll")
-                        .vertical()
-                        .h(table_height)
-                        .child(table),
+                        .children(use_best),
                 )
                 .child(
                     div()
-                        .flex()
-                        .flex_col()
+                        .id("fishing-ranking-table")
+                        .h(table_height)
+                        .child(DataTable::new(&controls.ranking)),
+                )
+                .child(
+                    v_flex()
                         .gap_1()
                         .border_t_1()
-                        .border_color(cx.theme().colors.border)
+                        .border_color(border)
                         .pt_3()
                         .child(
                             div()
@@ -249,14 +398,12 @@ pub(crate) fn card(
                                 .role(Role::Label)
                                 .aria_label(format!(
                                     "Ranking by {} · {} combinations",
-                                    objective.label(),
-                                    rows.len()
+                                    summary.objective, summary.count
                                 ))
                                 .child(
                                     Caption::new(format!(
                                         "{} combinations · ranked by {}",
-                                        rows.len(),
-                                        objective.label()
+                                        summary.count, summary.objective
                                     ))
                                     .text_color(muted),
                                 ),
@@ -265,8 +412,8 @@ pub(crate) fn card(
                             div()
                                 .id("fishing-tie-note")
                                 .role(Role::Label)
-                                .aria_label(tie_note.clone())
-                                .child(Caption::new(tie_note).text_color(muted)),
+                                .aria_label(summary.tie_note.clone())
+                                .child(Caption::new(summary.tie_note.clone()).text_color(muted)),
                         )
                         .child(
                             Caption::new(
@@ -286,13 +433,4 @@ fn saved_selection(state: &AppState) -> (usize, usize) {
         .character(state.fishing.character)
         .map(|character| (character.saved_lure, character.saved_line))
         .unwrap_or_default()
-}
-
-fn delta_color(tone: Tone, cx: &mut Context<AppState>) -> Hsla {
-    let colors = &cx.theme().colors;
-    match tone {
-        Tone::Success => colors.success,
-        Tone::Warning => colors.warning,
-        _ => colors.fg_muted,
-    }
 }

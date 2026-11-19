@@ -22,6 +22,7 @@ use crate::sections::drop_rate::State as DropRateState;
 use crate::sections::farming::{
     CompareInputs as FarmingCompareInputs, RunInputs as FarmingRunInputs, State as FarmingState,
 };
+use crate::sections::fishing::Controls as FishingControls;
 use crate::sections::fishing::State as FishingState;
 use crate::sections::fountain::{
     Controls as FountainControls, MarblePlanInputs, Runs as FountainRuns, SimInputs,
@@ -50,6 +51,7 @@ use crate::sections::research::minehead::{
 use crate::sections::research::tree::{Outcome as TreeOutcome, RunInputs as TreeRunInputs};
 use crate::sections::royal_guardian::Controls as RoyalControls;
 use crate::sections::royal_guardian::State as RoyalState;
+use crate::sections::sailing::Controls as SailingControls;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Trees as SailingTrees;
 use crate::sections::sailing::simulation::RunInputs as SailingSimInputs;
@@ -255,6 +257,8 @@ pub(crate) struct AppState {
     pub(crate) sailing_trees: SailingTrees,
     /// The shared runner for the fleet pile simulation.
     pub(crate) sailing_sim: Entity<TaskRunner<SimResult, SailingSimInputs>>,
+    /// The sailing section's kit controls, tab tables and per-tab caches.
+    pub(crate) sailing_controls: SailingControls,
     /// The farming field the last import carried.
     pub(crate) farm: Farm,
     /// The farming section's selection and crop target, kept alive too.
@@ -265,6 +269,8 @@ pub(crate) struct AppState {
     pub(crate) fishing_save: FishingSave,
     /// The fishing section's character, toolkit, pool and account values.
     pub(crate) fishing: FishingState,
+    /// The fishing section's kit controls, ranking table and caches.
+    pub(crate) fishing_controls: FishingControls,
     /// The monument section's own state, kept alive across dashboard visits.
     pub(crate) monument: MonumentState,
     /// The imported save, narrowed to the Monument rows.
@@ -1122,6 +1128,7 @@ impl AppState {
                 ))
             },
         );
+        let sailing_controls = SailingControls::new(&sailing_sim, window, cx);
         let spelunk_sim = report_run::<SpelunkRunResult, SpelunkRunInputs>(
             cx,
             &mut subscriptions,
@@ -1180,6 +1187,7 @@ impl AppState {
         let cglunko_breakdown = ui::formula_tree("cglunko-formula", window, cx);
         let clamworks_breakdown = ui::formula_tree("clamworks-formula", window, cx);
         let fishing_breakdown = ui::formula_tree("fishing-formula", window, cx);
+        let fishing_controls = FishingControls::new(window, cx);
         let mastery_breakdown = ui::formula_tree("cooking-mastery-formula", window, cx);
         let fountain_breakdown = ui::formula_tree("fountain-formula", window, cx);
         let jar_breakdown = ui::formula_tree("jar-formula", window, cx);
@@ -1315,11 +1323,13 @@ impl AppState {
             royal_shelf,
             sailing_trees,
             sailing_sim,
+            sailing_controls,
             farm: Farm::default(),
             farming: FarmingState::default(),
             farming_name,
             fishing_save: FishingSave::default(),
             fishing: FishingState::default(),
+            fishing_controls,
             monument: MonumentState::default(),
             monument_save: None,
             monument_controls: MonumentControls::new(window, cx),

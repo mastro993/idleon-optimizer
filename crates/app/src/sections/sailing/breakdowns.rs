@@ -2,107 +2,141 @@
 //!
 //! One selector picks the boat, and every tree reads that boat's route from the
 //! active assignment. The trees themselves come from the domain crates, so the
-//! searched and copied numbers are the ones the other tabs report.
+//! searched and copied numbers are the ones the other tabs report. Their roots
+//! are replaced only when the boat or the fleet changes.
 
-use super::{captain_short, trip};
+use super::controls::cached;
+use super::{captain_short, field, trip};
 use crate::state::AppState;
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Pixels, Styled, div, px};
-use idleon_sailing::{RouteMetrics, artifact_tree, chest_tree, loot_tree, speed_tree};
+use gpui::{
+    AnyElement, App, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window,
+    div, px,
+};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
+use idleon_sailing::{artifact_tree, chest_tree, loot_tree, speed_tree};
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{Caption, Card, CardHeader, Choice};
+
+/// What the tab shows for one boat, read once per key and boat.
+pub(crate) struct View {
+    boat: usize,
+    boats: Vec<Choice<usize>>,
+    assignment: SharedString,
+}
 
 /// The breakdowns tab: the boat selector and the four trees.
 pub(crate) fn breakdowns_tab(
     state: &mut AppState,
-    _table_height: Pixels,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let plan = state.fleet_plan(state.sailing_state.island, state.sailing_state.goal);
-    let boat = state
-        .sailing_state
-        .breakdown_boat
-        .min(state.fleet.boats.len().saturating_sub(1));
-    let Some(route) = plan.routes.iter().find(|route| route.boat == boat).cloned() else {
+    let key = (state.sailing_key(), state.sailing_state.breakdown_boat);
+    let view = cached(state, |controls| &mut controls.breakdowns, key, cx, build);
+    let Some(view) = view.as_ref() else {
         return div().into_any_element();
     };
-    state.sailing_state.breakdown_boat = route.boat;
-    let context = state.sailing.clone();
-    state.sailing_trees.loot.update(cx, |tree, cx| {
-        tree.set_root(loot_tree(&route, &context), cx)
-    });
-    state.sailing_trees.speed.update(cx, |tree, cx| {
-        tree.set_root(speed_tree(&route, &context), cx)
-    });
-    state
-        .sailing_trees
-        .artifact
-        .update(cx, |tree, cx| tree.set_root(artifact_tree(&route), cx));
-    state
-        .sailing_trees
-        .chest
-        .update(cx, |tree, cx| tree.set_root(chest_tree(&route), cx));
-    let loot = state.sailing_trees.loot.clone();
-    let speed = state.sailing_trees.speed.clone();
-    let artifact = state.sailing_trees.artifact.clone();
-    let chest = state.sailing_trees.chest.clone();
-    div()
+    let muted = cx.theme().muted_foreground;
+    let select = &state.sailing_controls.breakdown_boat;
+    select.show(view.boats.clone(), Some(&view.boat), window, cx);
+    let controls = Card::new()
+        .header(CardHeader::new("Interactive formula breakdowns").description(
+            "Click any row with an arrow to expand it, hover for the exact stacking details, or search the nodes",
+        ))
+        .child(
+            h_flex()
+                .id("breakdowns-controls")
+                .items_end()
+                .gap_4()
+                .child(field(
+                    "Break down boat",
+                    div().w(px(240.0)).child(
+                        Select::new(select.state())
+                            .id("breakdown-boat")
+                            .accessibility_label("Break down boat")
+                            .small(),
+                    ),
+                ))
+                .child(field(
+                    "Assignment",
+                    div()
+                        .id("breakdowns-assignment")
+                        .role(gpui::Role::Label)
+                        .aria_label(view.assignment.clone())
+                        .child(view.assignment.clone()),
+                ))
+                .child(div().flex_1())
+                .child(
+                    Caption::new("Stateful near-full pile processing is excluded from every tree.")
+                        .text_color(muted),
+                ),
+        );
+    let trees = &state.sailing_trees;
+    v_flex()
         .id("breakdowns-body")
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_h_0()
         .gap_3()
-        .child(controls(state, &plan.routes, &route, cx))
+        .child(controls)
         .child(
             div()
                 .id("sailing-breakdowns")
-                .flex()
-                .flex_wrap()
+                .grid()
+                .grid_cols(2)
                 .gap_3()
-                .items_start()
                 .child(panel(
                     "sailing-breakdown-loot",
                     "Loot value",
                     "Base loot × captain × Davey Jones × the loot multiplier",
-                    &loot,
+                    &trees.loot,
                 ))
                 .child(panel(
                     "sailing-breakdown-speed",
                     "Route speed and trip time",
                     "Raw speed against the minimum-time cap, then trips per hour",
-                    &speed,
+                    &trees.speed,
                 ))
                 .child(panel(
                     "sailing-breakdown-artifact",
                     "Artifact find",
                     "Chests per hour × the chance one chest finds an artifact",
-                    &artifact,
+                    &trees.artifact,
                 ))
                 .child(panel(
                     "sailing-breakdown-chest",
                     "Chest opening",
                     "Tier chances × the value and payouts each tier opens",
-                    &chest,
+                    &trees.chest,
                 )),
         )
         .into_any_element()
 }
 
-fn controls(
-    state: &AppState,
-    routes: &[RouteMetrics],
-    route: &RouteMetrics,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let boats: Vec<Choice> = (0..state.fleet.boats.len())
+/// Hand the four trees the selected boat's route, once.
+fn build(state: &AppState, cx: &mut App) -> Option<View> {
+    let plan = state.fleet_plan(state.sailing_state.island, state.sailing_state.goal);
+    let boat = state
+        .sailing_state
+        .breakdown_boat
+        .min(state.fleet.boats.len().saturating_sub(1));
+    let route = plan.routes.iter().find(|route| route.boat == boat)?;
+    let context = &state.sailing;
+    let trees = &state.sailing_trees;
+    trees
+        .loot
+        .update(cx, |tree, cx| tree.set_root(loot_tree(route, context), cx));
+    trees
+        .speed
+        .update(cx, |tree, cx| tree.set_root(speed_tree(route, context), cx));
+    trees
+        .artifact
+        .update(cx, |tree, cx| tree.set_root(artifact_tree(route), cx));
+    trees
+        .chest
+        .update(cx, |tree, cx| tree.set_root(chest_tree(route), cx));
+    let boats = (0..state.fleet.boats.len())
         .map(|boat| {
-            let captain = routes
+            let captain = plan
+                .routes
                 .iter()
                 .find(|route| route.boat == boat)
                 .and_then(|route| route.captain);
@@ -110,70 +144,19 @@ fn controls(
                 Some(captain) => format!("Boat {} · {}", boat + 1, captain_short(state, captain)),
                 None => format!("Boat {} · no captain", boat + 1),
             };
-            Choice::new(boat.to_string(), label)
+            Choice::new(boat, label)
         })
         .collect();
-    let select = Select::new("breakdown-boat", boats)
-        .label("Break down boat")
-        .selected(route.boat.to_string())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Ok(boat) = value.parse::<usize>() {
-                entity.update(cx, |state, cx| state.set_sailing_breakdown_boat(boat, cx));
-            }
-        });
-    Card::new()
-        .header(CardHeader::new("Interactive formula breakdowns").description(
-            "Click any row with an arrow to expand it, hover for the exact stacking details, or search the nodes",
-        ))
-        .child(
-            div()
-                .id("breakdowns-controls")
-                .flex()
-                .flex_wrap()
-                .items_end()
-                .gap_4()
-                .p_3()
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .min_w(px(240.0))
-                        .child(Caption::new("Break down boat"))
-                        .child(select),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(Caption::new("Assignment"))
-                        .child(
-                            div()
-                                .id("breakdowns-assignment")
-                                .role(gpui::Role::Label)
-                                .aria_label(format!(
-                                    "Island {} · trip {}",
-                                    route.island + 1,
-                                    trip(route.timing.trip_seconds)
-                                ))
-                                .child(format!(
-                                    "Island {} · trip {}",
-                                    route.island + 1,
-                                    trip(route.timing.trip_seconds)
-                                )),
-                        ),
-                )
-                .child(div().flex_1())
-                .child(
-                    Caption::new(
-                        "Stateful near-full pile processing is excluded from every tree.",
-                    )
-                    .text_color(muted),
-                ),
+    Some(View {
+        boat,
+        boats,
+        assignment: format!(
+            "Island {} · trip {}",
+            route.island + 1,
+            trip(route.timing.trip_seconds)
         )
-        .into_any_element()
+        .into(),
+    })
 }
 
 /// One breakdown card around the shared formula tree.
@@ -185,13 +168,6 @@ fn panel(
 ) -> AnyElement {
     Card::new()
         .header(CardHeader::new(title).description(description))
-        .child(
-            div()
-                .id(id)
-                .h(px(360.0))
-                .min_h_0()
-                .flex_1()
-                .child(tree.clone()),
-        )
+        .child(div().id(id).h(px(360.0)).min_h_0().child(tree.clone()))
         .into_any_element()
 }
