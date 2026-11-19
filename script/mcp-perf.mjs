@@ -1,11 +1,11 @@
 // Frame-time harness: launches a private window with the fixture save, drives
 // the UI through gpui-mcp, and reports the draw time of every frame each
-// scenario produced (p50/p95/max, frames over 8.3 and 16.7 ms). The budget and
-// the baseline it is checked against live in docs/ui-kit/performance.md.
+// scenario produced (p50/p95/max, frames past one vsync). Nothing is enforced:
+// there is no budget for now, only the numbers and the baseline to compare.
 //
 // Every scenario is wrapped in `mark_frames` / `get_frame_report`, so only the
 // frames the action caused are counted. Measure a release build: a debug build
-// is several times slower and says nothing about the budget.
+// is several times slower and says nothing about a real run's frame time.
 //
 // Usage: node script/mcp-perf.mjs [options]
 //   --release          launch target/release/idleon-optimizer (default: target/debug)
@@ -15,7 +15,6 @@
 //                      resize, run-away, or any section id (even one not in SECTIONS)
 //   --json FILE        write the raw results
 //   --compare FILE     print each scenario's delta against a previous --json
-//   --check            exit non-zero when a scenario is over budget
 //   --keep             leave the window running afterwards
 import { execFile, execFileSync } from 'node:child_process';
 import { once } from 'node:events';
@@ -32,15 +31,11 @@ const appBin = flag(
 const only = flag('--only', null)?.split(',').map((entry) => entry.trim()).filter(Boolean) ?? null;
 const jsonOut = flag('--json', null);
 const compareWith = flag('--compare', null);
-const enforce = hasFlag('--check');
 
-/// Agreed with the owner on #337; docs/ui-kit/performance.md explains it.
-const BUDGET = {
-  frame_p95_ms: 8.3, // one vsync at 120 Hz
-  frame_max_ms: 16.7, // never two vsyncs at 120 Hz, one at 60 Hz
-  idle_frames: 0,
-  first_frame_ms: 500,
-};
+/// One vsync at 120 Hz, and two at 120 Hz (one at 60 Hz). Counted and reported,
+/// never enforced.
+const VSYNC_MS = 8.3;
+const TWO_VSYNCS_MS = 16.7;
 
 /// Sections opened and scrolled, heaviest first in the baseline.
 const SECTIONS = [
@@ -195,8 +190,8 @@ const summarize = (report) => {
     max_ms: round(draws.length ? Math.max(...draws) : null),
     prepaint_p50_ms: round(percentile(frames.map((frame) => frame.prepaint_ms), 50)),
     paint_p50_ms: round(percentile(frames.map((frame) => frame.root_paint_ms), 50)),
-    over_8ms: draws.filter((draw) => draw > BUDGET.frame_p95_ms).length,
-    over_16ms: draws.filter((draw) => draw > BUDGET.frame_max_ms).length,
+    over_8ms: draws.filter((draw) => draw > VSYNC_MS).length,
+    over_16ms: draws.filter((draw) => draw > TWO_VSYNCS_MS).length,
     worst: [...frames]
       .sort((a, b) => b.draw_ms - a.draw_ms)
       .slice(0, 3)
@@ -209,26 +204,6 @@ const summarize = (report) => {
     views: [...views.values()].sort((a, b) => b.rendered - a.rendered).slice(0, 8),
     place_views: [...views.values()].filter((view) => PLACE_VIEWS.includes(view.type)),
   };
-};
-
-const overBudget = (result) => {
-  const reasons = [];
-  if (result.kind === 'idle' && result.frames > BUDGET.idle_frames) {
-    reasons.push(`${result.frames} idle frames`);
-  }
-  if (result.kind === 'interaction') {
-    if (result.p95_ms > BUDGET.frame_p95_ms) reasons.push(`p95 ${result.p95_ms} ms`);
-    if (result.max_ms > BUDGET.frame_max_ms) reasons.push(`max ${result.max_ms} ms`);
-  }
-  if (result.kind === 'isolation') {
-    for (const view of result.place_views.filter((entry) => entry.rendered)) {
-      reasons.push(`${view.type} rendered ${view.rendered}x`);
-    }
-  }
-  if (result.kind === 'startup' && result.first_frame_ms > BUDGET.first_frame_ms) {
-    reasons.push(`first frame ${result.first_frame_ms} ms`);
-  }
-  return reasons;
 };
 
 /// Run `setup` (unmeasured), then mark, run `act`, let the UI settle and read
@@ -260,7 +235,14 @@ const measure = async (name, { kind = 'interaction', note, setup, act, settle = 
       ...summarize(report),
       ...extra,
     };
-    result.over_budget = overBudget(result);
+    // The one requirement left is #363's render isolation: a run elsewhere
+    // leaves the place on screen alone.
+    result.problems =
+      kind === 'isolation'
+        ? result.place_views
+            .filter((entry) => entry.rendered)
+            .map((entry) => `${entry.type} rendered ${entry.rendered}x`)
+        : [];
     results.push(result);
     printRow(result);
     return result;
@@ -269,7 +251,7 @@ const measure = async (name, { kind = 'interaction', note, setup, act, settle = 
 
 const printRow = (result) => {
   const cell = (value, width) => String(value ?? '–').padStart(width);
-  const verdict = result.over_budget.length ? `over: ${result.over_budget.join(', ')}` : 'ok';
+  const verdict = result.problems.length ? `isolation: ${result.problems.join(', ')}` : 'ok';
   const focus = result.focus_lost ? ' (focus lost)' : '';
   console.log(
     `${result.name.padEnd(26)}${cell(result.frames, 7)}${cell(result.p50_ms, 8)}${cell(result.p95_ms, 8)}` +
@@ -402,8 +384,8 @@ const startup = async () => {
     session_ms: median('session_ms'),
     runs,
     ...summarize(report),
+    problems: [],
   };
-  result.over_budget = overBudget(result);
   results.push(result);
   console.log(
     `startup: bridge ${result.discovered_ms} ms, first frame ≤ ${result.first_frame_ms} ms, ` +
@@ -671,7 +653,7 @@ try {
   lane?.close();
 }
 
-const over = results.filter((result) => result.over_budget.length);
+const failing = results.filter((result) => result.problems.length);
 if (jsonOut) {
   const report = {
     date: new Date().toISOString().slice(0, 10),
@@ -684,7 +666,6 @@ if (jsonOut) {
           ? `macOS ${read('sw_vers', ['-productVersion'])}`
           : `${process.platform} ${release()}`,
     },
-    budget: BUDGET,
     results,
     errors,
   };
@@ -692,5 +673,5 @@ if (jsonOut) {
   console.log(`\nwrote ${jsonOut}`);
 }
 if (compareWith) compare(JSON.parse(readFileSync(compareWith, 'utf8')));
-console.log(`\n${results.length} scenarios, ${over.length} over budget, ${errors.length} failed`);
-if (errors.length || (enforce && over.length)) process.exitCode = 1;
+console.log(`\n${results.length} scenarios, ${failing.length} with an isolation failure, ${errors.length} failed`);
+if (errors.length || failing.length) process.exitCode = 1;

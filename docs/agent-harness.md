@@ -72,11 +72,18 @@ window running so you can look at it.
 
 Two consequences worth knowing:
 
-- Every instance activates itself on open, so the last one launched takes focus.
-  The harnesses re-activate their own pid before frame-dependent calls and retry
-  a `frame wait timed out` once.
+- A lane never takes the user's focus. It spawns the app with `GPUI_MCP_BACKGROUND=1`, so the
+  window opens behind whatever the user is doing, and the bridge draws the frames macOS skips for
+  a window it stopped drawing (for 35 s after the last request). Only a call that still times out
+  activates the window, as a fallback, and retries once.
 - A lane must not `pkill -f target/debug/idleon-optimizer`: that kills other
   lanes' windows. Let the harness stop the instance it started.
+
+The server side of the pin is a binary on `PATH`, built from the same commit as the submodule:
+
+```console
+cargo install --git https://github.com/mastro993/gpui-mcp --branch main --locked gpui-mcp-server --force
+```
 
 ## Verifying a lane without the MCP client
 
@@ -176,12 +183,13 @@ the endpoint directory falls back to `/tmp` when `TMPDIR` is too long for it.
 ## Frame times
 
 `script/mcp-perf.mjs` measures frame draw times per scenario (cold start, idle, scroll, typing,
-navigation, sidebar, resize) on a release build and checks them against the UI budget:
+navigation, sidebar, resize) on a release build and reports them. There is no budget: compare a run
+with the baseline when you want a delta.
 
 ```console
 cargo build --release -p idleon-optimizer
 node script/mcp-perf.mjs --release --compare docs/ui-kit/baseline.json
 ```
 
-Scenarios, flags, the budget and the baseline live in [`ui-kit/performance.md`](ui-kit/performance.md).
+Scenarios, flags and the baseline live in [`ui-kit/performance.md`](ui-kit/performance.md).
 

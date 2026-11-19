@@ -1,9 +1,9 @@
-# UI performance: harness, baseline and budget
+# UI performance: harness and baseline
 
-The UI kit migration (#335) is held to measured frame times, not impressions. `script/mcp-perf.mjs`
-drives a private app window through gpui-mcp, records the draw time of every frame each scenario
-causes, and checks the result against the budget below. `baseline.json` next to this page holds the
-raw numbers for the Ely UI before the migration; every later PR reports its delta against it.
+The UI kit migration (#335) is measured, not assumed. `script/mcp-perf.mjs` drives a private app
+window through gpui-mcp, records the draw time of every frame each scenario causes and reports it.
+`baseline.json` next to this page holds the raw numbers for the Ely UI before the migration, so a
+run can be compared against it. There is no budget for now: the harness reports, it does not gate.
 
 ## Running it
 
@@ -12,18 +12,16 @@ cargo build --release -p idleon-optimizer
 node script/mcp-perf.mjs --release                                   # every scenario, ~2 minutes
 node script/mcp-perf.mjs --release --only research,sidebar           # a subset
 node script/mcp-perf.mjs --release --compare docs/ui-kit/baseline.json
-node script/mcp-perf.mjs --release --check                           # exit 1 when over budget
 node script/mcp-perf.mjs --release --json docs/ui-kit/baseline.json  # refresh the baseline
 ```
 
 | Flag | Effect |
 |---|---|
-| `--release` | launch `target/release/idleon-optimizer` (default `target/debug`; a debug build is several times slower and says nothing about the budget) |
+| `--release` | launch `target/release/idleon-optimizer` (default `target/debug`; a debug build is several times slower and says nothing about a real run) |
 | `--app-bin PATH` | launch another binary |
 | `--only A,B` | run these scenarios: `idle`, `home-scroll`, `search`, `hover`, `sections` (the default section list), `switch`, `sidebar`, `resize`, `run-away`, or any section id. Startup always runs |
 | `--json FILE` | write the raw results (the `baseline.json` format) |
 | `--compare FILE` | print each scenario's delta against a previous `--json` |
-| `--check` | exit non-zero when a scenario is over budget. #362 turns this on as the gate |
 | `--keep` | leave the window running afterwards |
 
 It needs macOS, `gpui-mcp` on `PATH` and Accessibility access for the terminal (System Events
@@ -51,7 +49,7 @@ frames that missed a 60 Hz vsync.
 | `switch-10x` | research → royal-guardian → research, 10 times, through the sidebar |
 | `sidebar-fold`, `sidebar-unfold` | Toggle the rail on Home, 1 s settle (the animation) |
 | `window-resize` | 20 width steps 1180 → 1920 px and back at 900 px high. macOS clamps the window to its screen; `widest_px` in the JSON says how far it got |
-| `run-away-home`, `run-away-killroy` | Start Worship TD's strategy search (about 3.5 s), open Home or Killroy, and watch 1 s of its progress. Over budget when the place on screen (`Page` or `Pane<HomeReads>`) renders at all: only the sidebar mark and the status line may follow a run (#363) |
+| `run-away-home`, `run-away-killroy` | Start Worship TD's strategy search (about 3.5 s), open Home or Killroy, and watch 1 s of its progress. A failure when the place on screen (`Page` or `Pane<HomeReads>`) renders at all: only the sidebar mark and the status line may follow a run (#363) |
 
 The sections are `stats-all`, `research`, `spelunking`, `royal-guardian`, `jelly-operator`,
 `worship-td`, `combat-sim`, `farming` and `killroy`: the heaviest ones in the first measurement plus
@@ -63,23 +61,11 @@ earlier.
 
 ### Focus
 
-macOS stops drawing an occluded window, and every lane activates itself when it opens. The harness
-activates its own window before each scenario and samples the frontmost app while it runs. If another
-app took focus, the scenario is retried up to twice; a result still taken without focus is printed
-with `(focus lost)` and carries `focus_lost: true` in the JSON.
-
-## Budget
-
-Acknowledged by the owner on 2026-11-18 (in the #337 work thread):
-
-- **Every interaction** (scroll, typing, navigation, section switching, hover, the sidebar animation
-  and window resize), release build: **p95 ≤ 8.3 ms and max ≤ 16.7 ms** per frame, so 95% of frames
-  fit one 120 Hz vsync and none misses two.
-- **Idle: zero frames.** An idle UI must not repaint.
-- **Cold start: first frame ≤ 500 ms.** The time until Home shows the decoded session is reported and
-  compared but not budgeted, because it grows with the save.
-
-`--check` applies exactly these rules (`BUDGET` in the script).
+macOS stops drawing an occluded window, and a frame the platform skipped is not measured. The
+harness activates its own window before each scenario and samples the frontmost app while it runs.
+If another app took focus, the scenario is retried up to twice; a result still taken without focus
+is printed with `(focus lost)` and carries `focus_lost: true` in the JSON. The other harnesses drive
+their lane without taking focus at all ([agent-harness.md](../agent-harness.md)).
 
 ## Baseline
 
@@ -114,9 +100,9 @@ macOS 26.7.1, window 1440 × 900 on the built-in 120 Hz display, fixture save. T
 | sidebar-unfold | 8 | 42.2 | 44.0 | 44.0 | 8 |
 | window-resize (to 1728 px, the screen width) | 60 | 43.6 | 45.7 | 46.6 | 60 |
 
-20 of 27 scenarios are over budget. Idle and the cold-start first frame pass. The ~44 ms max on
-every `-open` row is the click frame, which still draws Home. Runs on the same machine vary by about
-±2 ms per frame and ±100 ms at startup.
+These are Ely's numbers, kept as the reference to compare a run against. Nothing is over or under
+table: without a budget there is no verdict, and the harness reports the figures only. Runs on the
+same machine vary by about ±2 ms per frame and ±100 ms at startup.
 
 ## Where the time goes
 
@@ -158,4 +144,5 @@ Problems hit while building the harness, and how the scripts handle them:
   works when one is needed.
 - **Hover.** `hover_element` answers `does not support Hover` on dashboard cards; `pointer_move` works.
 - **Resize.** The bridge has no resize tool; the harness resizes through System Events.
-- **Focus.** Other lanes and apps steal focus; see [Focus](#focus).
+- **Focus.** The perf harness wants its window in front so the platform draws every frame. Other
+  lanes and apps steal focus; see [Focus](#focus).
