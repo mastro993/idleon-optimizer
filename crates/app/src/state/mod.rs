@@ -311,6 +311,8 @@ pub(crate) struct AppState {
     pub(crate) jar_state: JarState,
     /// The shared runner for the enchant simulation.
     pub(crate) jar_sim: Entity<TaskRunner<JarSimResult, JarSimInputs>>,
+    /// The jar section's kit controls and the figures it reads from the save.
+    pub(crate) jar_controls: crate::sections::jar::Controls,
     /// The Spelunking section's controls and account inputs.
     pub(crate) spelunking: SpelunkingState,
     /// The Spelunking rows the loaded save carries, if it has them.
@@ -1181,6 +1183,7 @@ impl AppState {
         let mastery_breakdown = ui::formula_tree("cooking-mastery-formula", window, cx);
         let fountain_breakdown = ui::formula_tree("fountain-formula", window, cx);
         let jar_breakdown = ui::formula_tree("jar-formula", window, cx);
+        let jar_controls = crate::sections::jar::Controls::new(window, cx);
         let jar_sim = report_run::<JarSimResult, JarSimInputs>(
             cx,
             &mut subscriptions,
@@ -1340,6 +1343,7 @@ impl AppState {
             jar: None,
             jar_state: JarState::default(),
             jar_sim,
+            jar_controls,
             spelunking: SpelunkingState::default(),
             spelunking_save: None,
             spelunking_controls,

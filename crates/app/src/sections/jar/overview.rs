@@ -1,21 +1,19 @@
 //! The Overview tab: the jar summary, the rupie balances and the cavern's state.
 
-use crate::sections::jar::metric;
+use crate::sections::jar::{metric, row};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{KpiCard, Statistic, Tone};
-use ely_gpui_component::feedback::Callout;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, FontWeight, IntoElement, ParentElement, Role, SharedString, Styled, div,
-    px,
+    AnyElement, App, Context, FontWeight, IntoElement, ParentElement, Role, SharedString, Styled,
+    div, px,
 };
+use gpui_kit::component::ActiveTheme as _;
 use idleon_jar::Jar;
 use idleon_jar::{RUPIE_COLORS, RUPIE_NAMES, TYPE_NAMES, collectible_name};
 use idleon_ui::format;
+use idleon_ui::widgets::{
+    Callout, Caption, Card, CardHeader, KpiStrip, Statistic, TEXT_MONO, Tone,
+};
 
 pub(crate) fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let jar = state
@@ -29,10 +27,10 @@ pub(crate) fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyEleme
         .gap_3()
         .child(summary(jar));
     if jar.missing_types().next().is_some() {
-        pane = pane.child(missing(jar, cx));
+        pane = pane.child(missing(jar));
     }
     pane.child(balances(jar, cx))
-        .child(state_cards(jar, cx))
+        .child(state_cards(jar))
         .into_any_element()
 }
 
@@ -49,43 +47,43 @@ fn summary(jar: &Jar) -> AnyElement {
         .id("jar-summary-line")
         .role(Role::Label)
         .aria_label(label)
-        .flex()
-        .flex_wrap()
-        .gap_3()
         .child(
-            KpiCard::new(
-                Statistic::new("jar-kpi-types", "Jar types", jar.types_available() as f64)
-                    .suffix(format!(" / {}", TYPE_NAMES.len())),
-            )
-            .caption(next_type(jar)),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "jar-kpi-slots",
-                    "Production slots",
-                    jar.production_slots() as f64,
+            KpiStrip::new()
+                .child(
+                    Statistic::new(
+                        "jar-kpi-types",
+                        "Jar types",
+                        jar.types_available().to_string(),
+                    )
+                    .suffix(format!("/ {}", TYPE_NAMES.len()))
+                    .caption(next_type(jar)),
                 )
-                .suffix(" / 3"),
-            )
-            .caption("Every slot shares one production rate"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("jar-kpi-opals", "Opals from jars", jar.opals()).decimals(0),
-            )
-            .caption("Banked by Opal jar breaks"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "jar-kpi-collectibles",
-                    "Collectibles",
-                    jar.collectibles_found() as f64,
+                .child(
+                    Statistic::new(
+                        "jar-kpi-slots",
+                        "Production slots",
+                        jar.production_slots().to_string(),
+                    )
+                    .suffix("/ 3")
+                    .caption("Every slot shares one production rate"),
                 )
-                .suffix(format!(" / {}", jar.collectible_slots())),
-            )
-            .caption(format!("{} enchant levels", jar.enchant_levels())),
+                .child(
+                    Statistic::new(
+                        "jar-kpi-opals",
+                        "Opals from jars",
+                        format::count(jar.opals().max(0.0).round() as u64),
+                    )
+                    .caption("Banked by Opal jar breaks"),
+                )
+                .child(
+                    Statistic::new(
+                        "jar-kpi-collectibles",
+                        "Collectibles",
+                        jar.collectibles_found().to_string(),
+                    )
+                    .suffix(format!("/ {}", jar.collectible_slots()))
+                    .caption(format!("{} enchant levels", jar.enchant_levels())),
+                ),
         )
         .into_any_element()
 }
@@ -105,40 +103,45 @@ fn next_type(jar: &Jar) -> SharedString {
 
 /// The jar types the account has not bought: they cannot break, so they are
 /// named here instead of shown as empty balances.
-fn missing(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
+fn missing(jar: &Jar) -> AnyElement {
     let names: Vec<&str> = jar.missing_types().map(|index| TYPE_NAMES[index]).collect();
     let count = names.len();
     let cost = format::number(jar.next_type_cost());
     let rupie = RUPIE_NAMES[jar.types_purchased()];
-    let muted = cx.theme().colors.fg_muted;
     div()
         .id("jar-missing")
         .child(
-            Callout::new(Severity::Warning)
-                .title(format!("{count} jar types not owned"))
-                .child(
-                    Caption::new(format!(
-                        "{} cannot break until the type is bought; the next one costs {cost} {rupie}.",
-                        names.join(", ")
-                    ))
-                    .text_color(muted),
-                ),
+            Callout::new(Tone::Warning, format!("{count} jar types not owned")).child(
+                Caption::new(format!(
+                    "{} cannot break until the type is bought; the next one costs {cost} {rupie}.",
+                    names.join(", ")
+                )),
+            ),
         )
         .into_any_element()
 }
 
-/// The twelve rupie balances, as pills.
-fn balances(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
-    let mut pills = div().id("jar-rupies").flex().flex_wrap().gap_2();
+/// The twelve rupie balances, as pills, six to a row so a row never wraps.
+fn balances(jar: &Jar, cx: &App) -> AnyElement {
     let available = jar.types_available();
-    for index in 0..RUPIE_NAMES.len() {
-        let balance = jar.rupies(index);
-        // A standard rupie the account cannot earn yet stays hidden.
-        if index < TYPE_NAMES.len() && index >= available && balance <= 0.0 {
-            continue;
-        }
-        pills = pills.child(pill(index, balance, cx));
-    }
+    let shown: Vec<usize> = (0..RUPIE_NAMES.len())
+        .filter(|index| {
+            // A standard rupie the account cannot earn yet stays hidden.
+            *index >= TYPE_NAMES.len() || *index < available || jar.rupies(*index) > 0.0
+        })
+        .collect();
+    let pills = div()
+        .id("jar-rupies")
+        .flex()
+        .flex_col()
+        .gap_2()
+        .children(shown.chunks(6).map(|chunk| {
+            div().flex().gap_2().children(
+                chunk
+                    .iter()
+                    .map(|index| pill(*index, jar.rupies(*index), cx)),
+            )
+        }));
     Card::new()
         .header(CardHeader::new("Rupie balances").description(
             "Standard rupies bank in the cavern; white and dark have their own storage",
@@ -148,8 +151,8 @@ fn balances(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// One rupie's balance, wearing its own colour.
-fn pill(index: usize, balance: f64, cx: &mut Context<AppState>) -> AnyElement {
-    let colors = &cx.theme().colors;
+fn pill(index: usize, balance: f64, cx: &App) -> AnyElement {
+    let theme = cx.theme();
     let name = RUPIE_NAMES[index];
     let shown = format::value(balance);
     div()
@@ -163,8 +166,8 @@ fn pill(index: usize, balance: f64, cx: &mut Context<AppState>) -> AnyElement {
         .py_1()
         .rounded_full()
         .border_1()
-        .border_color(colors.border)
-        .bg(colors.hover)
+        .border_color(theme.border)
+        .bg(theme.accent)
         .child(
             div()
                 .flex_none()
@@ -172,18 +175,19 @@ fn pill(index: usize, balance: f64, cx: &mut Context<AppState>) -> AnyElement {
                 .rounded_full()
                 .bg(format::hex(RUPIE_COLORS[index])),
         )
-        .child(Caption::new(name).text_color(colors.fg_muted))
+        .child(Caption::new(name))
         .child(
             div()
-                .text_size(px(12.0))
+                .font_family(theme.mono_font_family.clone())
+                .text_size(TEXT_MONO)
                 .font_weight(FontWeight::SEMIBOLD)
                 .child(shown),
         )
         .into_any_element()
 }
 
-/// The gilded bonus, Break All and the targeted enchant, as cards.
-fn state_cards(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
+/// The gilded bonus, Break All and the targeted enchant, as panels.
+fn state_cards(jar: &Jar) -> AnyElement {
     let doubler = jar.doubler_bonus();
     let gilded = match doubler > 0.0 {
         true => (
@@ -214,12 +218,8 @@ fn state_cards(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
             collectible_name(index).to_owned(),
             Tone::Accent,
             format!(
-                "{} of enchants land on it",
-                ely_gpui_component::typography::format::percent(
-                    jar.targeted_enchant_chance(),
-                    2,
-                    false
-                )
+                "{:.2}% of enchants land on it",
+                jar.targeted_enchant_chance() * 100.0
             ),
         ),
         None => (
@@ -233,9 +233,9 @@ fn state_cards(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
         ("jar-break-all", "Break All", break_all),
         ("jar-target", "Targeted enchant", target),
     ];
-    let mut row = div().id("jar-state").flex().flex_wrap().gap_3();
+    let mut row = row("jar-state");
     for (id, label, (value, tone, caption)) in cards {
-        row = row.child(metric(id, label, value, caption, tone, cx));
+        row = row.child(metric(id, label, value, caption, tone));
     }
     row.into_any_element()
 }

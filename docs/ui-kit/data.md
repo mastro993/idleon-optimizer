@@ -158,6 +158,12 @@ Ely's `lists::List`/`ListItem` had one use, the spelunking event log. A short fi
 (below) or a `DataTable`: the event log is a `DataTable` (`sections/spelunking/events.rs`) whose
 first cell keeps the `spelunk-run-event-<n>` id.
 
+A long list whose rows differ in height, or change height when one expands, uses GPUI's own
+`list` over a `ListState` kept in section state: it measures rows as they scroll into view, so it
+needs no sizes up front. Give it a fixed-height parent and `vertical_scrollbar(&list_state)`, call
+`reset(count)` when the rows change and `remeasure_items(ix..ix + 1)` when one expands. The Ladle
+reset forecast (`sections/ladle/forecast.rs`) is one: up to 365 expandable resets.
+
 Every kit `Table` draws under the same element id, so two tables with no element id between them
 collide (a debug build panics on the duplicate accessibility node). Give each table a `div().id(..)`
 of its own.

@@ -1,19 +1,19 @@
 //! The Chances tab: the opal, collectible and enchant chances, how a tier
 //! scales them and how long the next event takes.
 
-use crate::sections::jar::metric;
+use super::rupies::TIER_HEADS;
+use super::table::{Col, table, text};
+use crate::sections::jar::{metric, row};
 use crate::state::AppState;
-use ely_gpui_component::data_display::Tone;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
+use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Styled, div};
 use idleon_jar as jar;
 use idleon_jar::Jar;
 use idleon_jar::{INCOME_TIERS, collectible_name};
 use idleon_ui::format;
+use idleon_ui::widgets::{Card, CardHeader, Tone};
 
-pub(crate) fn chances(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn chances(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let jar = state
         .jar
         .as_ref()
@@ -23,18 +23,18 @@ pub(crate) fn chances(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEl
         .flex()
         .flex_col()
         .gap_3()
-        .child(headline(jar, cx))
-        .child(chance_by_tier(jar))
-        .child(expected_events(jar));
+        .child(headline(jar))
+        .child(chance_by_tier(jar, cx))
+        .child(expected_events(jar, cx));
     if let Some(target) = jar.targeted_enchant() {
-        pane = pane.child(targeted(jar, target, cx));
+        pane = pane.child(targeted(jar, target));
     }
     pane.into_any_element()
 }
 
 /// The three chances a break rolls, with the counts that shape them.
-fn headline(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
-    let mut row = div().id("jar-chances-summary").flex().flex_wrap().gap_3();
+fn headline(jar: &Jar) -> AnyElement {
+    let mut row = row("jar-chances-summary");
     for event in jar.chance_events() {
         let caption = match event.name {
             "Opal" => format!(
@@ -62,7 +62,6 @@ fn headline(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
             format::chance(event.chance),
             caption,
             tone,
-            cx,
         ));
     }
     row.into_any_element()
@@ -79,100 +78,91 @@ fn chance_id(name: &str) -> &'static str {
 
 /// `Chance × Tier`: each tier multiplies the chance by ten, and the last column
 /// names the tier where the event is certain.
-fn chance_by_tier(jar: &Jar) -> AnyElement {
-    let mut headers: Vec<String> = vec!["Chance jar".into(), "Base".into()];
-    for tier in 0..INCOME_TIERS {
-        headers.push(format!("Tier {}", tier + 1));
-    }
-    headers.push("Certain at".into());
-    let mut table = Table::new(headers);
-    for event in jar.chance_events() {
-        let mut cells: Vec<AnyElement> = vec![
-            div()
-                .child(format!(
-                    "{} (type {})",
-                    event.name,
-                    jar::TYPE_NAMES[event.jar_type]
-                ))
-                .into_any_element(),
-            div().child(format::chance(event.chance)).into_any_element(),
+fn chance_by_tier(jar: &Jar, cx: &App) -> AnyElement {
+    let mut cols = vec![Col::Text("Chance jar"), Col::Number("Base")];
+    cols.extend(
+        TIER_HEADS[..INCOME_TIERS as usize]
+            .iter()
+            .copied()
+            .map(Col::Number),
+    );
+    cols.push(Col::Text("Certain at"));
+    let rows = jar.chance_events().into_iter().map(|event| {
+        let mut cells = vec![
+            text(format!(
+                "{} (type {})",
+                event.name,
+                jar::TYPE_NAMES[event.jar_type]
+            )),
+            text(format::chance(event.chance)),
         ];
-        for tier in 0..INCOME_TIERS {
+        cells.extend((0..INCOME_TIERS).map(|tier| {
             let chance = Jar::chance_at_tier(event.chance, tier);
-            cells.push(
-                div()
-                    .child(match chance >= 1.0 {
-                        true => "100%+".to_owned(),
-                        false => format::chance(chance),
-                    })
-                    .into_any_element(),
-            );
-        }
-        cells.push(
-            div()
-                .child(match Jar::tier_for_certainty(event.chance) {
-                    Some(tier) => format!("Tier {tier}"),
-                    None => "Never".into(),
-                })
-                .into_any_element(),
-        );
-        table = table.row(cells);
-    }
+            text(match chance >= 1.0 {
+                true => "100%+".to_owned(),
+                false => format::chance(chance),
+            })
+        }));
+        cells.push(text(match Jar::tier_for_certainty(event.chance) {
+            Some(tier) => format!("Tier {tier}"),
+            None => "Never".into(),
+        }));
+        cells
+    });
     Card::new()
         .header(CardHeader::new("Chance by tier").description(
-            "A chance jar multiplies its chance by ten every tier; past 100% the event is \
-                 certain",
+            "A chance jar multiplies its chance by ten every tier; past 100% the event is certain",
         ))
-        .child(table)
+        .child(table("jar-chance-tiers", &cols, rows, cx))
         .into_any_element()
 }
 
 /// How many breaks and how many hours the next event
 /// takes at tier one, on one slot.
-fn expected_events(jar: &Jar) -> AnyElement {
-    let mut table = Table::new(["Event", "Chance", "Average breaks", "Estimated time"]);
-    for event in jar.chance_events() {
+fn expected_events(jar: &Jar, cx: &App) -> AnyElement {
+    let rows = jar.chance_events().into_iter().map(|event| {
         let breaks = Jar::expected_breaks(event.chance);
-        table = table.row([
-            div().child(event.name).into_any_element(),
-            div().child(format::chance(event.chance)).into_any_element(),
-            div()
-                .child(match breaks.is_finite() {
-                    true => format::number(breaks),
-                    false => "∞".into(),
-                })
-                .into_any_element(),
-            div()
-                .child(format::projection(
-                    jar.expected_hours(event.jar_type, event.chance),
-                ))
-                .into_any_element(),
-        ]);
-    }
+        vec![
+            text(event.name),
+            text(format::chance(event.chance)),
+            text(match breaks.is_finite() {
+                true => format::number(breaks),
+                false => "∞".into(),
+            }),
+            text(format::projection(
+                jar.expected_hours(event.jar_type, event.chance),
+            )),
+        ]
+    });
     Card::new()
         .header(
             CardHeader::new("Expected time per event")
                 .description("Tier one jars at the current production rate, one slot at a time"),
         )
-        .child(table)
+        .child(table(
+            "jar-expected-events",
+            &[
+                Col::Text("Event"),
+                Col::Number("Chance"),
+                Col::Number("Average breaks"),
+                Col::Number("Estimated time"),
+            ],
+            rows,
+            cx,
+        ))
         .into_any_element()
 }
 
 /// The targeted enchant: what an enchant lands on and how often.
-fn targeted(jar: &Jar, target: usize, cx: &mut Context<AppState>) -> AnyElement {
+fn targeted(jar: &Jar, target: usize) -> AnyElement {
     let chance = jar.targeted_enchant_chance();
-    let row = div()
-        .id("jar-chances-target")
-        .flex()
-        .flex_wrap()
-        .gap_3()
+    let row = row("jar-chances-target")
         .child(metric(
             "jar-target-name",
             "Target",
             collectible_name(target).to_owned(),
             format!("Collectible #{target}"),
             Tone::Accent,
-            cx,
         ))
         .child(metric(
             "jar-target-chance",
@@ -180,7 +170,6 @@ fn targeted(jar: &Jar, target: usize, cx: &mut Context<AppState>) -> AnyElement 
             format::chance(chance),
             format!("5 / ({} found + 3)", jar.collectibles_found()),
             Tone::Info,
-            cx,
         ))
         .child(metric(
             "jar-target-combined",
@@ -188,7 +177,6 @@ fn targeted(jar: &Jar, target: usize, cx: &mut Context<AppState>) -> AnyElement 
             format::chance(jar.enchant_chance() * chance),
             "An enchant that lands on the target".to_owned(),
             Tone::Warning,
-            cx,
         ));
     Card::new()
         .header(

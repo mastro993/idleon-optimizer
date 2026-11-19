@@ -3,22 +3,31 @@
 //! The comparison runs the same horizon under the saved assignments, the
 //! optimized assignments and the donation policy, then lists every discovered
 //! meal with the levels each source bought and the target the `Selected meal
-//! targets` objective spends toward. The tables and the two charts reuse the
-//! shared components; the numbers come from [`idleon_ladle::kitchen::forecast`]
-//! and its plans.
+//! targets` objective spends toward. The numbers come from
+//! [`idleon_ladle::kitchen::forecast`] and its plans; the meal list runs to the
+//! whole menu, so it is a virtualized kit `DataTable` whose rows
+//! [`super::State::sync`] rebuilds when the forecast, the scenario or the sort
+//! change.
 
+use super::State;
+use super::kitchens::{ChartPoint, Figures};
+use super::summary::count;
+use super::table::{Col, table, text};
 use crate::state::AppState;
-use ely_gpui_component::charts::{LineChart, Series};
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::forms::{Choice, NumberInput, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui::number_field;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui::{
+    AnyElement, App, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window,
+    div, px,
+};
+use gpui_kit::component::chart::LineChart;
+use gpui_kit::component::input::InputState;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::table::{Column, DataTable, TableDelegate, TableState};
+use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_ladle::kitchen::{self, Forecast, Objective, Plan, Scenario};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, TEXT_MONO, show_number};
 
 /// How the meal outcomes table orders its rows (`k.outcomeSort`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -37,24 +46,12 @@ impl OutcomeSort {
     pub(crate) const ALL: [OutcomeSort; 3] =
         [OutcomeSort::Gain, OutcomeSort::Level, OutcomeSort::Name];
 
-    pub(crate) fn id(self) -> &'static str {
-        match self {
-            OutcomeSort::Gain => "gain",
-            OutcomeSort::Level => "level",
-            OutcomeSort::Name => "name",
-        }
-    }
-
     pub(crate) fn label(self) -> &'static str {
         match self {
             OutcomeSort::Gain => "Most ranks gained",
             OutcomeSort::Level => "Projected level",
             OutcomeSort::Name => "Name",
         }
-    }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|sort| sort.id() == id)
     }
 }
 
@@ -66,41 +63,32 @@ pub(crate) fn objective_label(objective: Objective) -> &'static str {
     }
 }
 
-/// The scenario comparison, its extra-rank cards and the two reset charts.
+/// The scenario comparison, its extra-rank figures and the two reset charts.
 pub(crate) fn comparison(
-    state: &AppState,
+    state: &State,
     forecast: &Forecast,
+    figures: &Figures,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let pick = entity.clone();
-    let objective = state.ladle_state.kitchen.objective;
-    let mut table = Table::new([
-        "Scenario",
-        "Meal ranks",
-        "Donated",
-        "Final daily grant",
-        "Ladles spent",
-    ]);
-    for scenario in kitchen::SCENARIOS {
+    let objective = state.kitchen.objective;
+    let cols = [
+        Col::Text("Scenario"),
+        Col::Number("Meal ranks"),
+        Col::Number("Donated"),
+        Col::Number("Final daily grant"),
+        Col::Number("Ladles spent"),
+    ];
+    let rows = kitchen::SCENARIOS.into_iter().map(|scenario| {
         let plan = forecast.plan(scenario);
-        table = table.row([
-            div().child(scenario.label()).into_any_element(),
-            div()
-                .child(format::number(forecast.ranks(scenario)))
-                .into_any_element(),
-            div()
-                .child(format::number(plan.jelly.donated))
-                .into_any_element(),
-            div()
-                .child(format!("{} h", format::number(plan.jelly.daily_hours_end)))
-                .into_any_element(),
-            div()
-                .child(format::number(plan.ladles_used))
-                .into_any_element(),
-        ]);
-    }
+        vec![
+            text(scenario.label()),
+            text(format::number(forecast.ranks(scenario))),
+            text(format::number(plan.jelly.donated)),
+            text(format!("{} h", format::number(plan.jelly.daily_hours_end))),
+            text(format::number(plan.ladles_used)),
+        ]
+    });
     let first_donation = forecast
         .recommended
         .timeline
@@ -108,220 +96,299 @@ pub(crate) fn comparison(
         .find(|day| day.jelly_donation > 0.0)
         .map(|day| format!("Before reset {}", day.day))
         .unwrap_or_else(|| "No new donation in this horizon".to_owned());
-    let cards = div()
-        .id("kitchens-comparison-cards")
-        .flex()
-        .flex_wrap()
-        .gap_3()
+    let extra = KpiStrip::new()
         .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kitchens-extra-layout-ranks",
-                    "Extra ranks from layouts",
-                    forecast.ranks(Scenario::Layout) - forecast.ranks(Scenario::Current),
-                )
-                .decimals(0),
+            Statistic::new(
+                "kitchens-extra-layout-ranks",
+                "Extra ranks from layouts",
+                count(forecast.ranks(Scenario::Layout) - forecast.ranks(Scenario::Current)),
             )
             .caption("without new donations"),
         )
         .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kitchens-extra-donation-ranks",
-                    "Extra ranks from donations",
-                    forecast.ranks(Scenario::Recommended) - forecast.ranks(Scenario::Layout),
-                )
-                .decimals(0),
+            Statistic::new(
+                "kitchens-extra-donation-ranks",
+                "Extra ranks from donations",
+                count(forecast.ranks(Scenario::Recommended) - forecast.ranks(Scenario::Layout)),
             )
             .caption("beyond the optimized assignments"),
         );
-    let scenarios: Vec<Choice> = kitchen::SCENARIOS
-        .into_iter()
-        .map(|scenario| Choice::new(scenario.id(), scenario.label()))
-        .collect();
-    let select = Select::new("kitchens-scenario", scenarios)
-        .label("Inspect scenario")
-        .selected(state.ladle_state.scenario.id())
-        .on_change(move |value, _window, cx| {
-            if let Some(scenario) = Scenario::from_id(value.as_ref()) {
-                pick.update(cx, |state, cx| {
-                    state.ladle_state.scenario = scenario;
-                    cx.notify();
-                });
-            }
-        });
+    let select = &state.controls.scenario;
+    select.show(
+        super::controls::scenario_choices(),
+        Some(&state.scenario),
+        window,
+        cx,
+    );
     Card::new()
         .header(
             CardHeader::new("Forecast comparison")
                 .description(objective_label(objective))
-                .action(select),
+                .action(
+                    div().flex_none().w(px(240.0)).child(
+                        Select::new(select.state())
+                            .id("kitchens-scenario")
+                            .accessibility_label("Inspect scenario")
+                            .small(),
+                    ),
+                ),
         )
-        .child(div().id("kitchens-comparison-objective").role(gpui::Role::Label).aria_label(objective_label(objective)))
-        .child(div().px_3().pb_3().child(table))
-        .child(div().px_3().pb_3().child(cards))
-        .child(div().px_3().pb_3().child(
-            Caption::new(format!(
-                "Direct spending is planned in all three scenarios; only the reset assignments and \
-                 new donations differ. {first_donation}."
-            ))
-            .text_color(muted),
-        ))
-        .child(charts(forecast))
+        .child(
+            div()
+                .id("kitchens-comparison-objective")
+                .role(gpui::Role::Label)
+                .aria_label(objective_label(objective)),
+        )
+        .child(table("kitchens-comparison", &cols, rows, cx))
+        .child(div().id("kitchens-comparison-cards").child(extra))
+        .child(Caption::new(format!(
+            "Direct spending is planned in all three scenarios; only the reset assignments and \
+             new donations differ. {first_donation}."
+        )))
+        .child(charts(figures, cx))
         .into_any_element()
 }
 
 /// The daily grant hours and the cumulative meal ranks the comparison draws.
-fn charts(forecast: &Forecast) -> AnyElement {
-    let plan = &forecast.recommended;
-    let mut labels = vec!["Now".to_owned()];
-    let mut grants = vec![plan.jelly.daily_hours];
-    let mut ranks = vec![0.0];
-    let mut total = 0.0;
-    for day in &plan.timeline {
-        labels.push(format!("Reset {}", day.day));
-        grants.push(day.jelly_hours);
-        total += day.levels_bought as f64 + day.nmlb_to - day.nmlb_from;
-        ranks.push(total);
-    }
-    let grants = LineChart::new("kitchens-grant-chart", labels.clone())
-        .series(Series::new("Daily grant hours", grants))
-        .h(px(180.0));
-    let ranks = LineChart::new("kitchens-ranks-chart", labels)
-        .series(Series::new("Cumulative meal ranks", ranks))
-        .h(px(180.0));
+fn charts(figures: &Figures, cx: &App) -> AnyElement {
+    let theme = cx.theme();
+    let chart = |id: &'static str,
+                 line: &'static str,
+                 caption: &'static str,
+                 name: &'static str,
+                 points: &[ChartPoint],
+                 stroke| {
+        div()
+            .id(id)
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_w_0()
+            .gap_1()
+            .child(Caption::new(caption))
+            .child(
+                div().h(px(180.0)).child(
+                    LineChart::new(points.to_vec())
+                        .id(line)
+                        .name(name)
+                        .x(|point: &ChartPoint| point.label.clone())
+                        .y(|point: &ChartPoint| point.value)
+                        .y_tick_format(format::number)
+                        .stroke(stroke),
+                ),
+            )
+    };
     div()
         .id("kitchens-comparison-charts")
         .flex()
-        .flex_wrap()
         .gap_3()
-        .px_3()
-        .pb_3()
-        .child(
-            div()
-                .id("kitchens-grant-chart")
-                .flex()
-                .flex_col()
-                .flex_1()
-                .min_w(px(280.0))
-                .gap_1()
-                .child(Caption::new("Daily grant hours per kitchen"))
-                .child(grants),
-        )
-        .child(
-            div()
-                .id("kitchens-ranks-chart")
-                .flex()
-                .flex_col()
-                .flex_1()
-                .min_w(px(280.0))
-                .gap_1()
-                .child(Caption::new("Cumulative meal ranks gained"))
-                .child(ranks),
-        )
+        .child(chart(
+            "kitchens-grant-chart",
+            "kitchens-grant-line",
+            "Daily grant hours per kitchen",
+            "Daily grant hours",
+            &figures.grants,
+            theme.chart_1,
+        ))
+        .child(chart(
+            "kitchens-ranks-chart",
+            "kitchens-ranks-line",
+            "Cumulative meal ranks gained",
+            "Cumulative meal ranks",
+            &figures.ranks,
+            theme.chart_2,
+        ))
         .into_any_element()
 }
 
 /// The meal outcomes table, its sort and the per-meal target inputs.
 ///
-/// `plan` is `None` when the forecast refused its inputs. The table still draws
-/// the target inputs so the player can fix them, and the projected column is then `-`.
+/// When the forecast refused its inputs the table still draws the target inputs
+/// so the player can fix them, and the projected column is then `-`.
 pub(crate) fn meal_outcomes(
-    state: &AppState,
-    levels: &[f64],
-    plan: Option<&Plan>,
+    state: &State,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let sort_pick = entity.clone();
-    let max_level = plan
-        .map_or(state.ladle_state.kitchen.max_level, |plan| plan.max_level)
-        .max(1.0);
-    let sort = state.ladle_state.outcome_sort;
-    let mut table = Table::new([
-        "Meal",
-        "Current",
-        "Projected",
-        "Direct",
-        "Jellyfish",
-        "NMLB",
-        "Target",
-    ]);
-    for meal in sorted(levels, plan, sort) {
-        let outcome = plan.and_then(|plan| plan.per_meal.get(meal).copied());
-        let target = state
-            .ladle_state
-            .kitchen
-            .targets
-            .get(meal)
-            .copied()
-            .unwrap_or(0.0);
-        let input = entity.clone();
-        let name = kitchen::meal_name(meal).to_owned();
-        table = table.row([
-            div().child(name.clone()).into_any_element(),
-            div().child(format::number(levels[meal])).into_any_element(),
-            div()
-                .child(
-                    plan.map_or_else(|| "-".to_owned(), |plan| format::number(plan.levels[meal])),
-                )
-                .into_any_element(),
-            div()
-                .child(format::number(outcome.map_or(0.0, |row| row.ladle_levels)))
-                .into_any_element(),
-            div()
-                .child(format::number(outcome.map_or(0.0, |row| row.jelly_levels)))
-                .into_any_element(),
-            div()
-                .child(format::number(outcome.map_or(0.0, |row| row.nmlb_levels)))
-                .into_any_element(),
-            div()
-                .child(
-                    NumberInput::new(format!("kitchens-target-{meal}"), target)
-                        .range(0.0, max_level)
-                        .label(format!("{name} target level"))
-                        .on_commit(move |value, _window, cx| {
-                            input.update(cx, |state, cx| {
-                                state.ladle_state.set_target(meal, value);
-                                cx.notify();
-                            });
-                        }),
-                )
-                .into_any_element(),
-        ]);
-    }
-    let choices: Vec<Choice> = OutcomeSort::ALL
-        .into_iter()
-        .map(|sort| Choice::new(sort.id(), sort.label()))
-        .collect();
-    let select = Select::new("kitchens-outcomes-sort", choices)
-        .label("Sort meals")
-        .selected(sort.id())
-        .on_change(move |value, _window, cx| {
-            if let Some(sort) = OutcomeSort::from_id(value.as_ref()) {
-                sort_pick.update(cx, |state, cx| {
-                    state.ladle_state.outcome_sort = sort;
-                    cx.notify();
-                });
-            }
-        });
+    let select = &state.controls.sort;
+    select.show(
+        super::controls::sort_choices(),
+        Some(&state.outcome_sort),
+        window,
+        cx,
+    );
     Card::new()
         .header(
             CardHeader::new("Meal outcomes & targets")
                 .description(
                     "Targets drive the Selected meal targets objective; 0 means the meal has none",
                 )
-                .action(select),
+                .action(
+                    div().flex_none().w(px(200.0)).child(
+                        Select::new(select.state())
+                            .id("kitchens-outcomes-sort")
+                            .accessibility_label("Sort meals")
+                            .small(),
+                    ),
+                ),
         )
-        .child(div().id("kitchens-outcomes").px_3().pb_3().child(table))
-        .child(div().px_3().pb_3().child(
-            Caption::new(
-                "Direct is what the claimed ladles and passive kitchen time bought, Jellyfish the \
-                 grant's batch stock and NMLB No Meal Left Behind's daily hit.",
-            )
-            .text_color(muted),
+        .child(
+            div()
+                .id("kitchens-outcomes")
+                .h(px(360.0))
+                .child(DataTable::new(&state.controls.outcomes)),
+        )
+        .child(Caption::new(
+            "Direct is what the claimed ladles and passive kitchen time bought, Jellyfish the \
+             grant's batch stock and NMLB No Meal Left Behind's daily hit.",
         ))
         .into_any_element()
+}
+
+/// One discovered meal's row, formatted once.
+pub(crate) struct Row {
+    meal: usize,
+    name: SharedString,
+    current: SharedString,
+    projected: SharedString,
+    direct: SharedString,
+    jelly: SharedString,
+    nmlb: SharedString,
+    target: f64,
+}
+
+/// The rows of the meal outcomes table and the target fields their cells draw.
+pub(crate) struct Rows {
+    pub(super) rows: Vec<Row>,
+    /// One target field per meal, owned by the section's controls.
+    pub(super) targets: Vec<Entity<InputState>>,
+}
+
+/// The discovered meals' rows in the order the sort names.
+pub(super) fn rows(
+    levels: &[f64],
+    plan: Option<&Plan>,
+    sort: OutcomeSort,
+    targets: &[f64],
+) -> Vec<Row> {
+    sorted(levels, plan, sort)
+        .into_iter()
+        .map(|meal| {
+            let outcome = plan.and_then(|plan| plan.per_meal.get(meal).copied());
+            let levels_from = |pick: fn(&kitchen::MealOutcome) -> f64| {
+                format::number(outcome.as_ref().map_or(0.0, pick)).into()
+            };
+            Row {
+                meal,
+                name: kitchen::meal_name(meal).into(),
+                current: format::number(levels[meal]).into(),
+                projected: plan
+                    .map_or_else(|| "-".to_owned(), |plan| format::number(plan.levels[meal]))
+                    .into(),
+                direct: levels_from(|row| row.ladle_levels),
+                jelly: levels_from(|row| row.jelly_levels),
+                nmlb: levels_from(|row| row.nmlb_levels),
+                target: targets.get(meal).copied().unwrap_or(0.0),
+            }
+        })
+        .collect()
+}
+
+/// The table state over the meal rows: no selection, sorting or column moves,
+/// as the Ely table had none.
+pub(super) fn state(
+    targets: Vec<Entity<InputState>>,
+    window: &mut Window,
+    cx: &mut App,
+) -> Entity<TableState<Rows>> {
+    cx.new(|cx| {
+        TableState::new(
+            Rows {
+                rows: Vec::new(),
+                targets,
+            },
+            window,
+            cx,
+        )
+        .row_selectable(false)
+        .col_selectable(false)
+        .col_movable(false)
+        .sortable(false)
+    })
+}
+
+impl TableDelegate for Rows {
+    fn columns_count(&self, _: &App) -> usize {
+        7
+    }
+
+    fn rows_count(&self, _: &App) -> usize {
+        self.rows.len()
+    }
+
+    fn column(&self, col_ix: usize, _: &App) -> Column {
+        match col_ix {
+            0 => Column::new("meal", "Meal").width(px(200.0)),
+            1 => Column::new("current", "Current").text_right(),
+            2 => Column::new("projected", "Projected").text_right(),
+            3 => Column::new("direct", "Direct").text_right(),
+            4 => Column::new("jelly", "Jellyfish").text_right(),
+            5 => Column::new("nmlb", "NMLB").text_right(),
+            _ => Column::new("target", "Target").width(px(140.0)),
+        }
+    }
+
+    fn render_td(
+        &mut self,
+        row_ix: usize,
+        col_ix: usize,
+        window: &mut Window,
+        cx: &mut Context<TableState<Self>>,
+    ) -> impl IntoElement {
+        let Some(row) = self.rows.get(row_ix) else {
+            return div().into_any_element();
+        };
+        let number = |value: &SharedString, cx: &App| {
+            div()
+                .font_family(cx.theme().mono_font_family.clone())
+                .text_size(TEXT_MONO)
+                .child(value.clone())
+                .into_any_element()
+        };
+        match col_ix {
+            0 => div().child(row.name.clone()).into_any_element(),
+            1 => number(&row.current, cx),
+            2 => number(&row.projected, cx),
+            3 => number(&row.direct, cx),
+            4 => number(&row.jelly, cx),
+            5 => number(&row.nmlb, cx),
+            _ => match self.targets.get(row.meal) {
+                Some(field) => {
+                    show_number(field, row.target, 0, window, cx);
+                    number_field(
+                        SharedString::from(format!("kitchens-target-{}", row.meal)),
+                        field,
+                        format!("{} target level", row.name),
+                    )
+                    .into_any_element()
+                }
+                None => div().into_any_element(),
+            },
+        }
+    }
+
+    fn cell_label(&self, row_ix: usize, col_ix: usize, _: &App) -> Option<SharedString> {
+        let row = self.rows.get(row_ix)?;
+        Some(match col_ix {
+            0 => row.name.clone(),
+            1 => row.current.clone(),
+            2 => row.projected.clone(),
+            3 => row.direct.clone(),
+            4 => row.jelly.clone(),
+            5 => row.nmlb.clone(),
+            _ => format::number(row.target).into(),
+        })
+    }
 }
 
 /// The discovered meals in the order the sort names.

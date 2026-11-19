@@ -3,57 +3,156 @@
 //!
 //! The plan itself lives in [`idleon_ladle::kitchen`]: this tab only gathers
 //! the inputs the save and the section's selectors give it, then draws the cards
-//! and hands each reset to [`super::forecast`].
+//! and hands each reset to [`super::forecast`]. [`Figures`] runs the forecast
+//! and what it feeds once per change of the save or the inputs.
 
-use super::summary;
+use super::controls::{COST, Pin, cost_value, objective_choices, policy_choices};
+use super::planner::LadlePlanRequest;
+use super::summary::{self, count, figure};
+use super::{State, field, import_prompt};
 use crate::state::AppState;
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::feedback::{Callout, EmptyState};
-use ely_gpui_component::forms::{Checkbox, Choice, Select, Stepper};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui::number_field;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
-use idleon_ladle::kitchen::{self, Policy};
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
+};
+use gpui_kit::component::Sizable as _;
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::Select;
+use idleon_ladle::kitchen::{self, Forecast, Policy, Problem, steer::Floor};
 use idleon_ladle::{self as ladle, Ladle};
 use idleon_ui::format;
+use idleon_ui::widgets::{
+    Callout, Caption, Card, CardHeader, Choice, KpiStrip, Statistic, Tone, show_number,
+};
+use std::rc::Rc;
+
+/// One point of a reset chart.
+#[derive(Clone, Debug)]
+pub(super) struct ChartPoint {
+    pub(super) label: SharedString,
+    pub(super) value: f64,
+}
+
+/// The reset forecast for one set of inputs and everything the tab derives
+/// from it.
+pub(crate) struct Figures {
+    /// The donation search's request: the save's reset and these inputs.
+    pub(super) request: LadlePlanRequest,
+    /// Shared with the forecast list, whose items draw from it.
+    pub(super) forecast: Rc<Result<Forecast, Problem>>,
+    /// The NMLB steering plan, when the save has NMLB.
+    pub(super) floor: Option<Floor>,
+    pub(super) grants: Vec<ChartPoint>,
+    pub(super) ranks: Vec<ChartPoint>,
+    /// One choice per reset of the recommended plan.
+    pub(super) resets: Vec<Choice<usize>>,
+    /// The discovered meals the pins and exclusions offer.
+    pub(super) discovered: Vec<usize>,
+    pub(super) pins: Vec<Choice<Pin>>,
+}
+
+impl Figures {
+    pub(super) fn new(reset: &kitchen::Reset, inputs: &kitchen::Inputs) -> Self {
+        let forecast = kitchen::forecast(reset, inputs);
+        let floor = (reset.nmlb > 0.0)
+            .then(|| kitchen::steer::floor_plan(&super::planner::steer_input(reset, inputs)));
+        let (grants, ranks) = forecast.as_ref().map(charts).unwrap_or_default();
+        let resets = forecast
+            .as_ref()
+            .map(|forecast| {
+                forecast
+                    .recommended
+                    .timeline
+                    .iter()
+                    .map(|day| Choice::new(day.day as usize, format!("Reset {}", day.day)))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let discovered: Vec<usize> = (0..reset.meals.levels.len())
+            .filter(|meal| kitchen::meal_requirement(*meal) > 0.0)
+            .filter(|meal| {
+                reset
+                    .meals
+                    .levels
+                    .get(*meal)
+                    .is_some_and(|level| *level >= 1.0)
+            })
+            .collect();
+        let pins = [
+            Choice::new(None, "Optimizer chooses"),
+            Choice::new(Some(-1), "Keep idle"),
+        ]
+        .into_iter()
+        .chain(
+            discovered
+                .iter()
+                .map(|meal| Choice::new(Some(*meal as i32), kitchen::meal_name(*meal))),
+        )
+        .collect();
+        Self {
+            request: LadlePlanRequest {
+                reset: reset.clone(),
+                inputs: inputs.clone(),
+            },
+            forecast: Rc::new(forecast),
+            floor,
+            grants,
+            ranks,
+            resets,
+            discovered,
+            pins,
+        }
+    }
+}
+
+/// The daily grant hours and the cumulative meal ranks the comparison draws.
+fn charts(forecast: &Forecast) -> (Vec<ChartPoint>, Vec<ChartPoint>) {
+    let plan = &forecast.recommended;
+    let mut grants = vec![ChartPoint {
+        label: "Now".into(),
+        value: plan.jelly.daily_hours,
+    }];
+    let mut ranks = vec![ChartPoint {
+        label: "Now".into(),
+        value: 0.0,
+    }];
+    let mut total = 0.0;
+    for day in &plan.timeline {
+        let label: SharedString = format!("Reset {}", day.day).into();
+        grants.push(ChartPoint {
+            label: label.clone(),
+            value: day.jelly_hours,
+        });
+        total += day.levels_bought as f64 + day.nmlb_to - day.nmlb_from;
+        ranks.push(ChartPoint {
+            label,
+            value: total,
+        });
+    }
+    (grants, ranks)
+}
 
 /// The whole Kitchens & Jellyfish tab.
 pub(crate) fn pane(
-    state: &mut AppState,
+    state: &AppState,
     ladle: &Ladle,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let Some(reset) = ladle.kitchen.clone() else {
+    let ladle_state = &state.ladle_state;
+    let (Some(reset), Some(figures)) =
+        (ladle.kitchen.as_ref(), ladle_state.derived.kitchen.as_ref())
+    else {
         return no_kitchens(cx);
     };
-    let stats = summary::all(
-        ladle,
-        state.ladle_state.panel,
-        state.ladle_state.claim_hours,
-    );
-    let inputs = inputs(
-        &state.ladle_state.kitchen,
-        &state.ladle_state.assigned,
-        state.ladle_state.panel,
-        state.ladle_state.use_owned,
-        ladle,
-        &stats,
-    );
-    state.ladle_state.forecast(&reset, &inputs);
-    let cached = state
-        .ladle_state
-        .kitchen_plan
-        .as_ref()
-        .expect("the forecast was just computed");
-    let forecast = match &cached.forecast {
+    let inputs = &figures.request.inputs;
+    let forecast = match figures.forecast.as_ref() {
         Ok(forecast) => forecast,
-        Err(problem) => return refused(state, &reset, *problem, cx),
+        Err(problem) => return refused(ladle_state, *problem, window, cx),
     };
-    let plan = forecast.plan(state.ladle_state.scenario);
+    let plan = forecast.plan(ladle_state.scenario);
     let message = format!(
         "{} resets, {} ladles donated, {} meal levels gained",
         plan.days,
@@ -69,42 +168,43 @@ pub(crate) fn pane(
         .flex_1()
         .min_h_0()
         .child(
-            ScrollArea::new("kitchens-scroll")
-                .vertical()
+            div()
+                .flex()
+                .flex_col()
                 .flex_1()
                 .min_h_0()
-                .child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_3()
-                        .child(controls(state, cx))
-                        .child(cards(state, &inputs, plan))
-                        .child(cost_inputs(state, cx))
-                        .child(super::planner::pane(state, &reset, &inputs, cx))
-                        .child(super::planner::steering(&reset, &inputs, cx))
-                        .child(super::outcomes::comparison(state, forecast, cx))
-                        .child(super::forecast::pane(state, &reset, plan, cx))
-                        .child(super::outcomes::meal_outcomes(
-                            state,
-                            &reset.meals.levels,
-                            Some(plan),
-                            cx,
-                        ))
-                        .child(
-                            div().px_1().child(
-                                Caption::new(
-                                    "The plan spends the guaranteed claim income only: the Post Office \
-                                     19c roll and the Prayer 2 cap already shape the rates on the Ladles \
-                                     tab. Kitchens are fungible, so every ladle adds its hours to every \
-                                     kitchen, and the Blue Jellyfish grant cooks one batch in all of them \
-                                     after the reset. Layouts and donation shares are bounded best-found \
-                                     recommendations, not global-optimum proofs.",
-                                )
-                                .text_color(cx.theme().colors.fg_muted),
-                            ),
-                        ),
-                ),
+                .gap_3()
+                .child(controls(ladle_state, window, cx))
+                .child(cards(ladle_state, inputs, plan))
+                .child(cost_inputs(ladle_state, window, cx))
+                .child(super::planner::pane(state, reset, inputs, cx))
+                .child(super::planner::steering(reset, figures.floor.as_ref(), cx))
+                .child(super::outcomes::comparison(
+                    ladle_state,
+                    forecast,
+                    figures,
+                    window,
+                    cx,
+                ))
+                .child(super::forecast::pane(
+                    ladle_state,
+                    reset,
+                    figures,
+                    plan,
+                    window,
+                    cx,
+                ))
+                .child(super::outcomes::meal_outcomes(ladle_state, window, cx))
+                .child(div().px_1().child(Caption::new(
+                    "The plan spends the guaranteed claim income only: the Post Office 19c roll \
+                     and the Prayer 2 cap already shape the rates on the Ladles tab. Kitchens are \
+                     fungible, so every ladle adds its hours to every kitchen, and the Blue \
+                     Jellyfish grant cooks one batch in all of them after the reset. Layouts and \
+                     donation shares are bounded best-found recommendations, not global-optimum \
+                     proofs.",
+                )))
+                .overflow_y_scrollbar()
+                .id("kitchens-scroll"),
         )
         .into_any_element()
 }
@@ -130,308 +230,174 @@ pub(crate) fn inputs(
 }
 
 /// The reset's own controls: the horizon, the donation policy and the model.
-fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let inputs = &state.ladle_state.kitchen;
-    let entity = cx.entity();
-    let policy = entity.clone();
-    let share = entity.clone();
-    let fixed = entity.clone();
-    let owned = entity.clone();
-    let days = entity.clone();
-    let speed = entity.clone();
-    let max_level = entity.clone();
-    let use_owned = entity.clone();
-    let passive = entity.clone();
-    let ladleable = entity.clone();
-    let objective = entity.clone();
-    let policy_choices: Vec<Choice> = [
-        (Policy::None, "none", "No new donations"),
-        (Policy::All, "all", "Donate all daily income"),
-        (Policy::Share, "share", "Donate a share of daily income"),
-        (Policy::Fixed, "fixed", "Donate a fixed amount daily"),
-    ]
-    .into_iter()
-    .map(|(_, id, label)| Choice::new(id, label))
-    .collect();
-    let mut row = div()
-        .id("kitchens-controls")
+fn controls(state: &State, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let inputs = &state.kitchen;
+    let fields = &state.controls;
+    fields
+        .objective
+        .show(objective_choices(), Some(&inputs.objective), window, cx);
+    fields
+        .policy
+        .show(policy_choices(), Some(&inputs.policy), window, cx);
+    show_number(&fields.share, inputs.income_fraction * 100.0, 0, window, cx);
+    show_number(&fields.fixed, inputs.donation_per_day, 0, window, cx);
+    show_number(&fields.owned, inputs.owned_fraction * 100.0, 0, window, cx);
+    show_number(&fields.days, f64::from(inputs.days), 0, window, cx);
+    show_number(&fields.speed, inputs.base_speed, 0, window, cx);
+    show_number(&fields.max_level, inputs.max_level, 0, window, cx);
+    let mut first = div()
         .flex()
-        .flex_wrap()
         .items_end()
         .gap_3()
         .child(
-            field("Objective", muted).child(
-                Select::new(
-                    "kitchens-objective",
-                    [
-                        Choice::new("ranks", "Most meal ranks"),
-                        Choice::new("targets", "Selected meal targets"),
-                    ],
-                )
-                .label("Objective")
-                .selected(objective_id(inputs.objective))
-                .on_change(move |value, _window, cx| {
-                    let chosen = parse_objective(value.as_ref());
-                    objective.update(cx, |state, cx| {
-                        state
-                            .ladle_state
-                            .set_kitchen(|inputs| inputs.objective = chosen);
-                        cx.notify();
-                    });
-                }),
+            field("Objective").child(
+                div().flex_none().w(px(200.0)).child(
+                    Select::new(fields.objective.state())
+                        .id("kitchens-objective")
+                        .accessibility_label("Objective")
+                        .small(),
+                ),
             ),
         )
         .child(
-            field("Donation policy", muted).child(
-                Select::new("kitchens-policy", policy_choices)
-                    .label("Donation policy")
-                    .selected(policy_id(inputs.policy))
-                    .on_change(move |value, _window, cx| {
-                        let chosen = parse_policy(value.as_ref());
-                        policy.update(cx, |state, cx| {
-                            state.ladle_state.set_kitchen(|inputs| {
-                                inputs.policy = chosen;
-                                // The policy and an applied schedule are alternatives.
-                                inputs.donations = None;
-                            });
-                            cx.notify();
-                        });
-                    }),
+            field("Donation policy").child(
+                div().flex_none().w(px(240.0)).child(
+                    Select::new(fields.policy.state())
+                        .id("kitchens-policy")
+                        .accessibility_label("Donation policy")
+                        .small(),
+                ),
             ),
         );
     if inputs.policy == Policy::Share {
-        row = row.child(
-            field("Income donated (%)", muted).child(
-                Stepper::new("kitchens-share", inputs.income_fraction * 100.0)
-                    .range(0.0, 100.0)
-                    .step(5.0)
-                    .precision(0)
-                    .on_change(move |value, _window, cx| {
-                        share.update(cx, |state, cx| {
-                            state.ladle_state.set_kitchen(|inputs| {
-                                inputs.income_fraction = (value / 100.0).clamp(0.0, 1.0);
-                                inputs.donations = None;
-                            });
-                            cx.notify();
-                        });
-                    }),
-            ),
-        );
+        first = first.child(field("Income donated (%)").child(number_field(
+            "kitchens-share",
+            &fields.share,
+            "Income donated (%)",
+        )));
     }
     if inputs.policy == Policy::Fixed {
-        row = row.child(
-            field("Ladles donated / day", muted).child(
-                Stepper::new("kitchens-fixed", inputs.donation_per_day)
-                    .range(0.0, 100_000.0)
-                    .step(1.0)
-                    .precision(0)
-                    .on_change(move |value, _window, cx| {
-                        fixed.update(cx, |state, cx| {
-                            state.ladle_state.set_kitchen(|inputs| {
-                                inputs.donation_per_day = value.max(0.0);
-                                inputs.donations = None;
-                            });
-                            cx.notify();
-                        });
-                    }),
-            ),
-        );
+        first = first.child(field("Ladles donated / day").child(number_field(
+            "kitchens-fixed",
+            &fields.fixed,
+            "Ladles donated / day",
+        )));
     }
     if inputs.policy != Policy::None {
-        row = row.child(
-            field("Owned ladles donated (%)", muted).child(
-                Stepper::new("kitchens-owned", inputs.owned_fraction * 100.0)
-                    .range(0.0, 100.0)
-                    .step(5.0)
-                    .precision(0)
-                    .on_change(move |value, _window, cx| {
-                        owned.update(cx, |state, cx| {
-                            state.ladle_state.set_kitchen(|inputs| {
-                                inputs.owned_fraction = (value / 100.0).clamp(0.0, 1.0);
-                                inputs.donations = None;
-                            });
-                            cx.notify();
-                        });
-                    }),
-            ),
-        );
+        first = first.child(field("Owned ladles donated (%)").child(number_field(
+            "kitchens-owned",
+            &fields.owned,
+            "Owned ladles donated (%)",
+        )));
     }
-    row.child(
-        field("Resets", muted).child(
-            Stepper::new("kitchens-days", f64::from(inputs.days))
-                .range(1.0, 365.0)
-                .step(1.0)
-                .precision(0)
-                .on_change(move |value, _window, cx| {
-                    days.update(cx, |state, cx| {
-                        state.ladle_state.set_kitchen(|inputs| {
-                            inputs.days = value.clamp(1.0, 365.0).round() as u32;
-                        });
-                        // The forecast's selected reset must stay inside the horizon.
-                        state.ladle_state.day = state
-                            .ladle_state
-                            .day
-                            .clamp(1, state.ladle_state.kitchen.days as usize);
-                        cx.notify();
-                    });
-                }),
-        ),
-    )
-    .child(
-        field("Cooking speed /hr (Speed Lv 0)", muted).child(
-            Stepper::new("kitchens-speed", inputs.base_speed)
-                .range(0.0, 1e12)
-                .step(10.0)
-                .precision(0)
-                .on_change(move |value, _window, cx| {
-                    speed.update(cx, |state, cx| {
-                        state.ladle_state.set_kitchen(|inputs| {
-                            inputs.base_speed = value.max(0.0);
-                        });
-                        cx.notify();
-                    });
-                }),
-        ),
-    )
-    .child(
-        field("Meal max level", muted).child(
-            Stepper::new("kitchens-max-level", inputs.max_level)
-                .range(2.0, 1000.0)
-                .step(1.0)
-                .precision(0)
-                .on_change(move |value, _window, cx| {
-                    max_level.update(cx, |state, cx| {
-                        state.ladle_state.set_kitchen(|inputs| {
-                            inputs.max_level = value.max(2.0);
-                        });
-                        cx.notify();
-                    });
-                }),
-        ),
-    )
-    .child(
-        Checkbox::new("kitchens-use-owned", state.ladle_state.use_owned)
-            .label("Spend the ladles the save carries")
-            .on_change(move |on, _window, cx| {
-                use_owned.update(cx, |state, cx| {
-                    state.ladle_state.use_owned = on;
-                    cx.notify();
-                });
-            }),
-    )
-    .child(
-        Checkbox::new("kitchens-passive", inputs.passive)
-            .label("24h passive kitchens")
-            .on_change(move |on, _window, cx| {
-                passive.update(cx, |state, cx| {
-                    state.ladle_state.set_kitchen(|inputs| inputs.passive = on);
-                    cx.notify();
-                });
-            }),
-    )
-    .child(
-        Checkbox::new("kitchens-ladleable", inputs.ladleable_only)
-            .label("Only level meals a day of kitchen time can finish")
-            .on_change(move |on, _window, cx| {
-                ladleable.update(cx, |state, cx| {
-                    state
-                        .ladle_state
-                        .set_kitchen(|inputs| inputs.ladleable_only = on);
-                    cx.notify();
-                });
-            }),
-    )
-    .into_any_element()
-}
-
-/// The objective's id, as the select carries it.
-pub(crate) fn objective_id(objective: kitchen::Objective) -> &'static str {
-    match objective {
-        kitchen::Objective::Ranks => "ranks",
-        kitchen::Objective::Targets => "targets",
-    }
-}
-
-/// The objective a select value names.
-pub(crate) fn parse_objective(value: &str) -> kitchen::Objective {
-    match value {
-        "targets" => kitchen::Objective::Targets,
-        _ => kitchen::Objective::Ranks,
-    }
-}
-
-/// The donation policy's id, as the select carries it.
-pub(crate) fn policy_id(policy: Policy) -> &'static str {
-    match policy {
-        Policy::None => "none",
-        Policy::All => "all",
-        Policy::Share => "share",
-        Policy::Fixed => "fixed",
-    }
-}
-
-/// The donation policy a select value names.
-pub(crate) fn parse_policy(value: &str) -> Policy {
-    match value {
-        "all" => Policy::All,
-        "share" => Policy::Share,
-        "fixed" => Policy::Fixed,
-        _ => Policy::None,
-    }
-}
-
-/// The summary cards the reset plan answers with.
-fn cards(state: &AppState, inputs: &kitchen::Inputs, plan: &kitchen::Plan) -> AnyElement {
-    let checked = state.ladle_state.assigned.len();
-    let row = div()
-        .id("kitchens-cards")
+    let second = div()
         .flex()
-        .flex_wrap()
+        .items_end()
         .gap_3()
+        .child(field("Resets").child(number_field("kitchens-days", &fields.days, "Resets")))
+        .child(field("Cooking speed /hr (Speed Lv 0)").child(number_field(
+            "kitchens-speed",
+            &fields.speed,
+            "Cooking speed /hr",
+        )))
+        .child(field("Meal max level").child(number_field(
+            "kitchens-max-level",
+            &fields.max_level,
+            "Meal max level",
+        )));
+    let use_owned = cx.entity();
+    let passive = cx.entity();
+    let ladleable = cx.entity();
+    let third = div()
+        .flex()
+        .items_center()
+        .gap_4()
         .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kitchens-kpi-income",
-                    "Daily ladle income",
-                    inputs.ladles_per_day,
-                )
-                .decimals(0),
+            Checkbox::new("kitchens-use-owned")
+                .label("Spend the ladles the save carries")
+                .checked(state.use_owned)
+                .on_click(move |on, _window, cx| {
+                    let on = *on;
+                    use_owned.update(cx, |state, cx| {
+                        state.ladle_state.use_owned = on;
+                        cx.notify();
+                    });
+                }),
+        )
+        .child(
+            Checkbox::new("kitchens-passive")
+                .label("24h passive kitchens")
+                .checked(inputs.passive)
+                .on_click(move |on, _window, cx| {
+                    let on = *on;
+                    passive.update(cx, |state, cx| {
+                        state.ladle_state.set_kitchen(|inputs| inputs.passive = on);
+                        cx.notify();
+                    });
+                }),
+        )
+        .child(
+            Checkbox::new("kitchens-ladleable")
+                .label("Only level meals a day of kitchen time can finish")
+                .checked(inputs.ladleable_only)
+                .on_click(move |on, _window, cx| {
+                    let on = *on;
+                    ladleable.update(cx, |state, cx| {
+                        state
+                            .ladle_state
+                            .set_kitchen(|inputs| inputs.ladleable_only = on);
+                        cx.notify();
+                    });
+                }),
+        );
+    // Rows of controls that never wrap (`docs/ui-kit/display.md`).
+    div()
+        .id("kitchens-controls")
+        .flex()
+        .flex_col()
+        .gap_3()
+        .child(first)
+        .child(second)
+        .child(third)
+        .into_any_element()
+}
+
+/// The summary figures the reset plan answers with.
+fn cards(state: &State, inputs: &kitchen::Inputs, plan: &kitchen::Plan) -> AnyElement {
+    let checked = state.assigned.len();
+    let first = KpiStrip::new()
+        .child(
+            Statistic::new(
+                "kitchens-kpi-income",
+                "Daily ladle income",
+                count(inputs.ladles_per_day),
             )
             .caption(format!("guaranteed · {checked} checked characters")),
         )
         .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kitchens-kpi-grant",
-                    "Saved reset grant",
-                    plan.jelly.daily_hours,
-                )
-                .decimals(1)
-                .suffix("h"),
+            Statistic::new(
+                "kitchens-kpi-grant",
+                "Saved reset grant",
+                figure(plan.jelly.daily_hours, 1),
             )
+            .suffix("h")
             .caption("per kitchen at every reset"),
         )
         .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kitchens-kpi-multi",
-                    "Direct-use multiplier",
-                    plan.ladle_multi,
-                )
-                .decimals(3)
-                .suffix("×"),
+            Statistic::new(
+                "kitchens-kpi-multi",
+                "Direct-use multiplier",
+                figure(plan.ladle_multi, 3),
             )
+            .suffix("×")
             .caption("Talent 148 · not applied to Jellyfish grants"),
-        )
+        );
+    let second = KpiStrip::new()
         .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kitchens-kpi-donated",
-                    "Donated over the plan",
-                    plan.jelly.donated,
-                )
-                .decimals(0),
+            Statistic::new(
+                "kitchens-kpi-donated",
+                "Donated over the plan",
+                count(plan.jelly.donated),
             )
             .caption(match (plan.jelly.unlocked, plan.jelly.donated > 0.0) {
                 (false, _) => "Jellyfish locked · the saved grant still applies".to_owned(),
@@ -443,28 +409,22 @@ fn cards(state: &AppState, inputs: &kitchen::Inputs, plan: &kitchen::Plan) -> An
             }),
         )
         .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kitchens-kpi-grant-end",
-                    "Final daily grant",
-                    plan.jelly.daily_hours_end,
-                )
-                .decimals(1)
-                .suffix("h"),
+            Statistic::new(
+                "kitchens-kpi-grant-end",
+                "Final daily grant",
+                figure(plan.jelly.daily_hours_end, 1),
             )
+            .suffix("h")
             .caption(format!(
                 "{} hours used across the plan",
                 format::hours(plan.jelly.total_hours)
             )),
         )
         .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kitchens-kpi-ranks",
-                    "Meal levels gained",
-                    plan.gained.iter().sum::<f64>(),
-                )
-                .decimals(0),
+            Statistic::new(
+                "kitchens-kpi-ranks",
+                "Meal levels gained",
+                count(plan.gained.iter().sum::<f64>()),
             )
             .caption(format!(
                 "{} from ladles · {} from the grant · {} from NMLB",
@@ -473,67 +433,34 @@ fn cards(state: &AppState, inputs: &kitchen::Inputs, plan: &kitchen::Plan) -> An
                 format::number(plan.by_source.nmlb)
             )),
         );
-    row.into_any_element()
+    div()
+        .id("kitchens-cards")
+        .flex()
+        .flex_col()
+        .gap_2()
+        .child(first)
+        .child(second)
+        .into_any_element()
 }
 
 /// The meal cost terms the stats engine would otherwise supply.
-fn cost_inputs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let cost = state.ladle_state.kitchen.cost;
-    let fields: [(&'static str, &'static str, f64, f64, f64, f64); 5] = [
-        (
-            "Cost companion 162",
-            "companion",
-            cost.companion_162,
-            0.0,
-            1e6,
-            1.0,
-        ),
-        (
-            "Achievement 233",
-            "achievement",
-            cost.achievement_233,
-            0.0,
-            1.0,
-            1.0,
-        ),
-        ("Cloud 33", "cloud", cost.cloud_33, 0.0, 1.0, 0.05),
-        (
-            "Dream days banked",
-            "discount",
-            cost.discount_days,
-            0.0,
-            3650.0,
-            1.0,
-        ),
-        ("Dream days cap", "dream", cost.dream_11, 0.0, 3650.0, 1.0),
-    ];
-    let mut row = div().id("kitchens-cost-inputs").flex().flex_wrap().gap_3();
-    for (label, id, value, min, max, step) in fields {
-        let entity = cx.entity();
-        row = row.child(
-            field(label, muted).child(
-                Stepper::new(format!("kitchens-cost-{id}"), value)
-                    .range(min, max)
-                    .step(step)
-                    .precision(if step < 0.1 { 2 } else { 0 })
-                    .on_change(move |value, _window, cx| {
-                        entity.update(cx, |state, cx| {
-                            state.ladle_state.set_kitchen(|inputs| {
-                                let cost = &mut inputs.cost;
-                                match id {
-                                    "companion" => cost.companion_162 = value,
-                                    "achievement" => cost.achievement_233 = value,
-                                    "cloud" => cost.cloud_33 = value,
-                                    "discount" => cost.discount_days = value,
-                                    _ => cost.dream_11 = value,
-                                }
-                            });
-                            cx.notify();
-                        });
-                    }),
-            ),
+fn cost_inputs(state: &State, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let mut inputs = state.kitchen.clone();
+    let mut row = div().id("kitchens-cost-inputs").flex().items_end().gap_3();
+    for (index, spec) in COST.iter().enumerate() {
+        let field_state = &state.controls.cost[index];
+        show_number(
+            field_state,
+            *cost_value(&mut inputs, index),
+            spec.precision,
+            window,
+            cx,
         );
+        row = row.child(field(spec.label).child(number_field(
+            format!("kitchens-cost-{}", spec.id),
+            field_state,
+            spec.label,
+        )));
     }
     Card::new()
         .header(CardHeader::new("Meal cost inputs").description(
@@ -541,24 +468,19 @@ fn cost_inputs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
              them carries",
         ))
         .child(row)
-        .child(
-            div().px_3().pb_3().child(
-                Caption::new(
-                    "Meal levels cost CookingR(\"CookingMenuMealCosts\"): the companion, achievement, cloud \
-                     and Dream terms below scale every price, and Dream days discount exactly one purchase.",
-                )
-                .text_color(cx.theme().colors.fg_muted),
-            ),
-        )
+        .child(Caption::new(
+            "Meal levels cost CookingR(\"CookingMenuMealCosts\"): the companion, achievement, cloud \
+             and Dream terms below scale every price, and Dream days discount exactly one purchase.",
+        ))
         .into_any_element()
 }
 
 /// The forecast refused its inputs: say which, and keep the target inputs open so
 /// a target objective without a target can be fixed from the same tab.
 fn refused(
-    state: &AppState,
-    reset: &kitchen::Reset,
-    problem: kitchen::Problem,
+    state: &State,
+    problem: Problem,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     div()
@@ -567,57 +489,43 @@ fn refused(
         .flex_col()
         .flex_1()
         .min_h_0()
-        .gap_3()
-        .p_3()
         .child(
-            div().id("kitchens-error").child(
-                Callout::new(Severity::Warning)
-                    .title("The reset forecast cannot run")
-                    .child(Caption::new(problem.message())),
-            ),
+            div()
+                .flex()
+                .flex_col()
+                .flex_1()
+                .min_h_0()
+                .gap_3()
+                .child(
+                    div().id("kitchens-error").child(
+                        Callout::new(Tone::Warning, "The reset forecast cannot run")
+                            .child(Caption::new(problem.message())),
+                    ),
+                )
+                .child(controls(state, window, cx))
+                .child(super::outcomes::meal_outcomes(state, window, cx))
+                .overflow_y_scrollbar()
+                .id("kitchens-scroll"),
         )
-        .child(controls(state, cx))
-        .child(super::outcomes::meal_outcomes(
-            state,
-            &reset.meals.levels,
-            None,
-            cx,
-        ))
         .into_any_element()
 }
 
 /// A save without `Cooking` or `Meals` rows has no reset to plan.
 fn no_kitchens(cx: &mut Context<AppState>) -> AnyElement {
-    let import = cx.entity();
     div()
         .id("kitchens-pane")
         .flex()
         .flex_col()
         .size_full()
         .min_h_0()
-        .child(
-            EmptyState::new("kitchens-empty", IconName::Map, "No kitchen rows")
-                .body(
-                    "The reset plan reads each kitchen's unlock state, the meal levels and stocks and the \
-                     Blue Jellyfish grant from a save. Import one to see the daily layout and its \
-                     instructions.",
-                )
-                .action(
-                    ely_gpui_component::buttons::Button::new("kitchens-import", "Import save")
-                        .icon(IconName::Upload)
-                        .on_click(move |_event, window, cx| {
-                            import.update(cx, |state, cx| state.open_import(window, cx));
-                        }),
-                ),
-        )
+        .child(import_prompt(
+            "kitchens-empty",
+            "kitchens-import",
+            "No kitchen rows",
+            "The reset plan reads each kitchen's unlock state, the meal levels and stocks and the \
+             Blue Jellyfish grant from a save. Import one to see the daily layout and its \
+             instructions.",
+            cx,
+        ))
         .into_any_element()
-}
-
-/// A labelled stepper column.
-fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(Caption::new(label).text_color(muted))
 }

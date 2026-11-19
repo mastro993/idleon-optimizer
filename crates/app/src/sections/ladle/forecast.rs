@@ -1,30 +1,42 @@
 //! The reset layout and the expandable reset instructions.
 //!
-//! The reset's kitchen cards come first, then one expandable row per reset
-//! whose summary is its headline and whose body is its spend order, built from
-//! the shared components: a card for the inspected reset's layout and batch,
-//! then the forecast list, where each row expands into its phase tables and
-//! copies the same instructions as plain text.
+//! A card for the inspected reset's layout and batch comes first, then the
+//! forecast list, where each reset's row expands into its phase tables and
+//! copies the same instructions as plain text. The horizon runs to 365 resets,
+//! so the list draws only the rows in view: it is a GPUI `list` whose rows are
+//! measured as they appear and remeasured when one expands.
 
+use super::State;
+use super::kitchens::Figures;
+use super::summary::tag;
+use super::table::{Col, table, text};
 use crate::state::AppState;
-use ely_gpui_component::buttons::CopyButton;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Checkbox, Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Disclosure;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_ladle::kitchen::{self, Layout, LayoutMode, Phase, PhaseKind};
+use gpui::{
+    AnyElement, App, Context, Hsla, IntoElement, ParentElement, Styled, Window, div, list, px,
+    radians,
+};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::clipboard::Clipboard;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, Size};
+use idleon_ladle::kitchen::{self, Layout, Phase, PhaseKind};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, Tone};
+use std::f32::consts::FRAC_PI_2;
+
+/// The height the forecast list scrolls in.
+const DAYS_HEIGHT: f32 = 480.0;
 
 /// The reset layout card and the forecast list.
 pub(crate) fn pane(
-    state: &AppState,
+    state: &State,
     reset: &kitchen::Reset,
+    figures: &Figures,
     plan: &kitchen::Plan,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     div()
@@ -32,106 +44,84 @@ pub(crate) fn pane(
         .flex()
         .flex_col()
         .gap_3()
-        .child(layout_card(state, reset, plan, cx))
-        .child(day_list(state, plan, cx))
+        .child(layout_card(state, reset, figures, plan, window, cx))
+        .child(day_list(state, figures, cx))
         .into_any_element()
 }
 
 /// The inspected reset's layout, batch and layout controls.
 fn layout_card(
-    state: &AppState,
+    state: &State,
     reset: &kitchen::Reset,
+    figures: &Figures,
     plan: &kitchen::Plan,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let day = state.ladle_state.day.clamp(1, plan.timeline.len().max(1));
+    let day = state.day.clamp(1, plan.timeline.len().max(1));
     let reset_day = plan.timeline.get(day - 1);
     let mut card = Card::new()
         .header(CardHeader::new("Reset layout").description(
             "Whole kitchens are indivisible · the batch cooks the grant's hours in every assigned \
              kitchen before any purchase",
         ))
-        .child(selectors(state, plan, cx))
-        .child(layout_controls(state, reset, cx));
+        .child(selectors(state, figures, day, window, cx))
+        .child(layout_controls(state, reset, figures, window, cx));
     if let Some(layout) = reset_day.and_then(day_layout) {
-        card = card.child(kitchen_grid(layout)).child(batch_table(layout));
+        card = card
+            .child(kitchen_grid(layout, cx))
+            .child(batch_table(layout, cx));
     } else if let Some(reset_day) = reset_day {
-        card = card.child(
-            div().px_3().pb_3().child(
-                Caption::new(format!(
-                    "Reset {} grants {} hours per kitchen; the batch has no stock to buy from.",
-                    reset_day.day,
-                    format::hours(reset_day.jelly_hours)
-                ))
-                .text_color(muted),
-            ),
-        );
+        card = card.child(Caption::new(format!(
+            "Reset {} grants {} hours per kitchen; the batch has no stock to buy from.",
+            reset_day.day,
+            format::hours(reset_day.jelly_hours)
+        )));
     }
     card.into_any_element()
 }
 
 /// The reset and assignment-mode selects.
-fn selectors(state: &AppState, plan: &kitchen::Plan, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let reset_pick = entity.clone();
-    let mode = entity.clone();
-    let resets: Vec<Choice> = plan
-        .timeline
-        .iter()
-        .map(|day| Choice::new(day.day.to_string(), format!("Reset {}", day.day)))
-        .collect();
-    let day = state.ladle_state.day.clamp(1, plan.timeline.len().max(1));
+fn selectors(
+    state: &State,
+    figures: &Figures,
+    day: usize,
+    window: &mut Window,
+    cx: &mut App,
+) -> AnyElement {
+    let controls = &state.controls;
+    controls
+        .reset
+        .show(figures.resets.clone(), Some(&day), window, cx);
+    controls.layout_mode.show(
+        super::controls::layout_mode_choices(),
+        Some(&state.kitchen.layout.mode),
+        window,
+        cx,
+    );
     div()
         .id("kitchens-layout-controls")
         .flex()
-        .flex_wrap()
         .items_end()
         .gap_3()
-        .px_3()
-        .pb_3()
         .child(
-            column("Inspect reset", muted).child(
-                Select::new("kitchens-reset-select", resets)
-                    .label("Inspect reset")
-                    .selected(day.to_string())
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(day) = value.parse::<usize>() {
-                            reset_pick.update(cx, |state, cx| {
-                                state.ladle_state.day = day;
-                                cx.notify();
-                            });
-                        }
-                    }),
+            super::field("Inspect reset").child(
+                div().flex_none().w(px(160.0)).child(
+                    Select::new(controls.reset.state())
+                        .id("kitchens-reset-select")
+                        .accessibility_label("Inspect reset")
+                        .small(),
+                ),
             ),
         )
         .child(
-            column("Assignments", muted).child(
-                Select::new(
-                    "kitchens-layout-mode",
-                    [
-                        Choice::new("optimized", "Optimizer chooses the meals"),
-                        Choice::new("saved", "Keep the saved assignments"),
-                    ],
-                )
-                .label("Assignments")
-                .selected(match state.ladle_state.kitchen.layout.mode {
-                    LayoutMode::Optimized => "optimized",
-                    LayoutMode::Saved => "saved",
-                })
-                .on_change(move |value, _window, cx| {
-                    let choice = match value.as_ref() {
-                        "saved" => LayoutMode::Saved,
-                        _ => LayoutMode::Optimized,
-                    };
-                    mode.update(cx, |state, cx| {
-                        state
-                            .ladle_state
-                            .set_kitchen(|inputs| inputs.layout.mode = choice);
-                        cx.notify();
-                    });
-                }),
+            super::field("Assignments").child(
+                div().flex_none().w(px(260.0)).child(
+                    Select::new(controls.layout_mode.state())
+                        .id("kitchens-layout-mode")
+                        .accessibility_label("Assignments")
+                        .small(),
+                ),
             ),
         )
         .into_any_element()
@@ -139,270 +129,272 @@ fn selectors(state: &AppState, plan: &kitchen::Plan, cx: &mut Context<AppState>)
 
 /// The pin selects and the meal exclusions, behind a toggle.
 fn layout_controls(
-    state: &AppState,
+    state: &State,
     reset: &kitchen::Reset,
+    figures: &Figures,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let toggle = entity.clone();
-    let mut controls = div().px_3().pb_3().child(
-        Checkbox::new("kitchens-show-layout", state.ladle_state.show_layout)
+    let toggle = cx.entity();
+    let mut controls = div().flex().flex_col().gap_3().child(
+        Checkbox::new("kitchens-show-layout")
             .label("Pin kitchens and exclude meals")
-            .on_change(move |on, _window, cx| {
+            .checked(state.show_layout)
+            .on_click(move |on, _window, cx| {
+                let on = *on;
                 toggle.update(cx, |state, cx| {
                     state.ladle_state.show_layout = on;
                     cx.notify();
                 });
             }),
     );
-    if !state.ladle_state.show_layout {
+    if !state.show_layout {
         return controls.into_any_element();
     }
-    let discovered: Vec<usize> = (0..reset.meals.levels.len())
-        .filter(|meal| kitchen::meal_requirement(*meal) > 0.0)
-        .filter(|meal| {
-            reset
-                .meals
-                .levels
-                .get(*meal)
-                .is_some_and(|level| *level >= 1.0)
-        })
-        .collect();
-    let mut grid = div()
-        .id("kitchens-pins")
-        .flex()
-        .flex_wrap()
-        .items_end()
-        .gap_3();
-    for kitchen in reset.unlocked() {
-        let entity = entity.clone();
-        let index = kitchen.index;
-        let mut choices = vec![
-            Choice::new("auto", "Optimizer chooses"),
-            Choice::new("-1", "Keep idle"),
-        ];
-        choices.extend(
-            discovered
-                .iter()
-                .map(|meal| Choice::new(meal.to_string(), kitchen::meal_name(*meal))),
-        );
-        let selected = state
-            .ladle_state
-            .kitchen
-            .layout
-            .pins
-            .get(&index)
-            .map_or_else(|| "auto".to_owned(), |meal| meal.to_string());
-        grid = grid.child(
-            column_owned(format!("Kitchen {}", index + 1), muted).child(
-                Select::new(format!("kitchens-pin-{index}"), choices)
-                    .label(format!("Kitchen {}", index + 1))
-                    .selected(selected)
-                    .on_change(move |value, _window, cx| {
-                        let meal = match value.as_ref() {
-                            "auto" => None,
-                            other => other.parse::<i32>().ok(),
-                        };
-                        entity.update(cx, |state, cx| {
-                            state.ladle_state.set_pin(index, meal);
-                            cx.notify();
-                        });
-                    }),
-            ),
-        );
+    // Rows of four never wrap (`docs/ui-kit/display.md`).
+    let mut grid = div().id("kitchens-pins").flex().flex_col().gap_2();
+    let kitchens: Vec<_> = reset.unlocked().collect();
+    for chunk in kitchens.chunks(4) {
+        let mut row = div().flex().items_end().gap_3();
+        for kitchen in chunk {
+            let index = kitchen.index;
+            let Some(select) = state.controls.pins.get(index) else {
+                continue;
+            };
+            let pin = state.kitchen.layout.pins.get(&index).copied();
+            select.show(figures.pins.clone(), Some(&pin), window, cx);
+            row = row.child(
+                super::field(format!("Kitchen {}", index + 1)).child(
+                    div().flex_none().w(px(200.0)).child(
+                        Select::new(select.state())
+                            .id(format!("kitchens-pin-{index}"))
+                            .accessibility_label(format!("Kitchen {}", index + 1))
+                            .small(),
+                    ),
+                ),
+            );
+        }
+        grid = grid.child(row);
     }
-    let mut meals = div().id("kitchens-exclusions").flex().flex_wrap().gap_2();
-    for meal in &discovered {
-        let entity = entity.clone();
-        let index = *meal;
-        let excluded = state.ladle_state.kitchen.layout.excluded.contains(&index);
-        meals = meals.child(
-            Checkbox::new(format!("kitchens-exclude-{index}"), excluded)
-                .label(kitchen::meal_name(index))
-                .on_change(move |_, _window, cx| {
-                    entity.update(cx, |state, cx| {
-                        state.ladle_state.toggle_excluded(index);
-                        cx.notify();
-                    });
-                }),
-        );
+    let mut meals = div().id("kitchens-exclusions").flex().flex_col().gap_2();
+    for chunk in figures.discovered.chunks(6) {
+        let mut row = div().flex().gap_4();
+        for meal in chunk {
+            let entity = cx.entity();
+            let index = *meal;
+            row = row.child(
+                div().w(px(150.0)).child(
+                    Checkbox::new(format!("kitchens-exclude-{index}"))
+                        .label(kitchen::meal_name(index))
+                        .checked(state.kitchen.layout.excluded.contains(&index))
+                        .on_click(move |_, _window, cx| {
+                            entity.update(cx, |state, cx| {
+                                state.ladle_state.toggle_excluded(index);
+                                cx.notify();
+                            });
+                        }),
+                ),
+            );
+        }
+        meals = meals.child(row);
     }
     controls = controls
         .child(grid)
-        .child(
-            div().px_3().pb_3().child(
-                Caption::new(
-                    "Exclusions and pins affect the reset assignments only, not direct spending.",
-                )
-                .text_color(muted),
-            ),
-        )
-        .child(div().px_3().pb_3().child(meals));
+        .child(Caption::new(
+            "Exclusions and pins affect the reset assignments only, not direct spending.",
+        ))
+        .child(meals);
     controls.into_any_element()
 }
 
-/// The reset's kitchen cards, one per unlocked kitchen.
-fn kitchen_grid(layout: &Layout) -> AnyElement {
-    let mut grid = div()
-        .id("kitchens-layout")
-        .flex()
-        .flex_wrap()
-        .gap_2()
-        .px_3()
-        .pb_3();
-    for kitchen in &layout.kitchens {
-        let mut header = div().flex().items_center().gap_2().child(
-            div()
-                .text_sm()
-                .child(format!("Kitchen {}", kitchen.index + 1)),
-        );
-        if kitchen.pinned {
-            header = header.child(Badge::new("pinned").tone(Tone::Warning));
-        }
-        let mut card = div()
-            .id(format!("kitchens-kitchen-{}", kitchen.index))
-            .flex()
-            .flex_col()
-            .gap_1()
-            .p_2()
-            .rounded_md()
-            .border_1()
-            .min_w(gpui::px(200.0))
-            .child(header)
-            .child(Caption::new(format!(
-                "{} cooking speed/hr",
-                format::number(kitchen.speed)
-            )))
-            .child(div().child(meal_label(kitchen.meal)));
-        if kitchen.meal >= 0 {
-            card = card.child(Caption::new(format!(
-                "Produces {} stock",
-                format::number(kitchen.produced)
-            )));
-            if let Some(meal) = layout
-                .meals
-                .iter()
-                .find(|meal| meal.meal == kitchen.meal as usize)
-            {
-                card = card.child(Caption::new(match meal.to > meal.from {
-                    true => format!(
-                        "Combined result: Lv {} → {} (+{})",
-                        format::number(meal.from),
-                        format::number(meal.to),
-                        format::number(meal.to - meal.from)
-                    ),
-                    false => format!(
-                        "Combined result: {}% toward Lv {}",
-                        (meal.progress * 100.0).round(),
-                        format::number(meal.to + 1.0)
-                    ),
-                }));
+/// The reset's kitchen cards, one per unlocked kitchen, four to a row.
+fn kitchen_grid(layout: &Layout, cx: &App) -> AnyElement {
+    let theme = cx.theme();
+    let mut grid = div().id("kitchens-layout").flex().flex_col().gap_2();
+    for chunk in layout.kitchens.chunks(4) {
+        let mut row = div().flex().gap_2();
+        for kitchen in chunk {
+            let mut header = div().flex().items_center().gap_2().child(
+                div()
+                    .text_size(TEXT_BODY)
+                    .child(format!("Kitchen {}", kitchen.index + 1)),
+            );
+            if kitchen.pinned {
+                header = header.child(tag("pinned", Tone::Warning));
             }
+            let mut card = div()
+                .id(format!("kitchens-kitchen-{}", kitchen.index))
+                .flex()
+                .flex_col()
+                .gap_1()
+                .p_2()
+                .rounded(theme.radius)
+                .border_1()
+                .border_color(theme.border)
+                .w(px(220.0))
+                .child(header)
+                .child(Caption::new(format!(
+                    "{} cooking speed/hr",
+                    format::number(kitchen.speed)
+                )))
+                .child(div().child(meal_label(kitchen.meal)));
+            if kitchen.meal >= 0 {
+                card = card.child(Caption::new(format!(
+                    "Produces {} stock",
+                    format::number(kitchen.produced)
+                )));
+                if let Some(meal) = layout
+                    .meals
+                    .iter()
+                    .find(|meal| meal.meal == kitchen.meal as usize)
+                {
+                    card = card.child(Caption::new(match meal.to > meal.from {
+                        true => format!(
+                            "Combined result: Lv {} → {} (+{})",
+                            format::number(meal.from),
+                            format::number(meal.to),
+                            format::number(meal.to - meal.from)
+                        ),
+                        false => format!(
+                            "Combined result: {}% toward Lv {}",
+                            (meal.progress * 100.0).round(),
+                            format::number(meal.to + 1.0)
+                        ),
+                    }));
+                }
+            }
+            card = card.child(Caption::new(format!(
+                "Saved: {}",
+                meal_label(kitchen.saved_meal)
+            )));
+            row = row.child(card);
         }
-        card = card.child(Caption::new(format!(
-            "Saved: {}",
-            meal_label(kitchen.saved_meal)
-        )));
-        grid = grid.child(card);
+        grid = grid.child(row);
     }
     grid.into_any_element()
 }
 
 /// The meals the batch cooks and the levels their stock buys.
-fn batch_table(layout: &Layout) -> AnyElement {
-    let mut table = Table::new(["Meal", "Levels", "Stock left", "Progress"]);
-    for meal in &layout.meals {
-        table = table.row([
-            div()
-                .child(kitchen::meal_name(meal.meal))
-                .into_any_element(),
-            div()
-                .child(format!(
-                    "Lv {} → {}",
-                    format::number(meal.from),
-                    format::number(meal.to)
-                ))
-                .into_any_element(),
-            div().child(format::number(meal.stock)).into_any_element(),
-            div()
-                .child(format!(
-                    "{}% to Lv {}",
-                    (meal.progress * 100.0).round(),
-                    format::number(meal.to + 1.0)
-                ))
-                .into_any_element(),
-        ]);
-    }
-    div()
-        .id("kitchens-batch")
-        .px_3()
-        .pb_3()
-        .child(table)
-        .into_any_element()
+fn batch_table(layout: &Layout, cx: &App) -> AnyElement {
+    let cols = [
+        Col::Text("Meal"),
+        Col::Text("Levels"),
+        Col::Number("Stock left"),
+        Col::Text("Progress"),
+    ];
+    let rows = layout.meals.iter().map(|meal| {
+        vec![
+            text(kitchen::meal_name(meal.meal)),
+            text(format!(
+                "Lv {} → {}",
+                format::number(meal.from),
+                format::number(meal.to)
+            )),
+            text(format::number(meal.stock)),
+            text(format!(
+                "{}% to Lv {}",
+                (meal.progress * 100.0).round(),
+                format::number(meal.to + 1.0)
+            )),
+        ]
+    });
+    table("kitchens-batch", &cols, rows, cx).into_any_element()
 }
 
-/// The forecast: one expandable row per reset.
-fn day_list(state: &AppState, plan: &kitchen::Plan, cx: &mut Context<AppState>) -> AnyElement {
-    let mut list = div().id("kitchens-days").flex().flex_col();
-    for day in &plan.timeline {
-        let number = day.day;
-        let open = state.ladle_state.open_days.contains(&number);
-        let entity = cx.entity();
-        let toggle = entity.clone();
-        let header = div()
-            .id(format!("kitchens-day-header-{number}"))
-            .flex()
-            .flex_1()
-            .min_w_0()
-            .items_center()
-            .gap_2()
-            .cursor_pointer()
-            .on_click(move |_event, _window, cx| {
-                toggle.update(cx, |state, cx| {
-                    toggle_day(&mut state.ladle_state.open_days, number);
-                    cx.notify();
-                });
-            })
-            .child(Disclosure::new(
-                format!("kitchens-day-disclosure-{number}"),
-                open,
-            ))
-            .child(div().flex_1().min_w_0().child(day.headline()));
-        let mut row = div()
-            .id(format!("kitchens-day-{}", day.day))
-            .flex()
-            .flex_col()
-            .gap_2()
-            .py_2()
-            .child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap_2()
-                    .child(header)
-                    .child(CopyButton::new(
-                        format!("kitchens-day-copy-{}", day.day),
-                        day.instructions(),
-                    )),
-            );
-        if open {
-            row = row.child(day_body(day, cx));
-        }
-        list = list.child(row);
-    }
+/// The forecast: one expandable row per reset, drawn only while in view.
+fn day_list(state: &State, figures: &Figures, cx: &mut Context<AppState>) -> AnyElement {
+    let days = state.controls.days_list.clone();
+    let forecast = figures.forecast.clone();
+    let scenario = state.scenario;
+    let open = state.open_days.clone();
+    let entity = cx.entity();
+    let items = days.clone();
+    let rows = list(days.clone(), move |ix, _window, cx| {
+        let Ok(forecast) = forecast.as_ref() else {
+            return div().into_any_element();
+        };
+        let Some(day) = forecast.plan(scenario).timeline.get(ix) else {
+            return div().into_any_element();
+        };
+        day_row(day, ix, open.contains(&day.day), &entity, &items, cx)
+    })
+    .size_full();
     Card::new()
         .header(CardHeader::new("Daily reset forecast").description(
             "Expand a reset for its spending order and instructions · the copy button takes the \
              same text",
         ))
-        .child(list)
+        .child(
+            div()
+                .id("kitchens-days")
+                .relative()
+                .h(px(DAYS_HEIGHT))
+                .child(rows)
+                .vertical_scrollbar(&days),
+        )
         .into_any_element()
 }
 
+/// One reset's row: its headline, its copy button and, when open, its body.
+fn day_row(
+    day: &kitchen::Day,
+    ix: usize,
+    open: bool,
+    entity: &gpui::Entity<AppState>,
+    items: &gpui::ListState,
+    cx: &mut App,
+) -> AnyElement {
+    let number = day.day;
+    let muted = cx.theme().muted_foreground;
+    let toggle = entity.clone();
+    let remeasure = items.clone();
+    let header = div()
+        .id(format!("kitchens-day-header-{number}"))
+        .flex()
+        .flex_1()
+        .min_w_0()
+        .items_center()
+        .gap_2()
+        .cursor_pointer()
+        .on_click(move |_event, _window, cx| {
+            toggle.update(cx, |state, cx| {
+                toggle_day(&mut state.ladle_state.open_days, number);
+                cx.notify();
+            });
+            remeasure.remeasure_items(ix..ix + 1);
+        })
+        .child(
+            div().id(format!("kitchens-day-disclosure-{number}")).child(
+                Icon::new(IconName::ChevronRight)
+                    .with_size(Size::Small)
+                    .text_color(muted)
+                    .rotate(radians(if open { FRAC_PI_2 } else { 0.0 })),
+            ),
+        )
+        .child(div().flex_1().min_w_0().child(day.headline()));
+    let mut row = div()
+        .id(format!("kitchens-day-{number}"))
+        .w_full()
+        .flex()
+        .flex_col()
+        .gap_2()
+        .py_2()
+        .pr_3()
+        .child(
+            div().flex().items_center().gap_2().child(header).child(
+                Clipboard::new(format!("kitchens-day-copy-{number}"))
+                    .value(day.instructions())
+                    .tooltip("Copy the instructions"),
+            ),
+        );
+    if open {
+        row = row.child(day_body(day, muted, cx));
+    }
+    row.into_any_element()
+}
+
 /// One reset's expanded body: its phases, their spend order and its leftovers.
-fn day_body(day: &kitchen::Day, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+fn day_body(day: &kitchen::Day, muted: Hsla, cx: &App) -> AnyElement {
     let mut body = div()
         .id(format!("kitchens-day-body-{}", day.day))
         .flex()
@@ -410,7 +402,7 @@ fn day_body(day: &kitchen::Day, cx: &mut Context<AppState>) -> AnyElement {
         .gap_2()
         .pl_5();
     for phase in &day.phases {
-        body = body.child(phase_block(day.day, phase, muted));
+        body = body.child(phase_block(day.day, phase, cx));
     }
     for saving in &day.savings {
         body = body.child(Caption::new(saving_line(saving, PhaseKind::Claim)).text_color(muted));
@@ -419,49 +411,50 @@ fn day_body(day: &kitchen::Day, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// One phase's heading, spend order and banked time.
-fn phase_block(day: u32, phase: &Phase, muted: gpui::Hsla) -> AnyElement {
+fn phase_block(day: u32, phase: &Phase, cx: &App) -> AnyElement {
+    let id = format!("kitchens-phase-{day}-{:?}", phase.kind);
     let mut block = div()
-        .id(format!("kitchens-phase-{day}-{:?}", phase.kind))
+        .id(id.clone())
         .flex()
         .flex_col()
         .gap_1()
-        .child(div().text_sm().child(phase.title(day)));
+        .child(div().text_size(TEXT_BODY).child(phase.title(day)));
     if !phase.rows.is_empty() {
-        let mut table = Table::new(["#", "Meal (spend order)", "Levels", "Ladles", "Used so far"]);
-        for (index, row) in phase.rows.iter().enumerate() {
-            table = table.row([
-                div().child((index + 1).to_string()).into_any_element(),
-                div().child(kitchen::meal_name(row.meal)).into_any_element(),
-                div()
-                    .child(format!(
-                        "Lv {} → {}{}",
-                        format::number(row.from),
-                        format::number(row.to),
-                        match row.levels > 1 {
-                            true => format!(" ({})", row.levels),
-                            false => String::new(),
-                        }
-                    ))
-                    .into_any_element(),
-                div()
-                    .child(match phase.kind {
-                        PhaseKind::Jelly => "jelly grant".to_owned(),
-                        _ => match (row.ladles <= 0.0, row.hours <= 0.0) {
-                            (true, false) => "passive".to_owned(),
-                            (true, true) => "stock".to_owned(),
-                            _ => format::number(row.ladles),
-                        },
-                    })
-                    .into_any_element(),
-                div()
-                    .child(format::number(row.cumulative_ladles))
-                    .into_any_element(),
-            ]);
-        }
-        block = block.child(table);
+        let cols = [
+            Col::Number("#"),
+            Col::Text("Meal (spend order)"),
+            Col::Text("Levels"),
+            Col::Number("Ladles"),
+            Col::Number("Used so far"),
+        ];
+        let rows = phase.rows.iter().enumerate().map(|(index, row)| {
+            vec![
+                text((index + 1).to_string()),
+                text(kitchen::meal_name(row.meal)),
+                text(format!(
+                    "Lv {} → {}{}",
+                    format::number(row.from),
+                    format::number(row.to),
+                    match row.levels > 1 {
+                        true => format!(" ({})", row.levels),
+                        false => String::new(),
+                    }
+                )),
+                text(match phase.kind {
+                    PhaseKind::Jelly => "jelly grant".to_owned(),
+                    _ => match (row.ladles <= 0.0, row.hours <= 0.0) {
+                        (true, false) => "passive".to_owned(),
+                        (true, true) => "stock".to_owned(),
+                        _ => format::number(row.ladles),
+                    },
+                }),
+                text(format::number(row.cumulative_ladles)),
+            ]
+        });
+        block = block.child(table(format!("{id}-table"), &cols, rows, cx));
     }
     if let Some(saving) = &phase.saving {
-        block = block.child(Caption::new(saving_line(saving, phase.kind)).text_color(muted));
+        block = block.child(Caption::new(saving_line(saving, phase.kind)));
     }
     block.into_any_element()
 }
@@ -512,22 +505,4 @@ pub(crate) fn toggle_day(open: &mut Vec<u32>, day: u32) {
             open.sort_unstable();
         }
     }
-}
-
-/// A labelled select column.
-fn column(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(Caption::new(label).text_color(muted))
-}
-
-/// A labelled select column whose label is built at runtime.
-fn column_owned(label: String, muted: gpui::Hsla) -> gpui::Div {
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(Caption::new(label).text_color(muted))
 }

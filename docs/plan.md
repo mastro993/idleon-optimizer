@@ -594,7 +594,11 @@ enchant simulation with a seeded generator, so the same inputs and seed reproduc
 collectible's target, and the result adds the enchant odds per jar tier. Every applied save records
 one history snapshot in the project document, a repeat of the last spread is skipped, the history
 keeps the newest 200, and the tab clears it. Missing: a sparkline behind each history tile; the
-history reads as the current-spread and recent-snapshot tables instead.
+history reads as the current-spread and recent-snapshot tables instead. The section draws with GPUI
+Kit (#355): the simulator's number fields and selects are kit controls built once in `controls.rs`
+that show the section's persisted values, and the collectible groups, the enchant priority, the
+schematics, the upgrade plan, the milestone ranking, the tier projections and the rupie value tree
+are read once per applied save, never per frame.
 Details: [`docs/sections/jar.md`](sections/jar.md).
 
 The Royal Guardian section implements RG-01 to RG-04: the overview with the counters (built
@@ -842,7 +846,12 @@ planner compares an up-front share of the owned ladles and a share of the guaran
 cutoff reset, refines the best split and shows the whole-ladle schedule; it runs through the shared
 task runner, so cancelling keeps the recommendation the tab already shows, and an improved schedule
 can be applied to the meal plan. Because kitchen speed is a fixed entered rate here, the search
-ranks by the section objective.
+ranks by the section objective. The section draws with GPUI Kit (#355): its selects and number
+fields are kit controls built once in `controls.rs` (the kitchen pins and meal targets are added as
+the save needs them), and `derived.rs` works out the character rates, the breakdown trees, the
+Cooking EXP table and the reset forecast with its steering plan, charts and meal rows only when the
+save or an input they read changes. The reset forecast list draws only the resets in view, and the
+meal outcomes table and the donation schedule are virtualized tables.
 Details: [`docs/sections/ladle.md`](sections/ladle.md).
 
 The Jelly Operator section implements JO-01, JO-02, JO-03 and JO-04: the overview, the layout

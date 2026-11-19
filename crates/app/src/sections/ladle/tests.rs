@@ -3,11 +3,11 @@
 
 use super::exp::{exp_to_level, target_choice};
 use super::forecast::toggle_day;
-use super::kitchens::{inputs, objective_id, parse_objective, parse_policy, policy_id};
+use super::kitchens::inputs;
 use super::outcomes::{OutcomeSort, objective_label, sorted};
-use super::summary::{all, line, total};
+use super::summary::{all, figure, line, total};
 use super::{adopt, set_target, toggle};
-use idleon_ladle::kitchen::{self, Objective, Policy};
+use idleon_ladle::kitchen::{self, Objective};
 use idleon_ladle::{Character, EXP_BALLOONS, Ladle, Panel};
 
 fn character(index: usize, cooking: bool) -> Character {
@@ -86,19 +86,15 @@ fn the_header_line_names_the_totals_and_the_reset() {
         afk: 1.0,
         ..Panel::default()
     };
-    let text = line(&ladle, panel, 24.0, &[0, 2]);
+    let text = line(&ladle, &all(&ladle, panel, 24.0), &[0, 2]);
     assert!(text.contains("0 ladles owned"), "{text}");
     assert!(text.contains("guaranteed / day"), "{text}");
     assert!(text.contains("7.5h to reset"), "{text}");
-    let unknown_reset = line(
-        &Ladle {
-            reset_hours: None,
-            ..ladle.clone()
-        },
-        panel,
-        24.0,
-        &[0],
-    );
+    let unknown = Ladle {
+        reset_hours: None,
+        ..ladle.clone()
+    };
+    let unknown_reset = line(&unknown, &all(&unknown, panel, 24.0), &[0]);
     assert!(
         unknown_reset.contains("reset countdown missing"),
         "{unknown_reset}"
@@ -151,15 +147,6 @@ fn close(actual: f64, expected: f64) {
 }
 
 #[test]
-fn the_donation_policy_round_trips_through_its_select_value() {
-    for policy in [Policy::None, Policy::All, Policy::Share, Policy::Fixed] {
-        assert_eq!(parse_policy(policy_id(policy)), policy);
-    }
-    // An unknown value falls back to no donations rather than panicking.
-    assert_eq!(parse_policy("auto"), Policy::None);
-}
-
-#[test]
 fn expanding_a_reset_keeps_the_list_in_day_order() {
     let mut open = vec![1];
     toggle_day(&mut open, 3);
@@ -194,13 +181,7 @@ fn the_plan_inputs_come_from_the_checked_rates_and_the_save() {
 }
 
 #[test]
-fn the_objective_round_trips_through_its_select_value() {
-    for (objective, id) in [(Objective::Ranks, "ranks"), (Objective::Targets, "targets")] {
-        assert_eq!(objective_id(objective), id);
-        assert_eq!(parse_objective(id), objective);
-    }
-    // An unknown value falls back to the rank objective rather than panicking.
-    assert_eq!(parse_objective("speed"), Objective::Ranks);
+fn the_objectives_are_named_as_the_select_offers_them() {
     assert_eq!(objective_label(Objective::Ranks), "Most meal ranks");
     assert_eq!(objective_label(Objective::Targets), "Selected meal targets");
 }
@@ -252,12 +233,14 @@ fn the_outcome_sort_orders_the_discovered_meals() {
         sorted(&plan.start_levels, None, OutcomeSort::Level),
         vec![3, 0, 2]
     );
-    for (sort, id) in [
-        (OutcomeSort::Gain, "gain"),
-        (OutcomeSort::Level, "level"),
-        (OutcomeSort::Name, "name"),
-    ] {
-        assert_eq!(sort.id(), id);
-        assert_eq!(OutcomeSort::from_id(id), Some(sort));
-    }
+}
+
+#[test]
+fn a_figure_groups_its_whole_part_and_keeps_its_decimals() {
+    assert_eq!(figure(1_039_999_928.0, 1), "1,039,999,928.0");
+    assert_eq!(figure(1.5, 3), "1.500");
+    assert_eq!(figure(-1234.0, 0), "-1,234");
+    // A value that rounds to zero carries no sign.
+    assert_eq!(figure(-0.2, 0), "0");
+    assert_eq!(figure(f64::NAN, 0), "—");
 }

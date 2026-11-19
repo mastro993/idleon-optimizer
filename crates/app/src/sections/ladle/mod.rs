@@ -12,32 +12,42 @@
 //! inputs in [`Panel`]; the shared account stats engine is not built yet, so the
 //! section asks the player for them and says so. Everything else comes from the
 //! save.
+//!
+//! The section draws with GPUI Kit: its controls are built once in
+//! [`controls`], and what the tabs show that costs a calculation is worked out
+//! in [`derived`] when its inputs change, never per frame.
 
 pub(crate) mod breakdowns;
+mod controls;
+mod derived;
 pub(crate) mod exp;
 pub(crate) mod forecast;
 pub(crate) mod kitchens;
 pub(crate) mod outcomes;
 pub(crate) mod planner;
 pub(crate) mod summary;
+mod table;
 #[cfg(test)]
 mod tests;
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::forms::{Choice, Select, Stepper};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui::layout::tab_bar;
+use crate::ui::number_field;
+use controls::Controls;
+use derived::Derived;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
+use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
 };
+use gpui_kit::component::select::Select;
+use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _};
 use idleon_ladle::kitchen::{self, Scenario};
 use idleon_ladle::{EXP_BALLOONS, Panel};
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{Caption, Choice, show_number};
 use outcomes::OutcomeSort;
 
 /// The ladle page's tabs.
@@ -71,14 +81,11 @@ impl Tab {
             Tab::Exp => "Cooking EXP",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// The section's own state: the selectors, the panel inputs, the checked
-/// characters and the three formula trees.
+/// characters, the three formula trees, the kit controls and the figures
+/// derived from them.
 pub(crate) struct State {
     pub(crate) tab: Tab,
     /// The character whose ladle hours the summary and later tabs use.
@@ -112,11 +119,11 @@ pub(crate) struct State {
     pub(crate) open_days: Vec<u32>,
     /// Whether the kitchen pins and meal exclusions are shown.
     pub(crate) show_layout: bool,
-    /// The forecast the Kitchens tab last computed and the inputs it came from.
-    pub(crate) kitchen_plan: Option<KitchenForecast>,
     pub(crate) ladles_tree: Entity<FormulaTree>,
     pub(crate) claims_tree: Entity<FormulaTree>,
     pub(crate) balloons_tree: Entity<FormulaTree>,
+    controls: Controls,
+    derived: Derived,
 }
 
 impl State {
@@ -141,21 +148,17 @@ impl State {
             outcome_sort: OutcomeSort::Gain,
             open_days: vec![1],
             show_layout: false,
-            kitchen_plan: None,
             ladles_tree,
             claims_tree,
             balloons_tree,
+            controls: Controls::new(window, cx),
+            derived: Derived::default(),
         }
     }
 
     /// The balloon the Cooking EXP tab spends.
     pub(crate) fn balloon_key(&self) -> idleon_ladle::Balloon {
         EXP_BALLOONS[self.balloon.min(EXP_BALLOONS.len() - 1)]
-    }
-
-    /// Whether a character is counted in the totals.
-    pub(crate) fn is_assigned(&self, index: usize) -> bool {
-        self.assigned.contains(&index)
     }
 
     /// Count or stop counting a character.
@@ -172,35 +175,6 @@ impl State {
         self.kitchen.donations = None;
         self.ladle_character = self.ladle_character.min(characters.saturating_sub(1));
         self.breakdown_character = self.breakdown_character.min(characters.saturating_sub(1));
-    }
-
-    /// The three forecast scenarios for the current inputs, recomputed only when
-    /// they change.
-    ///
-    /// Each scenario simulates the whole horizon and searches every reset's layout,
-    /// so the pane caches the result: a redraw reuses the stored forecast, and the
-    /// saved signature rebuilds it whenever the save or an input moves.
-    pub(crate) fn forecast(
-        &mut self,
-        reset: &kitchen::Reset,
-        inputs: &kitchen::Inputs,
-    ) -> &Result<kitchen::Forecast, kitchen::Problem> {
-        let signature = format!("{reset:?}{inputs:?}");
-        let stale = self
-            .kitchen_plan
-            .as_ref()
-            .is_none_or(|cached| cached.signature != signature);
-        if stale {
-            self.kitchen_plan = Some(KitchenForecast {
-                signature,
-                forecast: kitchen::forecast(reset, inputs),
-            });
-        }
-        &self
-            .kitchen_plan
-            .as_ref()
-            .expect("the forecast was just stored")
-            .forecast
     }
 
     /// Point one meal at a target level, or clear it with 0.
@@ -236,12 +210,6 @@ impl State {
     pub(crate) fn set_kitchen(&mut self, edit: impl FnOnce(&mut kitchen::Inputs)) {
         edit(&mut self.kitchen);
     }
-}
-
-/// The Kitchens tab's cached forecast and the inputs it was built from.
-pub(crate) struct KitchenForecast {
-    signature: String,
-    forecast: Result<kitchen::Forecast, kitchen::Problem>,
 }
 
 /// Set one meal's target, growing the list to reach it.
@@ -281,54 +249,47 @@ pub(crate) fn view(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let Some(ladle) = state.ladle.clone() else {
+    let Some(ladle) = state.ladle.as_ref() else {
         return no_roster(cx);
     };
-    let tab = state.ladle_state.tab;
-    let colors = {
-        let palette = &cx.theme().colors;
-        (palette.fg_muted, palette.accent)
-    };
-    let summary = summary::line(
-        &ladle,
-        state.ladle_state.panel,
-        state.ladle_state.claim_hours,
-        &state.ladle_state.assigned,
-    );
+    // Bring the derived figures in line with the save and the inputs first:
+    // each is rebuilt only when what it reads moved.
+    state
+        .ladle_state
+        .sync(state.save_revision, ladle, &state.ladle_plan, window, cx);
+    let state: &AppState = state;
+    let ladle = state.ladle.as_ref().expect("checked above");
+    let ladle_state = &state.ladle_state;
+    let tab = ladle_state.tab;
+    let summary = summary::line(ladle, &ladle_state.derived.stats, &ladle_state.assigned);
     let entity = cx.entity();
-    let select_tab = entity.clone();
-    let tabs = TabBar::new("ladle-tabs")
-        .selected(SharedString::from(tab.id()))
-        .tab(WindowTab::new(Tab::Ladles.id(), Tab::Ladles.label()))
-        .tab(WindowTab::new(Tab::Kitchens.id(), Tab::Kitchens.label()))
-        .tab(WindowTab::new(Tab::Exp.id(), Tab::Exp.label()))
-        .on_select(move |id, _window, cx| {
-            if let Some(tab) = Tab::from_id(id.as_ref()) {
-                select_tab.update(cx, |state, cx| {
-                    state.ladle_state.tab = tab;
-                    cx.notify();
-                });
-            }
-        });
-    let toolbar = toolbar(state, window, cx);
+    let selected = Tab::ALL.iter().position(|each| *each == tab).unwrap_or(0);
+    let tabs = tab_bar(
+        "ladle-tabs",
+        Tab::ALL.map(|tab| (tab.id().into(), tab.label().into())),
+        selected,
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| {
+                state.ladle_state.tab = Tab::ALL[index];
+                cx.notify();
+            });
+        },
+    )
+    .flex_1();
     let header = div()
         .id("ladle-header")
         .flex()
         .flex_none()
-        .flex_wrap()
         .items_center()
         .gap_3()
         .child(tabs)
-        .child(div().flex_1())
         .child(
             div()
                 .id("ladle-summary-line")
                 .role(gpui::Role::Label)
                 .aria_label(summary.clone())
-                .flex()
-                .items_center()
-                .gap_2()
-                .child(Caption::new(summary).text_color(colors.0)),
+                .flex_none()
+                .child(Caption::new(summary)),
         );
 
     div()
@@ -339,126 +300,154 @@ pub(crate) fn view(
         .min_h_0()
         .gap_3()
         .child(header)
-        .child(toolbar)
+        .child(toolbar(state, window, cx))
         .child(match tab {
-            Tab::Ladles => summary::pane(state, &ladle, window, cx),
-            Tab::Kitchens => kitchens::pane(state, &ladle, window, cx),
-            Tab::Exp => exp::pane(state, &ladle, window, cx),
+            Tab::Ladles => summary::pane(state, ladle, window, cx),
+            Tab::Kitchens => kitchens::pane(state, ladle, window, cx),
+            Tab::Exp => exp::pane(state, ladle, window, cx),
         })
         .into_any_element()
 }
 
 /// No character rows: the section has nothing to rate, so it says what it needs.
 fn no_roster(cx: &mut Context<AppState>) -> AnyElement {
-    let import = cx.entity();
     div()
         .id("ladle-section")
         .flex()
         .flex_col()
         .size_full()
         .min_h_0()
+        .child(import_prompt(
+            "ladle-empty",
+            "ladle-import",
+            "No Cooking rows",
+            "The ladle optimizer reads each character's Cooking level, EXP and AFK target from a \
+             save. Import one to see the ladle rates, claim plan and EXP balloons.",
+            cx,
+        ))
+        .into_any_element()
+}
+
+/// The empty state both the section and the Kitchens tab show without rows:
+/// what the tab needs, and the import that brings it.
+pub(super) fn import_prompt(
+    id: &'static str,
+    import_id: &'static str,
+    title: &'static str,
+    body: &'static str,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let import = cx.entity();
+    let muted = cx.theme().muted_foreground;
+    div()
+        .id(id)
         .child(
-            EmptyState::new("ladle-empty", IconName::Map, "No Cooking rows")
-                .body(
-                    "The ladle optimizer reads each character's Cooking level, EXP and AFK target from a                      save. Import one to see the ladle rates, claim plan and EXP balloons.",
+            Empty::new()
+                .header(
+                    EmptyHeader::new()
+                        .media(EmptyMedia::new().child(Icon::new(IconName::Map).text_color(muted)))
+                        .title(EmptyTitle::new().child(title))
+                        .description(EmptyDescription::new().child(body)),
                 )
-                .action(Button::new("ladle-import", "Import save").icon(IconName::Upload).on_click(
-                    move |_event, window, cx| {
-                        import.update(cx, |state, cx| state.open_import(window, cx));
-                    },
-                )),
+                .content(
+                    EmptyContent::new().child(
+                        Button::new(import_id)
+                            .label("Import save")
+                            .icon(IconName::Upload)
+                            .on_click(move |_event, window, cx| {
+                                import.update(cx, |state, cx| state.open_import(window, cx));
+                            }),
+                    ),
+                ),
         )
         .into_any_element()
 }
 
 /// The toolbar: who uses the ladles, whose breakdown is drawn, and how
 /// often the player claims.
-fn toolbar(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(ladle) = state.ladle.clone() else {
-        return div().into_any_element();
-    };
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let characters = ladle.characters.clone();
-    let multiplier = state.ladle_state.panel.ladle_hours();
-    let ladle_choices: Vec<Choice> = characters
+fn toolbar(state: &AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let ladle_state = &state.ladle_state;
+    let controls = &ladle_state.controls;
+    let characters = state
+        .ladle
+        .as_ref()
+        .map_or(&[][..], |ladle| &ladle.characters[..]);
+    let multiplier = ladle_state.panel.ladle_hours();
+    let ladle_choices: Vec<Choice<usize>> = characters
         .iter()
         .map(|character| {
             Choice::new(
-                character.index.to_string(),
+                character.index,
                 format!("{} · ×{multiplier:.3}", character.name),
             )
         })
         .collect();
-    let breakdown_choices: Vec<Choice> = characters
+    let breakdown_choices: Vec<Choice<usize>> = characters
         .iter()
-        .map(|character| Choice::new(character.index.to_string(), character.name.clone()))
+        .map(|character| Choice::new(character.index, character.name.clone()))
         .collect();
     let has_characters = !characters.is_empty();
-    let ladle_pick = entity.clone();
-    let breakdown_pick = entity.clone();
-    let hours = entity.clone();
+    controls.ladle_character.show(
+        ladle_choices,
+        Some(&ladle_state.ladle_character),
+        window,
+        cx,
+    );
+    controls.breakdown_character.show(
+        breakdown_choices,
+        Some(&ladle_state.breakdown_character),
+        window,
+        cx,
+    );
+    show_number(
+        &controls.claim_hours,
+        ladle_state.claim_hours,
+        1,
+        window,
+        cx,
+    );
 
     div()
         .id("ladle-toolbar")
         .flex()
         .flex_none()
-        .flex_wrap()
         .items_end()
         .gap_3()
         .child(
-            field("Uses ladles", muted).child(
-                Select::new("ladle-character", ladle_choices)
-                    .label("Uses ladles")
-                    .selected(state.ladle_state.ladle_character.to_string())
-                    .disabled(!has_characters)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            ladle_pick.update(cx, |state, cx| {
-                                state.ladle_state.ladle_character = index;
-                                cx.notify();
-                            });
-                        }
-                    }),
+            field("Uses ladles").child(
+                div().flex_none().w(px(220.0)).child(
+                    Select::new(controls.ladle_character.state())
+                        .id("ladle-character")
+                        .accessibility_label("Uses ladles")
+                        .disabled(!has_characters)
+                        .small(),
+                ),
             ),
         )
         .child(
-            field("Breakdown character", muted).child(
-                Select::new("ladle-breakdown-character", breakdown_choices)
-                    .label("Breakdown character")
-                    .selected(state.ladle_state.breakdown_character.to_string())
-                    .disabled(!has_characters)
-                    .on_change(move |value, _window, cx| {
-                        if let Ok(index) = value.parse::<usize>() {
-                            breakdown_pick.update(cx, |state, cx| {
-                                state.ladle_state.breakdown_character = index;
-                                cx.notify();
-                            });
-                        }
-                    }),
+            field("Breakdown character").child(
+                div().flex_none().w(px(180.0)).child(
+                    Select::new(controls.breakdown_character.state())
+                        .id("ladle-breakdown-character")
+                        .accessibility_label("Breakdown character")
+                        .disabled(!has_characters)
+                        .small(),
+                ),
             ),
         )
-        .child(
-            field("AFK claim every (h)", muted).child(
-                Stepper::new("ladle-claim-hours", state.ladle_state.claim_hours)
-                    .range(0.1, 24.0)
-                    .step(0.5)
-                    .precision(1)
-                    .on_change(move |value, _window, cx| {
-                        hours.update(cx, |state, cx| {
-                            state.ladle_state.claim_hours = value.clamp(0.1, 24.0);
-                            cx.notify();
-                        });
-                    }),
-            ),
-        )
+        .child(field("AFK claim every (h)").child(number_field(
+            "ladle-claim-hours",
+            &controls.claim_hours,
+            "AFK claim every (h)",
+        )))
         .into_any_element()
 }
 
-fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
+/// A control under its caption.
+pub(super) fn field(label: impl Into<gpui::SharedString>) -> gpui::Div {
     div()
         .flex()
         .flex_col()
         .gap_1()
-        .child(Caption::new(label).text_color(muted))
+        .child(Caption::new(label.into()))
 }
