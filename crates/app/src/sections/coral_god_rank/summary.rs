@@ -1,17 +1,15 @@
 //! Current-state summary: the save's coral metrics and Coral Kid levels.
 
 use crate::state::AppState;
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div};
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::v_flex;
 use idleon_coral::{Unlock, unlocks};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Statistic, Tone};
 
 /// The saved budget, rank and unlock headline above the plan.
 pub(crate) fn kpis(state: &mut AppState) -> AnyElement {
@@ -25,7 +23,7 @@ pub(crate) fn kpis(state: &mut AppState) -> AnyElement {
     let levels: u32 = inputs.levels.iter().sum();
     div()
         .id("coral-kpis")
-        .role(gpui::Role::Label)
+        .role(Role::Label)
         .aria_label(format!(
             "Budget {} · god rank {} · offer tier {} · Coral Kid levels {}",
             format::value(inputs.budget),
@@ -33,63 +31,43 @@ pub(crate) fn kpis(state: &mut AppState) -> AnyElement {
             inputs.tier,
             levels
         ))
-        .flex()
-        .flex_wrap()
-        .gap_3()
         .child(
-            KpiCard::new(
-                Statistic::new("kpi-coral-budget", "Budget", budget)
-                    .decimals(budget_decimals)
-                    .suffix(budget_unit),
-            )
-            .caption("Divinity points"),
-        )
-        .child(
-            KpiCard::new(Statistic::new(
-                "kpi-coral-rank",
-                "God rank",
-                f64::from(inputs.god_rank),
-            ))
-            .caption("Divinity[25]"),
-        )
-        .child(
-            KpiCard::new(Statistic::new(
-                "kpi-coral-tier",
-                "Offer tier",
-                f64::from(inputs.tier),
-            ))
-            .caption("Offering odds row"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("kpi-coral-levels", "Coral Kid levels", f64::from(levels))
-                    .size(TextSize::Xl),
-            )
-            .caption(format!("{} of 6 unlocked", inputs.unlocked_count())),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("kpi-coral-y4", "Y4", inputs.y4)
-                    .decimals(1)
-                    .suffix("%"),
-            )
-            .caption("Free offering chance"),
+            KpiStrip::new()
+                .child(
+                    Statistic::new(
+                        "kpi-coral-budget",
+                        "Budget",
+                        format!("{budget:.budget_decimals$}{budget_unit}"),
+                    )
+                    .caption("Divinity points"),
+                )
+                .child(
+                    Statistic::new("kpi-coral-rank", "God rank", inputs.god_rank.to_string())
+                        .caption("Divinity[25]"),
+                )
+                .child(
+                    Statistic::new("kpi-coral-tier", "Offer tier", inputs.tier.to_string())
+                        .caption("Offering odds row"),
+                )
+                .child(
+                    Statistic::new("kpi-coral-levels", "Coral Kid levels", levels.to_string())
+                        .caption(format!("{} of 6 unlocked", inputs.unlocked_count())),
+                )
+                .child(
+                    Statistic::new("kpi-coral-y4", "Y4", format!("{:.1}%", inputs.y4))
+                        .caption("Free offering chance"),
+                ),
         )
         .into_any_element()
 }
 
 /// The save's current coral metrics and Coral Kid levels.
-pub(crate) fn current_pane(
-    state: &mut AppState,
-    _window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> impl IntoElement {
+pub(crate) fn current_pane(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
     let inputs = &state.coral.inputs;
     let metrics = inputs.metrics();
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
 
-    let mut coral_metrics = Table::new(["Metric", "Current"]);
-    for (label, value) in [
+    let metric_rows = [
         (
             "Divinity Points",
             format!("{}×", format::value(metrics.divinity_points)),
@@ -111,28 +89,44 @@ pub(crate) fn current_pane(
             "Daily Reef Coral",
             format!("{}×", format::value(metrics.daily_reef_coral)),
         ),
-    ] {
-        coral_metrics = coral_metrics.row([label.to_string(), value]);
-    }
+    ];
+    let coral_metrics = table(
+        &[("Metric", false), ("Current", true)],
+        metric_rows
+            .into_iter()
+            .enumerate()
+            .map(|(index, (label, value))| {
+                TableRow::new()
+                    .id(("coral-metric-row", index))
+                    .child(TableCell::new().child(label))
+                    .child(number_cell(value))
+            }),
+    );
 
-    let mut levels_table = Table::new([
-        "Index",
-        "Per level",
-        "Level",
-        "Effect",
-        "Next cost",
-        "Status",
-    ]);
-    for (row, unlock) in inputs.level_rows().into_iter().zip(unlocks(inputs)) {
-        levels_table = levels_table.row([
-            row.index.to_string(),
-            format::value(row.per_level),
-            row.level.to_string(),
-            format::value(row.effect),
-            format::value(row.next_cost),
-            unlock_status(unlock).to_string(),
-        ]);
-    }
+    let levels_table = table(
+        &[
+            ("Index", true),
+            ("Per level", true),
+            ("Level", true),
+            ("Effect", true),
+            ("Next cost", true),
+            ("Status", false),
+        ],
+        inputs
+            .level_rows()
+            .into_iter()
+            .zip(unlocks(inputs))
+            .map(|(row, unlock)| {
+                TableRow::new()
+                    .id(("coral-level-row", row.index))
+                    .child(number_cell(row.index.to_string()))
+                    .child(number_cell(format::value(row.per_level)))
+                    .child(number_cell(row.level.to_string()))
+                    .child(number_cell(format::value(row.effect)))
+                    .child(number_cell(format::value(row.next_cost)))
+                    .child(TableCell::new().child(unlock_status(unlock)))
+            }),
+    );
     let levels_summary = format!(
         "Coral Kid levels: {}",
         inputs
@@ -164,21 +158,22 @@ pub(crate) fn current_pane(
         );
     let missing_levels = state.coral.save.levels_missing();
     if state.save_loaded && !missing_levels.is_empty() {
-        levels_card = levels_card.child(Banner::new(
-            "coral-levels-missing",
-            Severity::Warning,
-            format!(
-                "The save did not carry {}, so those levels read 0. Import a save with the Coral Kid page.",
-                missing_levels.join(" and ")
-            ),
-        ));
+        levels_card = levels_card.child(
+            Alert::new(
+                "coral-levels-missing",
+                format!(
+                    "The save did not carry {}, so those levels read 0. Import a save with the Coral Kid page.",
+                    missing_levels.join(" and ")
+                ),
+            )
+            .with_variant(Tone::Warning.into())
+            .banner(),
+        );
     }
 
-    div()
+    v_flex()
         .id("coral-summary")
-        .flex()
-        .flex_col()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(
             Card::new()
                 .header(
@@ -187,13 +182,11 @@ pub(crate) fn current_pane(
                 )
                 .child(coral_metrics)
                 .child(
-                    div().px_3().py_2().child(
-                        Caption::new(format!(
-                            "Singularity levels 6-11: {}",
-                            singularity.join(", ")
-                        ))
-                        .text_color(muted),
-                    ),
+                    Caption::new(format!(
+                        "Singularity levels 6-11: {}",
+                        singularity.join(", ")
+                    ))
+                    .text_color(muted),
                 ),
         )
         .child(levels_card)
@@ -202,4 +195,28 @@ pub(crate) fn current_pane(
 /// The status column: the unlock reason, or `Unlocked` when there is none.
 fn unlock_status(unlock: Unlock) -> &'static str {
     unlock.reason.unwrap_or("Unlocked")
+}
+
+/// A kit table with these `(title, numeric)` columns over `rows`. Number
+/// columns sit right-aligned, as `docs/ui-kit/data.md` sets them.
+pub(super) fn table(
+    columns: &[(&'static str, bool)],
+    rows: impl IntoIterator<Item = TableRow>,
+) -> Table {
+    Table::new()
+        .child(
+            TableHeader::new().child(TableRow::new().children(columns.iter().map(
+                |(title, numeric)| {
+                    TableHead::new()
+                        .when(*numeric, TableHead::text_right)
+                        .child(*title)
+                },
+            ))),
+        )
+        .child(TableBody::new().children(rows))
+}
+
+/// A right-aligned number cell.
+pub(super) fn number_cell(text: String) -> TableCell {
+    TableCell::new().text_right().child(text)
 }

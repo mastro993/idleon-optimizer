@@ -10,59 +10,67 @@
 mod actions;
 
 mod bonuses;
+mod controls;
 mod currency;
 mod marble;
 mod overview;
 mod planner;
 mod sim;
 pub(crate) mod state;
+mod table;
 mod upgrades;
 
 pub(crate) use actions::{MarblePlanInputs, SimInputs};
-pub(crate) use state::{SIM_DEFAULT_HOURS, SIM_MAX_HOURS, SIM_MIN_HOURS, STEP_CHOICES, State, Tab};
+pub(crate) use controls::{Controls, Runs};
+pub(crate) use state::{SIM_DEFAULT_HOURS, SIM_MAX_HOURS, SIM_MIN_HOURS, State, Tab};
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::layout::ScrollArea;
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui::layout;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::{ActiveTheme as _, Icon, h_flex, v_flex};
+use idleon_ui::widgets::{Caption, PANEL_PADDING};
 
 /// The fountain section: the tab strip and the selected pane, or the import
 /// prompt when the loaded save carries no cavern.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let fountain = state.fountain.as_ref();
-    let muted = cx.theme().colors.fg_muted;
-    let Some(fountain) = fountain else {
+    let muted = cx.theme().muted_foreground;
+    let Some(fountain) = state.fountain.as_ref() else {
         return prompt(cx);
     };
+    let revision = state.save_revision;
+    if state.fountain_controls.tree_revision != Some(revision) {
+        let root = fountain.multi_tree();
+        state
+            .fountain_breakdown
+            .update(cx, |tree, cx| tree.set_root(root, cx));
+        state.fountain_controls.tree_revision = Some(revision);
+    }
     let tab = state.fountain_state.tab;
     let entity = cx.entity();
-    let mut tabs = TabBar::new("fountain-tabs")
-        .selected(SharedString::from(format!("fountain-tab-{}", tab.id())));
-    for entry in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(
-            format!("fountain-tab-{}", entry.id()),
-            entry.label(),
-        ));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        let tab = id
-            .as_ref()
-            .strip_prefix("fountain-tab-")
-            .and_then(Tab::from_id);
-        if let Some(tab) = tab {
-            entity.update(cx, |state, cx| state.set_fountain_tab(tab, cx));
-        }
-    });
+    let tabs = layout::tab_bar(
+        "fountain-tabs",
+        Tab::ALL.map(|tab| {
+            (
+                format!("fountain-tab-{}", tab.id()).into(),
+                tab.label().into(),
+            )
+        }),
+        Tab::ALL.iter().position(|entry| *entry == tab).unwrap_or(0),
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| state.set_fountain_tab(Tab::ALL[index], cx));
+        },
+    );
     let desired = state.fountain_desired();
     let saved = fountain.desired_currency();
     let wanted = idleon_fountain::currency_label(desired);
@@ -76,47 +84,40 @@ pub(crate) fn view(
         },
         overview::num(fountain.currency_all_multi())
     );
-    let header = div()
+    let header = h_flex()
         .id("fountain-header")
-        .flex()
         .flex_none()
-        .flex_wrap()
-        .items_center()
         .gap_3()
-        .child(tabs)
-        .child(div().flex_1())
+        .child(tabs.flex_1())
         .child(
             div()
                 .id("fountain-summary-line")
                 .role(gpui::Role::Label)
                 .aria_label(summary.clone())
-                .flex()
-                .items_center()
-                .gap_2()
+                .flex_none()
                 .child(Caption::new(summary).text_color(muted)),
         );
     let pane = match tab {
         Tab::Overview => overview::overview(state, cx),
-        Tab::Currency => currency::currency_pane(state, cx),
-        Tab::Upgrades => upgrades::upgrades_pane(state, cx),
-        Tab::Planner => planner::planner_pane(state, cx),
-        Tab::Marble => marble::marble_pane(state, cx),
-        Tab::Sim => sim::sim_pane(state, cx),
+        Tab::Currency => currency::currency_pane(state, window, cx),
+        Tab::Upgrades => upgrades::upgrades_pane(state, window, cx),
+        Tab::Planner => planner::planner_pane(state, window, cx),
+        Tab::Marble => marble::marble_pane(state, window, cx),
+        Tab::Sim => sim::sim_pane(state, window, cx),
     };
-    div()
+    v_flex()
         .id("fountain-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
         .gap_3()
         .child(header)
         .child(
-            ScrollArea::new("fountain-pane")
-                .vertical()
+            div()
                 .flex_1()
                 .min_h_0()
-                .child(pane),
+                .child(pane)
+                .overflow_y_scrollbar()
+                .id("fountain-pane"),
         )
         .into_any_element()
 }
@@ -124,25 +125,38 @@ pub(crate) fn view(
 /// A save without `Holes` has no fountain state: say so and offer the import.
 fn prompt(cx: &mut Context<AppState>) -> AnyElement {
     let import = cx.entity();
-    div()
+    let muted = cx.theme().muted_foreground;
+    v_flex()
         .id("fountain-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
+        .p(PANEL_PADDING)
         .child(
-            EmptyState::new("fountain-empty", IconName::Map, "No fountain state")
-                .body(
-                    "The fountain calculator reads the cavern from a save. Import one to see the \
-                     fountain level, currency values, upgrades and income rates.",
-                )
-                .action(
-                    Button::new("fountain-import", "Import save")
-                        .icon(IconName::Upload)
-                        .on_click(move |_event, window, cx| {
-                            import.update(cx, |state, cx| state.open_import(window, cx));
-                        }),
-                ),
+            div().id("fountain-empty").child(
+                Empty::new()
+                    .header(
+                        EmptyHeader::new()
+                            .media(
+                                EmptyMedia::new().child(Icon::new(IconName::Map).text_color(muted)),
+                            )
+                            .title(EmptyTitle::new().child("No fountain state"))
+                            .description(EmptyDescription::new().child(
+                                "The fountain calculator reads the cavern from a save. Import one \
+                                 to see the fountain level, currency values, upgrades and income \
+                                 rates.",
+                            )),
+                    )
+                    .content(
+                        EmptyContent::new().child(
+                            Button::new("fountain-import")
+                                .label("Import save")
+                                .icon(IconName::Upload)
+                                .on_click(move |_event, window, cx| {
+                                    import.update(cx, |state, cx| state.open_import(window, cx));
+                                }),
+                        ),
+                    ),
+            ),
         )
         .into_any_element()
 }

@@ -6,22 +6,19 @@
 //! the Y4 free chance and the planning confidence combine.
 
 use crate::state::AppState;
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div};
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::{ActiveTheme as _, v_flex};
 use idleon_coral::{SaveInputs, offer};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, KpiStrip, Statistic, Tone};
 
 /// The fit card: the odds, the expected spend and the tier the model reads.
 pub(crate) fn offering_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let inputs = &state.coral.inputs;
     let row = offer(inputs, inputs.god_rank);
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let (spend, spend_unit) = format::scaled(row.expected_spend_per_success);
     let (paid, paid_unit) = format::scaled(row.cost);
     let (worst, worst_unit) = format::scaled(row.max_paid_spend);
@@ -43,47 +40,30 @@ pub(crate) fn offering_pane(state: &mut AppState, cx: &mut Context<AppState>) ->
             "What one God Rank offering succeeds, costs and expects to spend at the current rank.",
         ))
         .child(
-            div()
+            v_flex()
                 .id("coral-offering-fit")
-                .flex()
-                .flex_col()
                 .gap_3()
-                .p_3()
                 .child(
-                    div()
-                        .flex()
-                        .flex_wrap()
-                        .gap_3()
+                    KpiStrip::new()
                         .child(
-                            KpiCard::new(
-                                Statistic::new(
-                                    "kpi-coral-fit-odds",
-                                    "Success / attempt",
-                                    row.odds * 100.0,
-                                )
-                                .decimals(2)
-                                .suffix("%"),
+                            Statistic::new(
+                                "kpi-coral-fit-odds",
+                                "Success / attempt",
+                                format!("{:.2}%", row.odds * 100.0),
                             )
                             .caption("Probability of a successful offering"),
                         )
                         .child(
-                            KpiCard::new(
-                                Statistic::new("kpi-coral-fit-spend", "Expected spend", spend)
-                                    .decimals(2)
-                                    .suffix(spend_unit),
+                            Statistic::new(
+                                "kpi-coral-fit-spend",
+                                "Expected spend",
+                                format!("{spend:.2}{spend_unit}"),
                             )
                             .caption("Divinity points per success"),
                         )
                         .child(
-                            KpiCard::new(
-                                Statistic::new(
-                                    "kpi-coral-fit-tier",
-                                    "Tier",
-                                    f64::from(inputs.tier),
-                                )
-                                .size(TextSize::Xl),
-                            )
-                            .caption("Offering odds row"),
+                            Statistic::new("kpi-coral-fit-tier", "Tier", inputs.tier.to_string())
+                                .caption("Offering odds row"),
                         ),
                 )
                 .child(
@@ -98,7 +78,11 @@ pub(crate) fn offering_pane(state: &mut AppState, cx: &mut Context<AppState>) ->
     if state.save_loaded
         && let Some(warning) = missing_warning(&state.coral.save)
     {
-        card = card.child(Banner::new("coral-fit-missing", Severity::Warning, warning));
+        card = card.child(
+            Alert::new("coral-fit-missing", warning)
+                .with_variant(Tone::Warning.into())
+                .banner(),
+        );
     }
 
     card.into_any_element()

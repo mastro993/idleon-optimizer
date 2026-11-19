@@ -5,61 +5,41 @@
 //! Planning itself is [`idleon_cooking_mastery::Mastery::distribution`]; this
 //! module only draws it.
 
-use super::whole;
+use super::{number_cell, table, text_cell, whole};
 use crate::state::AppState;
-use ely_gpui_component::buttons::CopyButton;
-use ely_gpui_component::data_display::Statistic;
-use ely_gpui_component::feedback::Callout;
-use ely_gpui_component::forms::{Choice, Select, Stepper};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
-use ely_gpui_component::typography::Caption;
+use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use gpui_kit::component::clipboard::Clipboard;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::table::TableRow;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_cooking_mastery::{Goal, Plan, Row};
 use idleon_ui::format;
+use idleon_ui::widgets::{
+    Callout, Caption, Card, CardHeader, Choice, Statistic, Tone, show_number,
+};
 
 /// The card: the controls, the plan's headline, its table and the copy action.
 pub(crate) fn card(
     state: &AppState,
-    mastery: &idleon_cooking_mastery::Mastery,
+    plan: &Plan,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let plan = state.mastery_plan.plan(mastery);
-    let muted = cx.theme().colors.fg_muted;
-    let text = plan.copy_text();
-
-    let goal_entity = cx.entity();
-    let goal = Select::new(
-        "cooking-mastery-goal",
-        Goal::ALL
-            .into_iter()
-            .map(|goal| Choice::new(goal.id(), goal.label())),
-    )
-    .label("Goal")
-    .selected(plan.goal.id())
-    .size(ControlSize::Sm)
-    .on_change(move |value, _window, cx| {
-        let entity = goal_entity.clone();
-        let value = value.to_string();
-        entity.update(cx, |state, cx| {
-            state.mastery_plan.set_goal(&value);
-            cx.notify();
-        });
-    });
-
-    let budget_entity = cx.entity();
-    let budget = Stepper::new("cooking-mastery-budget", plan.budget)
-        .range(0.0, plan.available)
-        .on_change(move |value, _window, cx| {
-            let entity = budget_entity.clone();
-            entity.update(cx, |state, cx| {
-                state.mastery_plan.set_budget(value);
-                cx.notify();
-            });
-        });
+    let muted = cx.theme().muted_foreground;
+    let controls = &state.mastery_controls;
+    let goals = Goal::ALL
+        .into_iter()
+        .map(|goal| Choice::new(goal, goal.label()))
+        .collect();
+    controls.goal.show(goals, Some(&plan.goal), window, cx);
+    show_number(&controls.budget, plan.budget, 0, window, cx);
+    let goal = Select::new(controls.goal.state())
+        .id("cooking-mastery-goal")
+        .accessibility_label("Goal")
+        .menu_width(gpui::px(200.0))
+        .small();
 
     Card::new()
         .header(
@@ -69,39 +49,44 @@ pub(crate) fn card(
             ),
         )
         .child(
-            div()
+            h_flex()
                 .id("cooking-mastery-distribution-controls")
-                .flex()
                 .flex_wrap()
                 .items_end()
                 .gap_3()
-                .px_3()
                 .child(
-                    div()
-                        .flex()
-                        .flex_col()
+                    v_flex()
                         .gap_1()
                         .child(Caption::new("Points to Spend").text_color(muted))
                         .child(
-                            div().flex().items_center().gap_2().child(budget).child(
-                                Caption::new(format!("of {} total", whole(plan.available)))
-                                    .text_color(muted),
-                            ),
+                            h_flex()
+                                .gap_2()
+                                .child(ui::number_field(
+                                    "cooking-mastery-budget",
+                                    &controls.budget,
+                                    "Points to Spend",
+                                ))
+                                .child(
+                                    Caption::new(format!("of {} total", whole(plan.available)))
+                                        .text_color(muted),
+                                ),
                         ),
                 )
-                .child(goal),
+                .child(
+                    v_flex()
+                        .gap_1()
+                        .w(gpui::px(200.0))
+                        .child(Caption::new("Goal").text_color(muted))
+                        .child(goal),
+                ),
         )
-        .child(div().p_3().child(headline(&plan, muted)))
-        .child(div().px_3().child(table(&plan)))
-        .child(notes(&plan, muted))
+        .child(headline(plan, muted))
+        .child(rows(plan))
+        .child(notes(plan, muted))
         .child(
-            div()
+            h_flex()
                 .id("cooking-mastery-distribution-copy-row")
-                .flex()
-                .items_center()
                 .gap_2()
-                .px_3()
-                .pb_3()
                 .child(
                     Caption::new(
                         "Copy the plan as text: the goal, the budget and every level change.",
@@ -109,7 +94,7 @@ pub(crate) fn card(
                     .text_color(muted),
                 )
                 .child(div().flex_1())
-                .child(CopyButton::new("cooking-mastery-distribution-copy", text)),
+                .child(Clipboard::new("cooking-mastery-distribution-copy").value(plan.copy_text())),
         )
         .into_any_element()
 }
@@ -125,7 +110,7 @@ fn headline(plan: &Plan, muted: gpui::Hsla) -> AnyElement {
             format!(
                 "+{:.2}% vs the saved distribution · {} to the next level",
                 plan.improvement,
-                hours(plan.hours)
+                super::span(plan.hours)
             ),
             format!("{:+.2}% vs saved", plan.improvement),
         )
@@ -134,7 +119,7 @@ fn headline(plan: &Plan, muted: gpui::Hsla) -> AnyElement {
             format!(
                 "{:.2}% below the saved levels · {} to the next level",
                 plan.improvement,
-                hours(plan.hours)
+                super::span(plan.hours)
             ),
             format!("{:.2}% below saved", plan.improvement),
         )
@@ -156,60 +141,63 @@ fn headline(plan: &Plan, muted: gpui::Hsla) -> AnyElement {
         whole(plan.budget),
         whole(plan.available),
     );
-    let row = div()
+    h_flex()
         .id("cooking-mastery-distribution")
         .role(Role::Label)
         .aria_label(label)
-        .flex()
         .flex_wrap()
-        .items_center()
         .gap_3()
         .child(
             Statistic::new(
                 "cooking-mastery-distribution-rate",
                 "Optimal EXP Rate",
-                value,
+                format!("{value:.2}{suffix}"),
             )
-            .decimals(2)
-            .suffix(SharedString::from(format!("{suffix}/hr")))
-            .size(TextSize::Xl),
+            .suffix("/hr"),
         )
         .child(
-            div()
-                .flex()
-                .flex_col()
+            v_flex()
                 .gap_1()
                 .child(
                     div()
                         .id("cooking-mastery-distribution-improvement")
-                        .child(SharedString::from(verdict)),
+                        .child(verdict),
                 )
                 .child(
                     Caption::new(format!(
                         "{} now · {} to the next level",
                         format::rate(plan.current_rate),
-                        hours(plan.current_hours)
+                        super::span(plan.current_hours)
                     ))
                     .text_color(muted),
                 ),
-        );
-    row.into_any_element()
+        )
+        .into_any_element()
 }
 
 /// The page's table: current level, optimal level, the change and the bonus.
-fn table(plan: &Plan) -> AnyElement {
-    let mut table = Table::new(["Upgrade", "Current", "Optimal", "Change", "EXP Bonus%"]);
-    for row in &plan.rows {
-        table = table.row(row_cells(row));
-    }
+fn rows(plan: &Plan) -> AnyElement {
     div()
         .id("cooking-mastery-distribution-rows")
-        .child(table)
+        .child(table(
+            &[
+                ("Upgrade", false),
+                ("Current", true),
+                ("Optimal", true),
+                ("Change", true),
+                ("EXP Bonus%", true),
+            ],
+            plan.rows.iter().map(|row| {
+                TableRow::new()
+                    .id(("cooking-mastery-distribution-table-row", row.index))
+                    .children(row_cells(row))
+            }),
+        ))
         .into_any_element()
 }
 
 /// One comparison row; a locked upgrade says what rank it waits for.
-fn row_cells(row: &Row) -> [AnyElement; 5] {
+fn row_cells(row: &Row) -> [gpui_kit::component::table::TableCell; 5] {
     let change = if row.change > 0.0 {
         format!("+{}", whole(row.change))
     } else {
@@ -227,43 +215,30 @@ fn row_cells(row: &Row) -> [AnyElement; 5] {
             String::new()
         },
     );
-    let mut name = div()
+    let name = v_flex()
         .id(("cooking-mastery-distribution-row", row.index))
         .role(Role::Label)
         .aria_label(label)
-        .flex()
-        .flex_col()
         .gap_0p5()
-        .child(SharedString::from(row.name));
-    if row.locked {
-        name = name.child(div().text_size(px(11.0)).child(SharedString::from(format!(
-            "needs mastery rank {}",
-            row.required_level
-        ))));
-    }
+        .child(row.name)
+        .when(row.locked, |name| {
+            name.child(Caption::new(format!(
+                "needs mastery rank {}",
+                row.required_level
+            )))
+        });
     [
-        name.into_any_element(),
-        cell(whole(row.current)),
-        cell(whole(row.planned)),
-        cell(change),
-        cell(format!("{:.1}%", row.bonus)),
+        text_cell(name),
+        number_cell(whole(row.current)),
+        number_cell(whole(row.planned)),
+        number_cell(change),
+        number_cell(format!("{:.1}%", row.bonus)),
     ]
-}
-
-/// A plain table cell.
-fn cell(text: String) -> AnyElement {
-    div().child(SharedString::from(text)).into_any_element()
 }
 
 /// What the plan holds back, and what the budget cannot reach.
 fn notes(plan: &Plan, muted: gpui::Hsla) -> AnyElement {
-    let mut body = div()
-        .id("cooking-mastery-distribution-notes")
-        .flex()
-        .flex_col()
-        .gap_1()
-        .px_3()
-        .pb_2();
+    let mut body = v_flex().id("cooking-mastery-distribution-notes").gap_1();
     // The page's own note: SMOKY never enters the distribution.
     body = body.child(
         Caption::new(format!(
@@ -304,23 +279,11 @@ fn notes(plan: &Plan, muted: gpui::Hsla) -> AnyElement {
     }
     if plan.budget == 0.0 {
         body = body.child(
-            Callout::new(Severity::Info)
-                .title("No points to spend")
-                .child(
-                    Caption::new("Raise the budget, or level the mastery rank for more points.")
-                        .text_color(muted)
-                        .into_any_element(),
-                ),
+            Callout::new(Tone::Info, "No points to spend").child(
+                Caption::new("Raise the budget, or level the mastery rank for more points.")
+                    .text_color(muted),
+            ),
         );
     }
     body.into_any_element()
-}
-
-/// A span of hours in the section's own style.
-fn hours(hours: f64) -> String {
-    if hours.is_finite() {
-        format::hours(hours)
-    } else {
-        "∞".into()
-    }
 }

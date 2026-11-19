@@ -1,44 +1,54 @@
 //! The Overview tab: the fountain summary, fill and income rates, and the level plan.
 
 use super::bonuses;
+use super::controls::{Overview, cached};
+use super::table::{number, table, tag, text};
 use crate::state::AppState;
 use crate::ui::layout::figure;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, FontWeight, IntoElement, ParentElement, SharedString, Styled, div, px,
-};
+use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Styled, div};
+use gpui_kit::component::table::TableRow;
+use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use idleon_fountain as fountain;
-use idleon_fountain::Fountain;
+use idleon_fountain::{Fountain, Income, LevelStep};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, KpiStrip, PANEL_GAP, Statistic, TEXT_CAPTION, Tone,
+};
 
 /// The overview pane, in order: summary, income, bonuses, stacks.
-pub(crate) fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn overview(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let fountain = state
         .fountain
         .as_ref()
         .expect("the section renders its import prompt without a save");
-    let mut pane = div().id("fountain-overview").flex().flex_col().gap_3();
+    let lists = cached(
+        &mut state.fountain_controls.overview,
+        state.save_revision,
+        || Overview {
+            income: fountain.income(),
+            levels: fountain.level_plan(15),
+            stacks: fountain.stacks(),
+            cross: fountain.cross_bonuses(),
+        },
+    );
+    let mut pane = v_flex().id("fountain-overview").gap(PANEL_GAP);
     if !fountain.missing_bonuses().is_empty() {
         pane = pane.child(bonuses::missing(fountain, cx));
     }
     pane = pane
         .child(summary(fountain, cx))
         .child(fill_summary(fountain, cx))
-        .child(income(fountain, cx));
+        .child(income(fountain, &lists.income, cx));
     if let Some(lucky) = bonuses::lucky_and_ducks(fountain, cx) {
         pane = pane.child(lucky);
     }
-    if let Some(stacks) = bonuses::stacks(fountain, cx) {
+    if let Some(stacks) = bonuses::stacks(fountain, &lists.stacks) {
         pane = pane.child(stacks);
     }
     pane.child(fill_times(fountain, cx))
-        .child(bonuses::cross_system(fountain, cx))
-        .child(bonuses::formula(state, fountain, cx))
-        .child(level_plan(fountain, cx))
+        .child(bonuses::cross_system(&lists.cross, cx))
+        .child(bonuses::formula(state))
+        .child(level_plan(&lists.levels, cx))
         .into_any_element()
 }
 
@@ -236,44 +246,45 @@ fn fill_summary(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// The Income Rates card: three summary figures, the per-currency table and notes.
-fn income(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
-    let income = fountain.income();
+fn income(fountain: &Fountain, income: &Income, cx: &mut Context<AppState>) -> AnyElement {
     let active_speed = fountain.active_speed();
     let marble_afk = fountain.marble_per_hr() / active_speed;
     let fills = 3600.0 / fountain.active_fill_time();
     let fills_afk = 3600.0 / fountain.bar_fill_time();
     let keep = fountain.currency_keep();
-    let mut table = Table::new([
-        "Currency",
-        "Coin value",
-        "Single /hr (active)",
-        "Full stack /hr (active)",
-        "Est. optimal /hr",
-    ]);
-    for row in &income.rows {
-        table = table.row([
-            currency_cell(fountain, row.currency),
-            number_cell(row.value),
-            rate_cell(row.single, row.single_afk, cx),
-            rate_cell(row.full, row.full_afk, cx),
-            rate_cell(row.optimal, row.optimal_afk, cx),
-        ]);
-    }
-    let table = table.row([
-        bold("Total"),
-        bold(""),
-        bold_rate(income.single, income.single_afk),
-        bold_rate(income.full, income.full_afk),
-        bold_rate(income.optimal, income.optimal_afk),
-    ]);
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
+    let rows = income.rows.iter().map(|row| {
+        TableRow::new()
+            .id(("fountain-income-row", row.currency))
+            .child(text(currency_cell(fountain, row.currency)))
+            .child(number(num(row.value)))
+            .child(number(rate_cell(row.single, row.single_afk, muted)))
+            .child(number(rate_cell(row.full, row.full_afk, muted)))
+            .child(number(rate_cell(row.optimal, row.optimal_afk, muted)))
+    });
+    let total = TableRow::new()
+        .id("fountain-income-total")
+        .font_weight(FontWeight::SEMIBOLD)
+        .child(text("Total"))
+        .child(number(""))
+        .child(number(rate_cell(income.single, income.single_afk, muted)))
+        .child(number(rate_cell(income.full, income.full_afk, muted)))
+        .child(number(rate_cell(income.optimal, income.optimal_afk, muted)));
+    let table = table(
+        &[
+            ("Currency", false),
+            ("Coin value", true),
+            ("Single /hr (active)", true),
+            ("Full stack /hr (active)", true),
+            ("Est. optimal /hr", true),
+        ],
+        rows.chain(std::iter::once(total)),
+    );
     let size = fountain.size_matter_bonus();
-    let mut notes = div()
+    let mut notes = v_flex()
         .id("fountain-income-notes")
-        .flex()
-        .flex_col()
         .gap_1()
-        .text_size(px(11.0))
+        .text_size(TEXT_CAPTION)
         .text_color(muted);
     if size > 0.0 {
         notes = notes.child(format!(
@@ -300,29 +311,29 @@ fn income(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
             "Coins per hour at the current upgrades and save; every type shares the fills",
         ))
         .child(
-            div()
-                .id("fountain-income-kpis")
-                .flex()
-                .flex_wrap()
-                .gap_3()
-                .child(metric(
-                    "fountain-kpi-marble-rate",
-                    "Marble /hr (Active)",
-                    num(fountain.marble_per_hr()),
-                    format!("AFK: {}/hr", num(marble_afk)),
-                ))
-                .child(metric(
-                    "fountain-kpi-fills",
-                    "Fills /hr (Active)",
-                    format!("{fills:.1}"),
-                    format!("AFK: {fills_afk:.1}/hr"),
-                ))
-                .child(metric(
-                    "fountain-kpi-keep",
-                    "Money Back Guarantee",
-                    pct(keep),
-                    "Full-board coins auto-collect at this value",
-                )),
+            div().id("fountain-income-kpis").child(
+                KpiStrip::new()
+                    .child(
+                        Statistic::new(
+                            "fountain-kpi-marble-rate",
+                            "Marble /hr (Active)",
+                            num(fountain.marble_per_hr()),
+                        )
+                        .caption(format!("AFK: {}/hr", num(marble_afk))),
+                    )
+                    .child(
+                        Statistic::new(
+                            "fountain-kpi-fills",
+                            "Fills /hr (Active)",
+                            format!("{fills:.1}"),
+                        )
+                        .caption(format!("AFK: {fills_afk:.1}/hr")),
+                    )
+                    .child(
+                        Statistic::new("fountain-kpi-keep", "Money Back Guarantee", pct(keep))
+                            .caption("Full-board coins auto-collect at this value"),
+                    ),
+            ),
         )
         .child(div().id("fountain-income").child(table))
         .child(notes)
@@ -384,39 +395,29 @@ fn fill_times(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// The fountain level planner: the next fifteen levels and their opal spend.
-fn level_plan(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mut table = Table::new(["Level", "Cost (Opals)", "Currency type", "Cumulative"]);
-    for step in fountain.level_plan(15) {
-        let cumulative = div()
-            .flex()
-            .items_center()
+fn level_plan(levels: &[LevelStep], cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
+    let rows = levels.iter().map(|step| {
+        let cumulative = h_flex()
+            .justify_end()
             .gap_2()
+            .when(step.affordable, |cell| cell.child(tag("✓", Tone::Success)))
             .child(format!(
                 "{} {}",
                 num(step.cumulative),
                 fountain::currency_label(step.currency)
-            ))
-            .when(step.affordable, |cell| {
-                cell.child(Badge::new("✓").tone(Tone::Success))
-            });
-        table = table.row([
-            div()
-                .child(format!("{} → {}", step.level, step.level + 1))
-                .into_any_element(),
-            div()
-                .child(format!(
-                    "{} {}",
-                    num(step.cost),
-                    fountain::currency_label(step.currency)
-                ))
-                .into_any_element(),
-            div()
-                .child(fountain::currency_name(step.currency).to_owned())
-                .into_any_element(),
-            cumulative.into_any_element(),
-        ]);
-    }
+            ));
+        TableRow::new()
+            .id(("fountain-level-row", step.level))
+            .child(text(format!("{} → {}", step.level, step.level + 1)))
+            .child(number(format!(
+                "{} {}",
+                num(step.cost),
+                fountain::currency_label(step.currency)
+            )))
+            .child(text(fountain::currency_name(step.currency)))
+            .child(number(cumulative))
+    });
     Card::new()
         .header(
             CardHeader::new("Fountain Level Planner").description(
@@ -424,12 +425,18 @@ fn level_plan(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
             ),
         )
         .child(
-            div()
+            v_flex()
                 .id("fountain-levels")
-                .flex()
-                .flex_col()
                 .gap_2()
-                .child(table)
+                .child(table(
+                    &[
+                        ("Level", false),
+                        ("Cost (Opals)", true),
+                        ("Currency type", false),
+                        ("Cumulative", true),
+                    ],
+                    rows,
+                ))
                 .child(
                     Caption::new(
                         "A row dims when the saved opal balance cannot cover its currency's spend.",
@@ -487,89 +494,19 @@ pub(super) fn odds(chance: f64) -> String {
     format!("1 in {:.2}", 1.0 / chance)
 }
 
-/// A smaller figure inside another card.
-fn metric(
-    id: &'static str,
-    label: &'static str,
-    value: impl Into<SharedString>,
-    caption: impl Into<SharedString>,
-) -> AnyElement {
-    let value = value.into();
-    div()
-        .id(id)
-        .role(gpui::Role::Label)
-        .aria_label(format!("{label}: {value}"))
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_w(px(170.0))
-        .gap_1()
-        .child(Caption::new(label))
-        .child(
-            div()
-                .text_size(px(18.0))
-                .font_weight(FontWeight::SEMIBOLD)
-                .child(value),
-        )
-        .child(Caption::new(caption.into()))
-        .into_any_element()
-}
-
 /// A currency's name, marked when it is the desired one.
-fn currency_cell(fountain: &Fountain, currency: usize) -> AnyElement {
+fn currency_cell(fountain: &Fountain, currency: usize) -> impl IntoElement {
     let desired = currency == fountain.desired_currency();
-    div()
-        .flex()
-        .items_center()
+    h_flex()
         .gap_1()
         .child(fountain::currency_label(currency))
-        .when(desired, |cell| {
-            cell.child(Badge::new("★").tone(Tone::Accent))
-        })
-        .into_any_element()
-}
-
-/// A right-aligned number.
-fn number_cell(value: f64) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .items_end()
-        .w_full()
-        .child(num(value))
-        .into_any_element()
+        .when(desired, |cell| cell.child(tag("★", Tone::Accent)))
 }
 
 /// A rate with its AFK rate under it.
-fn rate_cell(active: f64, afk: f64, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    div()
-        .flex()
-        .flex_col()
+fn rate_cell(active: f64, afk: f64, muted: gpui::Hsla) -> impl IntoElement {
+    v_flex()
         .items_end()
-        .w_full()
         .child(num(active))
         .child(Caption::new(format!("AFK {}", num(afk))).text_color(muted))
-        .into_any_element()
-}
-
-/// A bold total cell.
-fn bold(text: impl Into<SharedString>) -> AnyElement {
-    div()
-        .font_weight(FontWeight::SEMIBOLD)
-        .child(text.into())
-        .into_any_element()
-}
-
-/// A bold rate total with its AFK rate under it.
-fn bold_rate(active: f64, afk: f64) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .items_end()
-        .w_full()
-        .font_weight(FontWeight::SEMIBOLD)
-        .child(num(active))
-        .child(format!("AFK {}", num(afk)))
-        .into_any_element()
 }

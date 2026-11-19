@@ -9,32 +9,38 @@
 //!
 //! Every figure comes from the import; the only inputs are the distribution's
 //! goal and budget and the allocator's goal, budget and character, which live in
-//! [`State`], so the section keeps no state beyond them and the shared tree.
+//! [`State`]. The kit controls and the planned figures live in [`Controls`].
 
+mod controls;
 mod distribution;
 mod state;
 mod yellow;
 
+pub(crate) use controls::Controls;
 pub(crate) use state::State;
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
-use ely_gpui_component::feedback::{Callout, EmptyState};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
-use ely_gpui_component::typography::Caption;
+use crate::ui::layout;
+use controls::Derived;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled, Window,
-    div, px,
+    AnyElement, Context, Entity, IntoElement, ParentElement, Role, Styled, Window, div, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
 use idleon_cooking_mastery::{Mastery, RIBBON_CHANCE, UPGRADE_NAMES, Upgrade};
 use idleon_ui::format;
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::{
+    Callout, Caption, Card, CardHeader, KpiStrip, PANEL_GAP, PANEL_PADDING, Statistic, Tone,
+};
 
 /// The page's two tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -63,98 +69,87 @@ impl Tab {
             Tab::Yellow => "Yellow Points",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// The section: the tab strip and its pane.
 pub(crate) fn view(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let Some(mastery) = state.mastery.clone() else {
+    state.sync_mastery(cx);
+    let (Some(mastery), Some(derived)) = (&state.mastery, &state.mastery_controls.derived) else {
         return prompt(cx);
     };
     let tab = state.mastery_plan.tab;
     let entity = cx.entity();
-    let mut tabs = TabBar::new("cooking-mastery-tabs").selected(SharedString::from(format!(
-        "cooking-mastery-tab-{}",
-        tab.id()
-    )));
-    for entry in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(
-            format!("cooking-mastery-tab-{}", entry.id()),
-            entry.label(),
-        ));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        let tab = id
-            .as_ref()
-            .strip_prefix("cooking-mastery-tab-")
-            .and_then(Tab::from_id);
-        if let Some(tab) = tab {
-            let entity = entity.clone();
+    let tabs = layout::tab_bar(
+        "cooking-mastery-tabs",
+        Tab::ALL.map(|tab| {
+            (
+                format!("cooking-mastery-tab-{}", tab.id()).into(),
+                tab.label().into(),
+            )
+        }),
+        Tab::ALL.iter().position(|entry| *entry == tab).unwrap_or(0),
+        move |index, _window, cx| {
             entity.update(cx, |state, cx| {
-                state.mastery_plan.tab = tab;
+                state.mastery_plan.tab = Tab::ALL[index];
                 cx.notify();
             });
-        }
-    });
-    let strip = div()
-        .id("cooking-mastery-tab-strip")
-        .flex()
-        .items_center()
-        .px_3()
-        .pt_2()
-        .child(tabs);
+        },
+    );
     let pane = match tab {
-        Tab::Exp => exp_pane(state, &mastery, cx),
-        Tab::Yellow => yellow::pane(state, cx),
+        Tab::Exp => exp_pane(state, mastery, derived, window, cx),
+        Tab::Yellow => yellow::pane(state, derived, window, cx),
     };
-    div()
+    v_flex()
         .id("cooking-mastery-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
-        .child(strip)
+        .gap_3()
         .child(
-            ScrollArea::new("cooking-mastery-scroll")
-                .vertical()
+            div()
+                .id("cooking-mastery-tab-strip")
+                .flex_none()
+                .child(tabs),
+        )
+        .child(
+            div()
                 .flex_1()
                 .min_h_0()
-                .child(pane),
+                .child(pane)
+                .overflow_y_scrollbar()
+                .id("cooking-mastery-scroll"),
         )
         .into_any_element()
 }
 
 /// The Mastery EXP tab: the summary, the recommendation, the comparison, the
 /// daily distribution and the EXP rate breakdown.
-fn exp_pane(state: &AppState, mastery: &Mastery, cx: &mut Context<AppState>) -> AnyElement {
-    let tree = state.mastery_breakdown.clone();
-    tree.update(cx, |tree, cx| tree.set_root(mastery.breakdown(), cx));
-    div()
+fn exp_pane(
+    state: &AppState,
+    mastery: &Mastery,
+    derived: &Derived,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    v_flex()
         .id("cooking-mastery-pane")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
-        .child(summary(mastery, cx))
-        .child(recommendation(mastery, cx))
-        .child(comparison(mastery, cx))
-        .child(distribution::card(state, mastery, cx))
-        .child(formula_card(tree))
+        .gap(PANEL_GAP)
+        .child(summary(mastery))
+        .child(recommendation(mastery, &derived.ranking, cx))
+        .child(comparison(&derived.ranking, cx))
+        .child(distribution::card(state, &derived.plan, window, cx))
+        .child(formula_card(state.mastery_breakdown.clone()))
         .into_any_element()
 }
 
 /// The figures the page leads with: rank, points, rate, requirement and hours.
-fn summary(mastery: &Mastery, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+fn summary(mastery: &Mastery) -> AnyElement {
     let rate = mastery.exp_rate();
     let (rate_value, rate_suffix) = format::scale(rate);
+    let (exp_value, exp_suffix) = format::scale(mastery.exp_required());
     let label = format!(
         "Mastery level {} · {} points available · {} EXP per hour · {} EXP to the next level",
         whole(mastery.level),
@@ -162,92 +157,62 @@ fn summary(mastery: &Mastery, cx: &mut Context<AppState>) -> AnyElement {
         format::rate(rate),
         format::number(mastery.exp_required()),
     );
-    let (exp_value, exp_suffix) = format::scale(mastery.exp_required());
+    let hours = mastery.hours_to_next_level();
     div()
         .id("cooking-mastery-summary")
         .role(Role::Label)
         .aria_label(label)
-        .flex()
-        .flex_wrap()
-        .gap_3()
         .child(
-            KpiCard::new(
-                Statistic::new("cooking-mastery-kpi-level", "Mastery Level", mastery.level)
-                    .decimals(0)
-                    .size(TextSize::Xl),
-            )
-            .caption(format!(
-                "rank {} · {} ribbons",
-                whole(mastery.level),
-                format::count(mastery.ribbons as u64)
-            )),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "cooking-mastery-kpi-points",
-                    "Points Available",
-                    mastery.points_available(),
+            KpiStrip::new()
+                .child(
+                    Statistic::new(
+                        "cooking-mastery-kpi-level",
+                        "Mastery Level",
+                        whole(mastery.level),
+                    )
+                    .caption(format!(
+                        "rank {} · {} ribbons",
+                        whole(mastery.level),
+                        format::count(mastery.ribbons as u64)
+                    )),
                 )
-                .decimals(0)
-                .size(TextSize::Xl),
-            )
-            .caption(format!(
-                "{} spent of the {} earned",
-                whole(mastery.points_spent()),
-                whole(mastery.points_earned())
-            )),
+                .child(
+                    Statistic::new(
+                        "cooking-mastery-kpi-points",
+                        "Points Available",
+                        whole(mastery.points_available()),
+                    )
+                    .caption(format!(
+                        "{} spent of the {} earned",
+                        whole(mastery.points_spent()),
+                        whole(mastery.points_earned())
+                    )),
+                )
+                .child(
+                    Statistic::new(
+                        "cooking-mastery-kpi-rate",
+                        "EXP Rate",
+                        format!("{rate_value:.2}{rate_suffix}"),
+                    )
+                    .suffix("/hr")
+                    .caption(format!(
+                        "{}× external",
+                        format::value(mastery.external.total())
+                    )),
+                )
+                .child(
+                    Statistic::new(
+                        "cooking-mastery-kpi-exp",
+                        "EXP to Next Lv",
+                        format!("{exp_value:.2}{exp_suffix}"),
+                    )
+                    .caption("100 × 2.5^lv × 5^max(0, lv − 40)"),
+                )
+                .child(
+                    Statistic::new("cooking-mastery-kpi-hours", "Hrs to Next Lv", span(hours))
+                        .caption(format!("at {}", format::rate(rate))),
+                ),
         )
-        .child(
-            KpiCard::new(
-                Statistic::new("cooking-mastery-kpi-rate", "EXP Rate", rate_value)
-                    .decimals(2)
-                    .suffix(SharedString::from(format!("{rate_suffix}/hr")))
-                    .size(TextSize::Xl),
-            )
-            .caption(format!(
-                "{}× external",
-                format::value(mastery.external.total())
-            )),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("cooking-mastery-kpi-exp", "EXP to Next Lv", exp_value)
-                    .decimals(2)
-                    .suffix(SharedString::from(exp_suffix))
-                    .size(TextSize::Xl),
-            )
-            .caption("100 × 2.5^lv × 5^max(0, lv − 40)"),
-        )
-        .child(hours_to_next_level(mastery, muted))
-        .into_any_element()
-}
-
-/// The EXP requirement over the rate, in the research dashboard's time style.
-fn hours_to_next_level(mastery: &Mastery, muted: gpui::Hsla) -> AnyElement {
-    let hours = mastery.hours_to_next_level();
-    let reading = if hours.is_finite() {
-        format::hours(hours)
-    } else {
-        "∞".into()
-    };
-    div()
-        .id("cooking-mastery-kpi-hours")
-        .role(Role::Label)
-        .aria_label(format!("Hours to the next level: {reading}"))
-        .flex()
-        .flex_col()
-        .gap_1()
-        .min_w(px(190.0))
-        .flex_1()
-        .child(
-            div()
-                .text_size(px(11.0))
-                .text_color(muted)
-                .child("Hrs to Next Lv"),
-        )
-        .child(div().text_size(px(20.0)).child(SharedString::from(reading)))
-        .child(Caption::new(format!("at {}", format::rate(mastery.exp_rate()))).text_color(muted))
         .into_any_element()
 }
 
@@ -256,19 +221,19 @@ fn hours_to_next_level(mastery: &Mastery, muted: gpui::Hsla) -> AnyElement {
 /// A save with nothing left to spend gets the page's "No points available"
 /// notice instead, under the same node so the harness reads one place either
 /// way.
-fn recommendation(mastery: &Mastery, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+fn recommendation(
+    mastery: &Mastery,
+    ranking: &[Upgrade],
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let available = mastery.points_available();
-    let best = mastery
-        .ranking()
-        .into_iter()
-        .next()
-        .filter(|_| available > 0.0);
-    let (severity, title, detail, label) = match best {
+    let best = ranking.first().filter(|_| available > 0.0);
+    let (tone, title, detail, label) = match best {
         Some(best) => {
             let next_level = best.level + 1.0;
             (
-                Severity::Success,
+                Tone::Success,
                 format!("Next point → {}", best.name),
                 format!(
                     "+{:.4}% EXP rate · Lv {} → {} · {} now, {} after · {} of {} points free",
@@ -290,7 +255,7 @@ fn recommendation(mastery: &Mastery, cx: &mut Context<AppState>) -> AnyElement {
             )
         }
         None => (
-            Severity::Info,
+            Tone::Info,
             "No points available".to_string(),
             "Level up mastery to gain more points.".to_string(),
             format!(
@@ -304,78 +269,78 @@ fn recommendation(mastery: &Mastery, cx: &mut Context<AppState>) -> AnyElement {
         .id("cooking-mastery-recommendation")
         .role(Role::Label)
         .aria_label(label)
-        .child(
-            Callout::new(severity)
-                .title(title)
-                .child(Caption::new(detail).text_color(muted).into_any_element()),
-        )
+        .child(Callout::new(tone, title).child(Caption::new(detail).text_color(muted)))
         .into_any_element()
 }
 
 /// The upgrade comparison: every EXP upgrade by the gain one point brings.
-fn comparison(mastery: &Mastery, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mut table = Table::new([
-        "#",
-        "Upgrade",
-        "Level",
-        "Per Lv",
-        "Scaling",
-        "Current Bonus%",
-        "+1 Gain%",
-    ]);
-    for (position, row) in mastery.ranking().iter().enumerate() {
-        table = table.row(comparison_row(position, row));
-    }
+fn comparison(ranking: &[Upgrade], cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
+    let table = table(
+        &[
+            ("#", false),
+            ("Upgrade", false),
+            ("Level", true),
+            ("Per Lv", true),
+            ("Scaling", true),
+            ("Current Bonus%", true),
+            ("+1 Gain%", true),
+        ],
+        ranking.iter().enumerate().map(|(position, row)| {
+            TableRow::new()
+                .id(("cooking-mastery-comparison-row", row.index))
+                .children(comparison_row(position, row))
+        }),
+    );
     Card::new()
         .header(
             CardHeader::new("Upgrade Comparison")
                 .description("Every upgrade that feeds the EXP rate, ranked by one more point."),
         )
-        .child(div().id("cooking-mastery-upgrades").p_3().child(table))
+        .child(div().id("cooking-mastery-upgrades").child(table))
         .child(
-            div().px_3().pb_3().child(
-                Caption::new(format!(
-                    "{} is excluded: it raises ribbon rank chance, not the EXP rate.",
-                    UPGRADE_NAMES[RIBBON_CHANCE]
-                ))
-                .text_color(muted),
-            ),
+            Caption::new(format!(
+                "{} is excluded: it raises ribbon rank chance, not the EXP rate.",
+                UPGRADE_NAMES[RIBBON_CHANCE]
+            ))
+            .text_color(muted),
         )
         .into_any_element()
 }
 
 /// One comparison row; the page marks the top gain and flags the locked rows.
-fn comparison_row(position: usize, row: &Upgrade) -> [AnyElement; 7] {
-    let mut place = div()
+fn comparison_row(position: usize, row: &Upgrade) -> [TableCell; 7] {
+    let place = h_flex()
         .id(("cooking-mastery-place", row.index))
-        .flex()
-        .items_center()
         .gap_1()
-        .child(SharedString::from((position + 1).to_string()));
-    if position == 0 && !row.locked {
-        place = place.child(Badge::new("BEST").tone(Tone::Accent));
-    }
-    let mut name = div()
+        .child((position + 1).to_string())
+        .when(position == 0 && !row.locked, |place| {
+            place.child(
+                Tag::new()
+                    .with_variant(Tone::Accent.into())
+                    .outline()
+                    .small()
+                    .child("BEST"),
+            )
+        });
+    let name = v_flex()
         .id(("cooking-mastery-upgrade", row.index))
-        .flex()
-        .flex_col()
         .gap_0p5()
-        .child(SharedString::from(row.name));
-    if row.locked {
-        name = name.child(div().text_size(px(11.0)).child(SharedString::from(format!(
-            "needs mastery rank {}",
-            row.required_level
-        ))));
-    }
+        .child(row.name)
+        .when(row.locked, |name| {
+            name.child(Caption::new(format!(
+                "needs mastery rank {}",
+                row.required_level
+            )))
+        });
     [
-        place.into_any_element(),
-        name.into_any_element(),
-        cell(whole(row.level)),
-        cell(whole(row.per_lv)),
-        cell(format!("{:.2}", row.scaling)),
-        cell(format!("{:.2}%", row.bonus)),
-        cell(format!("+{:.4}%", row.gain_pct)),
+        TableCell::new().child(place),
+        text_cell(name),
+        number_cell(whole(row.level)),
+        number_cell(whole(row.per_lv)),
+        number_cell(format!("{:.2}", row.scaling)),
+        number_cell(format!("{:.2}%", row.bonus)),
+        number_cell(format!("+{:.4}%", row.gain_pct)),
     ]
 }
 
@@ -384,9 +349,39 @@ fn whole(value: f64) -> String {
     format!("{value:.0}")
 }
 
-/// A plain table cell.
-fn cell(text: String) -> AnyElement {
-    div().child(SharedString::from(text)).into_any_element()
+/// A span of hours in the section's own style.
+fn span(hours: f64) -> String {
+    if hours.is_finite() {
+        format::hours(hours)
+    } else {
+        "∞".into()
+    }
+}
+
+/// A kit table with these `(title, numeric)` columns over `rows`. Number
+/// columns sit right-aligned, as `docs/ui-kit/data.md` sets them.
+fn table(columns: &[(&'static str, bool)], rows: impl IntoIterator<Item = TableRow>) -> Table {
+    Table::new()
+        .child(
+            TableHeader::new().child(TableRow::new().children(columns.iter().map(
+                |(title, numeric)| {
+                    TableHead::new()
+                        .when(*numeric, TableHead::text_right)
+                        .child(*title)
+                },
+            ))),
+        )
+        .child(TableBody::new().children(rows))
+}
+
+/// A cell whose content wraps inside its column.
+fn text_cell(content: impl IntoElement) -> TableCell {
+    TableCell::new().child(div().min_w_0().child(content))
+}
+
+/// A right-aligned number cell.
+fn number_cell(text: String) -> TableCell {
+    TableCell::new().text_right().child(text)
 }
 
 /// The shared formula tree, sized like the other sections' breakdown cards.
@@ -408,28 +403,37 @@ fn formula_card(tree: Entity<FormulaTree>) -> impl IntoElement {
 /// A save without `CookMaster` has no mastery state: say so and offer the import.
 fn prompt(cx: &mut Context<AppState>) -> AnyElement {
     let import = cx.entity();
-    div()
+    let muted = cx.theme().muted_foreground;
+    v_flex()
         .id("cooking-mastery-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
+        .p(PANEL_PADDING)
         .child(
-            EmptyState::new(
-                "cooking-mastery-empty",
-                IconName::Map,
-                "No Cooking Mastery data",
-            )
-            .body(
-                "Cooking Mastery needs the Rift's mastery ranks: import a save that has opened \
-                 them to read the rank, the upgrades and the EXP rate.",
-            )
-            .action(
-                Button::new("cooking-mastery-import", "Import save")
-                    .icon(IconName::Upload)
-                    .on_click(move |_event, window, cx| {
-                        import.update(cx, |state, cx| state.open_import(window, cx));
-                    }),
+            div().id("cooking-mastery-empty").child(
+                Empty::new()
+                    .header(
+                        EmptyHeader::new()
+                            .media(
+                                EmptyMedia::new().child(Icon::new(IconName::Map).text_color(muted)),
+                            )
+                            .title(EmptyTitle::new().child("No Cooking Mastery data"))
+                            .description(EmptyDescription::new().child(
+                                "Cooking Mastery needs the Rift's mastery ranks: import a save \
+                                 that has opened them to read the rank, the upgrades and the EXP \
+                                 rate.",
+                            )),
+                    )
+                    .content(
+                        EmptyContent::new().child(
+                            Button::new("cooking-mastery-import")
+                                .label("Import save")
+                                .icon(IconName::Upload)
+                                .on_click(move |_event, window, cx| {
+                                    import.update(cx, |state, cx| state.open_import(window, cx));
+                                }),
+                        ),
+                    ),
             ),
         )
         .into_any_element()

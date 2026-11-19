@@ -11,12 +11,16 @@ mod plan;
 mod run;
 mod summary;
 
+pub(crate) use controls::Controls;
+
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::layout::ScrollArea;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::v_flex;
 use idleon_coral::{Goal, Inputs, SaveInputs};
+use idleon_ui::widgets::PANEL_GAP;
 
 /// One numeric planner field, so the controls can share one editor row.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -84,39 +88,54 @@ impl State {
     }
 }
 
+/// The value `field` holds, as its number field shows it.
+fn value(inputs: &Inputs, field: Field) -> f64 {
+    match field {
+        Field::Budget => inputs.budget,
+        Field::MaxLevels => f64::from(inputs.max_levels),
+        Field::BeamSize => f64::from(inputs.beam_size),
+        Field::GodRank => f64::from(inputs.god_rank),
+        Field::Y4 => inputs.y4,
+        Field::DivCostAfter3 => inputs.div_cost_after3,
+        Field::ReefUpgradeCount => inputs.reef_upgrade_count,
+        Field::MineFloor => inputs.mine_floor,
+        Field::Vault76Bonus => inputs.vault76_bonus,
+        Field::Tier => f64::from(inputs.tier),
+        Field::PlanningConfidence => inputs.planning_confidence,
+    }
+}
+
 /// The section: the controls rail and the summary, plan and projection column.
 pub(crate) fn view(
     state: &mut AppState,
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let controls = ScrollArea::new("coral-controls-scroll")
-        .vertical()
+    let controls = div()
         .flex_1()
         .min_h_0()
         .child(controls::controls_pane(state, window, cx))
+        .overflow_y_scrollbar()
+        .id("coral-controls-scroll")
         .into_any_element();
-    let summary = ScrollArea::new("coral-summary-scroll")
-        .vertical()
+    let summary = div()
         .flex_1()
         .min_w_0()
         .min_h_0()
         .child(
-            div()
+            v_flex()
                 .id("coral-summary-column")
-                .flex()
-                .flex_col()
-                .gap_3()
+                .gap(PANEL_GAP)
                 .child(summary::kpis(state))
                 .child(plan::plan_pane(state, cx))
                 .child(fit::offering_pane(state, cx))
-                .child(summary::current_pane(state, window, cx)),
+                .child(summary::current_pane(state, cx)),
         )
+        .overflow_y_scrollbar()
+        .id("coral-summary-scroll")
         .into_any_element();
-    div()
+    v_flex()
         .id("coral-god-rank")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
         .child(layout::split_pane_reversed(

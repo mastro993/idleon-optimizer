@@ -58,10 +58,6 @@ impl Tab {
             Tab::Sim => "Sim",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// The optimizer's step caps, as the page's selector lists them.
