@@ -515,7 +515,7 @@ pub(crate) fn view(
     let page = v_flex()
         .id("statue-pane")
         .gap(PANEL_GAP)
-        .p_3()
+        .py_3()
         .when(!state.save_loaded, |page| {
             page.child(div().id("statue-no-save").child(Caption::new(
                 "Import a decoded save to read its per-character statue levels.",

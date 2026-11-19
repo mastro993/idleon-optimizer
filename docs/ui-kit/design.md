@@ -145,8 +145,9 @@ color as text, the same color at 14% as fill, and at 30% as a 1 px outline, in t
   field per 32 px line. Two or three exclusive options use a segmented control; booleans use
   switches; numbers use mono steppers sized to their content, not stretched.
 - **Callouts:** a sunken row with a status dot, a bold status-colored title and muted body text.
-- **Home:** one table of every calculator (sprite, name, world badge, what it answers, last opened)
-  in place of a card grid, so the 28 calculators fit on one screen.
+- **Home:** the card grid of [ADR 0001](../adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md) at Console density
+  (sprite, name, world badge and what it answers on each card). The mock showed one table of every
+  calculator instead; #375 kept the grid, which adds a column when the sidebar folds.
 
 ## Do and don't
 

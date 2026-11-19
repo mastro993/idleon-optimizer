@@ -335,11 +335,15 @@ pub(crate) fn view(
         format::count(points.spent as u64),
         format::count(points.earned as u64)
     );
+    // Ten tabs and the summary do not share one line on a compact window, so
+    // the summary moves under the tabs there.
+    let compact = Breakpoint::of(window, cx) == Breakpoint::Compact;
     let header = div()
         .id("research-header")
         .flex()
         .flex_none()
-        .items_center()
+        .when(compact, |header| header.flex_col().items_start())
+        .when(!compact, |header| header.items_center())
         .gap_3()
         .child(layout::app_tabs(state, cx))
         .child(

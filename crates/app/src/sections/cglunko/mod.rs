@@ -130,7 +130,6 @@ pub(crate) fn view(
         .id("cglunko-header")
         .flex()
         .items_center()
-        .px_3()
         .gap_3()
         .child(tabs)
         .child(
@@ -148,7 +147,6 @@ pub(crate) fn view(
         .id("cglunko-summary")
         .role(gpui::Role::Label)
         .aria_label(summary.clone())
-        .px_3()
         .min_w_0()
         .child(Caption::new(summary));
 
@@ -165,14 +163,12 @@ pub(crate) fn view(
     // read zero; say why instead of pretending the account is fresh.
     if state.save_loaded && !state.cglunko.saved {
         section = section.child(
-            div().px_3().child(
-                Alert::new(
-                    "cglunko-missing",
-                    "This save carries no Cglunko data: OptLacc[630..669] is empty, so every value below reads zero.",
-                )
-                .with_variant(Tone::Warning.into())
-                .banner(),
-            ),
+            Alert::new(
+                "cglunko-missing",
+                "This save carries no Cglunko data: OptLacc[630..669] is empty, so every value below reads zero.",
+            )
+            .with_variant(Tone::Warning.into())
+            .banner(),
         );
     }
     let entity = cx.entity();

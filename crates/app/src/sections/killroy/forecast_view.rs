@@ -374,12 +374,15 @@ fn encounter_cell(
         .when(row.maps.is_empty(), |cell| {
             cell.child(Caption::new("Locked").text_color(muted))
         })
+        // The record sits under the map: side by side they outgrow the
+        // column's share and run into the next encounter.
         .children(row.maps.iter().map(|(map, record)| {
-            h_flex()
-                .gap_1()
-                .child(div().child(map.clone()))
-                .child(Caption::new("· Record").text_color(muted))
-                .child(Caption::new(record.clone()).text_color(accent))
+            v_flex().child(map.clone()).child(
+                h_flex()
+                    .gap_1()
+                    .child(Caption::new("Record").text_color(muted))
+                    .child(Caption::new(record.clone()).text_color(accent)),
+            )
         }))
         .when(row.practice, |cell| {
             cell.child(Caption::new("Already used — practice only").text_color(muted))

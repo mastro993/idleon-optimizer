@@ -137,7 +137,7 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     let body = v_flex()
         .id("worship-model-body")
         .gap_3()
-        .p_3()
+        .py_3()
         .child(
             Card::new()
                 .header(CardHeader::new("Model assumptions").description(

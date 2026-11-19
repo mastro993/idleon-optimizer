@@ -314,7 +314,9 @@ pub fn number(value: f64) -> String {
         return format!("{value:.2e}");
     }
     if value.abs() < 1e3 {
-        return format!("{value:.0}");
+        // A sum over nothing is -0.0, and `{:.0}` keeps its sign.
+        let shown = format!("{value:.0}");
+        return if shown == "-0" { "0".into() } else { shown };
     }
     fmt_val(value)
 }
@@ -448,6 +450,8 @@ mod tests {
     #[test]
     fn farming_numbers_chances_and_durations_read_as_labels() {
         assert_eq!(number(845.0), "845");
+        assert_eq!(number(-0.0), "0");
+        assert_eq!(number(-0.3), "0");
         assert_eq!(number(12_345.0), "12.3K");
         assert_eq!(number(4.5e9), "4.50B");
         assert_eq!(number(1.2e15), "1.20Q");

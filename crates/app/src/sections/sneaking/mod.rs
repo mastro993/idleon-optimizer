@@ -82,7 +82,7 @@ pub(crate) fn view(
                     .flex()
                     .flex_col()
                     .gap_4()
-                    .p_4()
+                    .py_4()
                     .child(loadout::scenario(state, loadout, &figures, window, cx))
                     .child(loadout::saved_floors(state, loadout, &figures, cx))
                     .child(loadout::loadout_card(state, loadout, &figures, cx))
@@ -147,7 +147,6 @@ pub(crate) fn view(
         .flex_none()
         .items_center()
         .gap_3()
-        .px_4()
         .pt_4()
         .child(tabs)
         .child(div().flex_1());
@@ -172,7 +171,7 @@ fn pane(id: &'static str, content: AnyElement) -> AnyElement {
         .flex()
         .flex_col()
         .gap_3()
-        .p_4()
+        .py_4()
         .child(content)
         .into_any_element()
 }

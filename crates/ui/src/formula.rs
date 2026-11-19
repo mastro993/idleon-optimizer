@@ -157,6 +157,7 @@ fn push_rows(
     if let Some(note) = &node.note {
         details.push(note.clone());
     }
+    details.retain(|detail| !detail.trim().is_empty());
 
     rows.push(Row {
         path: key.replace('/', "-").into(),
@@ -405,7 +406,9 @@ mod tests {
     fn sample() -> FormulaNode {
         FormulaNode::new("Total", 6.0).with_children([
             FormulaNode::new("Base", 2.0).with_children([FormulaNode::new("Takin' Notes", 2.0)]),
-            FormulaNode::new("Bonus", 4.0).with_source("Grid"),
+            FormulaNode::new("Bonus", 4.0)
+                .with_source("Grid")
+                .with_note(""),
         ])
     }
 
@@ -452,5 +455,12 @@ mod tests {
             assert_eq!(matched.len(), 1);
             assert_eq!(matched[0].label.as_ref(), "Takin' Notes");
         });
+    }
+
+    #[gpui::test]
+    fn a_blank_note_leaves_no_trailing_separator(cx: &mut TestAppContext) {
+        let (tree, cx) = open(cx);
+        let details = tree.read_with(cx, |tree, _| tree.rows[2].details.clone());
+        assert_eq!(details.as_deref(), Some("Grid"));
     }
 }

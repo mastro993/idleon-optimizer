@@ -104,6 +104,51 @@ These are Ely's numbers, kept as the reference to compare a run against. Nothing
 table: without a budget there is no verdict, and the harness reports the figures only. Runs on the
 same machine vary by about ±2 ms per frame and ±100 ms at startup.
 
+## After the migration
+
+2026-11-19, commit `ada986d0` (GPUI Kit UI, after #361), the same machine, build and window as the
+baseline. Times in ms; `Δ p95` is against the baseline.
+
+| Scenario | Frames | p50 | p95 | max | Δ p95 |
+|---|---|---|---|---|---|
+| startup: first frame ≤ 354, Home with the session 1,582 | 159 | 0.4 | 0.7 | 12.4 | −47.0 |
+| home-idle-3s | 0 | – | – | – | – |
+| home-scroll | 38 | 1.6 | 3.8 | 4.8 | −41.3 |
+| home-search-typing | 54 | 0.5 | 1.8 | 2.3 | −41.1 |
+| home-hover | 9 | 1.7 | 4.4 | 4.4 | −39.0 |
+| stats-all-open (first visit) | 87 | 0.6 | 0.9 | 8.3 | −42.1 |
+| stats-all-scroll | 36 | 3.4 | 5.9 | 8.3 | −7.0 |
+| research-open | 3 | 6.2 | 17.4 | 17.4 | −26.2 |
+| research-scroll | 37 | 5.1 | 8.5 | 11.4 | −23.4 |
+| spelunking-open | 3 | 6.4 | 20.5 | 20.5 | −23.1 |
+| spelunking-scroll | 38 | 4.9 | 8.2 | 10.6 | −23.6 |
+| royal-guardian-open | 3 | 4.1 | 15.1 | 15.1 | +6.8 |
+| royal-guardian-scroll | 38 | 3.0 | 6.2 | 11.7 | −2.2 |
+| jelly-operator-open | 3 | 2.5 | 5.9 | 5.9 | +0.8 |
+| jelly-operator-scroll | 30 | 1.1 | 2.0 | 3.1 | −2.9 |
+| worship-td-open | 4 | 2.1 | 11.4 | 11.4 | +1.0 |
+| combat-sim-open | 3 | 2.5 | 10.5 | 10.5 | +1.1 |
+| combat-sim-scroll | 38 | 1.7 | 3.0 | 4.8 | −2.5 |
+| farming-open | 3 | 2.7 | 12.3 | 12.3 | −0.1 |
+| farming-scroll | 38 | 2.1 | 3.0 | 3.2 | −2.4 |
+| killroy-open | 3 | 1.5 | 2.5 | 2.5 | +1.0 |
+| switch-10x | 60 | 4.3 | 11.3 | 12.6 | −23.3 |
+| sidebar-fold | 26 | 2.1 | 2.5 | 2.6 | −40.9 |
+| sidebar-unfold | 26 | 2.1 | 2.6 | 2.7 | −41.4 |
+| window-resize | 30 | 2.9 | 3.0 | 3.0 | −42.7 |
+| run-away-home, run-away-killroy | 6, 6 | | | | |
+
+The slowest frames left are the ones that lay out a newly opened page (research, spelunking,
+royal-guardian, farming, worship-td and combat-sim open at 10–21 ms). An open draws three frames,
+so its p95 is that frame. Reopening the same section in one window costs less: research
+12.1, spelunking 11.9, royal-guardian 8.6, farming 6.2, worship-td 4.4 and combat-sim 5.1 ms. A
+first visit also pays 2–3 ms of paint for new glyphs and sprites. GPUI's line-layout cache keeps
+only the previous frame, so a page that is left and reopened shapes all its text again. About 45%
+of that frame is Taffy layout of the new page and about 28% is text shaping. Research lays out its
+whole grid, one element per square, and spelunking's first screen has 24 kit `Select`s and 11
+`NumberInput`s. On `research-scroll`, the four formula trees and four inputs re-render on every
+scroll frame.
+
 ## Where the time goes
 
 Profiled with `sample` on the release build while the harness drove each scenario:

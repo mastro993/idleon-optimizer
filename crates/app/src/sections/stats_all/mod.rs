@@ -437,11 +437,7 @@ fn map_card(
         options.len(),
         context.map_visibility.label()
     );
-    let target = if class.target_name.is_empty() {
-        "no AFK target".to_string()
-    } else {
-        class.target_name.replace('_', " ")
-    };
+    let target = class.mob().unwrap_or_else(|| "no AFK target".into());
     div()
         .flex()
         .flex_col()

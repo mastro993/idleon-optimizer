@@ -230,8 +230,7 @@ pub fn maps(snapshot: Option<&Snapshot>, character: usize) -> Vec<MapRow> {
     let push = |map: usize, rows: &mut Vec<MapRow>| {
         let class = stats::classify(map);
         let mut label = class.name.clone();
-        let mob = class.target_name.replace('_', " ");
-        if !mob.is_empty() && mob != "Nothing" {
+        if let Some(mob) = class.mob() {
             label.push_str(&format!(" - {mob}"));
         }
         if let Some(kills) = snapshot.map_bonus(map).and_then(|bonus| bonus.first()) {
@@ -446,6 +445,12 @@ mod tests {
         indices.sort_unstable();
         indices.dedup();
         assert_eq!(indices.len(), rows.len(), "no map is listed twice");
+        // A map without an AFK target ends at its name, not at a dangling dash.
+        let pet_park = rows
+            .iter()
+            .find(|row| row.label.starts_with("Pet Park"))
+            .expect("Pet Park is listed");
+        assert_eq!(pet_park.label, "Pet Park");
     }
 
     #[test]

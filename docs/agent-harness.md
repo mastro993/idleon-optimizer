@@ -176,6 +176,32 @@ the registry round-robin and skips captures, because only the frontmost window c
 reliably on macOS. The parallel run proves lane isolation and interaction paths; the default
 sequential run owns the screenshots.
 
+### Screenshot baseline
+
+The reference captures are kept out of git: the full set is about 13 MB of PNGs, and every refresh
+would add that much again. They are the asset `ui-baseline.tar.gz` on the draft release
+`ui-baseline`, which the nightly cleanup skips because it lists only published prereleases. The
+set was seeded by #362 on an Apple M4 Pro (2× display) with macOS in **Light** appearance, from the
+fixture save. The app follows the system appearance, and the comparison is pixel by pixel, so
+compare on a 2× display in the same appearance.
+
+```console
+mkdir -p target/ui-baseline
+gh release download ui-baseline --pattern ui-baseline.tar.gz --output - | tar -xz -C target/ui-baseline
+node script/mcp-sections.mjs --baseline target/ui-baseline
+```
+
+After an intended visual change, refresh the sections it touched and upload the set again:
+
+```console
+node script/mcp-sections.mjs --only <ids> --baseline target/ui-baseline --update-baseline
+tar -czf target/ui-baseline.tar.gz -C target/ui-baseline .
+gh release upload ui-baseline target/ui-baseline.tar.gz --clobber
+```
+
+`coral-god-rank` and `sneaking` have no capture yet: their interaction checks time out before the
+capture, as they already did on main before #362.
+
 Every lane owns a private `--endpoint-dir`, and `script/mcp-lane.mjs` is the shared spawn/stdio
 client for the four harnesses. The bridge's socket path must fit `sun_path` (104 bytes on macOS), so
 the endpoint directory falls back to `/tmp` when `TMPDIR` is too long for it.

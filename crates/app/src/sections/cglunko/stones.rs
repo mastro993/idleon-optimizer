@@ -24,7 +24,7 @@ pub(crate) fn stones_pane(state: &AppState, cx: &App) -> AnyElement {
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
+        .py_3()
         .child(digit_impact(cglunko))
         .child(stone_card(cglunko, page, &figures.stones, cx))
         .child(focus_card(cglunko, page, &figures.focus, cx));

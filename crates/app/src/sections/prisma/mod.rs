@@ -204,7 +204,7 @@ pub(crate) fn view(
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
+        .py_3()
         .child(toolbar(state, run.running(), &entity));
 
     if run.running() {
